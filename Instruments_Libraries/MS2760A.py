@@ -35,7 +35,7 @@ class MS2760A:
         self._marker_List = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
         self._exeption_state = 0  # indicates that an exception occured
         self._dataFormat = None
-        self.set_DataFormat("ASCii")
+        self.set_data_format("ASCii")
 
     def query(self, message):
         return self._resource.query(message)
@@ -49,13 +49,13 @@ class MS2760A:
     def read(self):
         return self._resource.read()
 
-    def Close(self):
+    def close(self):
         self._resource.close()
 
     # =============================================================================
     # General functions
     # =============================================================================
-    def Idn(self) -> str:
+    def get_idn(self) -> str:
         """
         Identify the Insturment.
 
@@ -108,7 +108,7 @@ class MS2760A:
             return 0
         return state
 
-    def StatusOperation(self) -> int:
+    def get_operation_status(self) -> int:
         """
         Returns the operation status of the instrument
 
@@ -137,11 +137,11 @@ class MS2760A:
     # Start Measurment
     # =============================================================================
 
-    def Init(self) -> None:
+    def init(self) -> None:
         """Initialize measurement."""
         self.write(":INITiate:IMMediate")
 
-    def ClearTrace(self, traceNumber: int = 1) -> None:
+    def clear_trace(self, traceNumber: int = 1) -> None:
         """
         Clear the trace.
 
@@ -160,7 +160,7 @@ class MS2760A:
     # Ask/Query Functions
     # =============================================================================
 
-    def ask_freq_Start(self) -> float:
+    def get_start_frequency(self) -> float:
         """
         Query for the start frequency.
 
@@ -173,7 +173,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:FREQuency:STARt?")[0]
 
-    def ask_freq_Stop(self) -> float:
+    def get_stop_frequency(self) -> float:
         """
         Query for the stop frequency.
 
@@ -186,7 +186,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:FREQuency:STOP?")[0]
 
-    def ask_ResBwidth(self) -> float:
+    def get_resolution_bandwidth(self) -> float:
         """
         Query the resolution bandwidth.
 
@@ -199,7 +199,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:BANDwidth:RESolution?")[0]
 
-    def ask_SingleOrContinuesMeas(self) -> int:
+    def get_continuous(self) -> int:
         """
         Query whether the instrument is in continuous or single sweep mode.
 
@@ -213,7 +213,7 @@ class MS2760A:
 
         return self.query_ascii_values(":INITiate:CONTinuous?", converter="d")[0]
 
-    def ask_Configuration(self) -> str:
+    def get_configuration(self) -> str:
         """
         Query the instrument configuration information.
 
@@ -228,7 +228,7 @@ class MS2760A:
 
         return self.query(":SYSTem:OPTions:CONFig?")
 
-    def ask_sweepTime(self) -> float:
+    def get_sweep_time(self) -> float:
         """
         Query the measured sweep time (in milliseconds).
 
@@ -263,7 +263,7 @@ class MS2760A:
     #     traceNumber = str(traceNumber)
     #     return self.query(':TRACe:DATA? ' + traceNumber)
 
-    def ask_ResBwidthAuto(self) -> int:
+    def get_resolution_bandwidth_auto(self) -> int:
         """
         Query the automatic resolution bandwidth setting.
 
@@ -277,7 +277,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:BANDwidth:RESolution:AUTO?", converter="d")[0]
 
-    def ask_DataPointCount(self) -> int:
+    def get_data_point_count(self) -> int:
         """
         Query the display point count.
 
@@ -290,7 +290,7 @@ class MS2760A:
 
         return self.query_ascii_values(":DISPlay:POINtcount?", converter="d")[0]
 
-    def ask_MarkerExcursionState(self) -> int:
+    def get_marker_excursion_state(self) -> int:
         """
         Query the peak marker excursion state.
 
@@ -303,7 +303,7 @@ class MS2760A:
 
         return self.query_ascii_values(":CALCulate:MARKer:PEAK:EXCursion:STATe?", converter="d")[0]
 
-    def ask_MarkerExcursion(self) -> str:
+    def get_marker_excursion(self) -> str:
         """
         Query the marker excursion data.
 
@@ -318,7 +318,7 @@ class MS2760A:
 
         return self.query(":CALCulate:MARKer:EXCursion?")
 
-    def ask_MarkerValues(self, markerNumber: int = None) -> list | tuple:
+    def get_marker_values(self, markerNumber: int = None) -> list | tuple:
         """
         Query the marker values.
 
@@ -358,7 +358,7 @@ class MS2760A:
         else:
             return result
 
-    def ask_CHPowerState(self) -> int:
+    def get_ch_power_state(self) -> int:
         """
         Query the channel power measurement state.
 
@@ -372,7 +372,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:CHPower:STATe?", converter="d")[0]
 
-    def ask_DataFormat(self) -> str:
+    def get_data_format(self) -> str:
         """
         Query the data format.
 
@@ -385,7 +385,7 @@ class MS2760A:
         self._dataFormat = self.query(":FORMat:TRACe:DATA?")
         return self._dataFormat
 
-    def ask_CenterFreq(self) -> float:
+    def get_center_frequency(self) -> float:
         """
         Query the center frequency.
 
@@ -397,7 +397,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:FREQuency:CENTer?")[0]
 
-    def ask_FreqSpan(self) -> float:
+    def get_span(self) -> float:
         """
         Query the frequency span.
 
@@ -408,7 +408,7 @@ class MS2760A:
         """
         return self.query_ascii_values(":SENSe:FREQuency:SPAN?")[0]
 
-    def ask_TraceType(self, traceNumber: int = 1) -> str:
+    def get_trace_type(self, traceNumber: int = 1) -> str:
         """
         Query the trace type for a given trace number.
 
@@ -434,7 +434,7 @@ class MS2760A:
         else:
             raise ValueError("Number must be between 1 and 6")
 
-    def ask_TraceSelected(self) -> int:
+    def get_trace_selected(self) -> int:
         """
         Query the currently selected trace. The max number of
         traces available to select is model specific.
@@ -448,7 +448,7 @@ class MS2760A:
 
         return self.query_ascii_values(":TRACe:SELect?", converter="d")[0]
 
-    def ask_TraceState(self, traceNumber: int = 1) -> int:
+    def get_trace_state(self, traceNumber: int = 1) -> int:
         """
         Query the display state of a given trace. If it is OFF, the :TRAC:DATA?
         command will return nan.
@@ -476,7 +476,7 @@ class MS2760A:
         else:
             raise ValueError("Number must be between 1 and 6")
 
-    def ask_RefLevel(self) -> float:
+    def get_reference_level(self) -> float:
         """
         Query the reference level.
 
@@ -488,7 +488,7 @@ class MS2760A:
         """
         return self.query_ascii_values(":DISPlay:TRACe:Y:SCALe:RLEVel?")[0]
 
-    def ask_IFGainState(self) -> int:
+    def get_if_gain_state(self) -> int:
         """
         Query the IF gain state.
 
@@ -501,7 +501,7 @@ class MS2760A:
         """
         return self.query_ascii_values(":POWer:IF:GAIN:STATe?", converter="d")[0]
 
-    def ask_DetectorType(self, traceNumber: int = 1) -> str:
+    def get_detector_type(self, traceNumber: int = 1) -> str:
         """
         Query the detector type.
 
@@ -521,7 +521,7 @@ class MS2760A:
         else:
             raise ValueError("Trace Number must be between 1 and 6")
 
-    def ask_CaptureTime(self) -> float:
+    def get_capture_time(self) -> float:
         """
         Query the capture time in ms.
 
@@ -536,7 +536,7 @@ class MS2760A:
     #  Write Functions
     # =============================================================================
 
-    def set_DataPointCount(self, dataPoints: int = 501) -> None:
+    def set_data_point_count(self, dataPoints: int = 501) -> None:
         """
         Changes the number of display points the instrument currently measures.
         Increasing the number of display points can improve the resolution of
@@ -562,7 +562,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! Value must be an integer.")
 
-    def set_freq_Start(self, value: int | float, unit: str = "Hz") -> None:
+    def set_start_frequency(self, value: int | float, unit: str = "Hz") -> None:
         """
         Sets the start frequency. Note that in the spectrum analyzer, changing the
         value of the start frequency will change the value of the coupled parameters,
@@ -589,7 +589,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    def set_freq_Stop(self, value: int | float, unit: str = "Hz") -> None:
+    def set_stop_frequency(self, value: int | float, unit: str = "Hz") -> None:
         """
         Sets the stop frequency. Note that in the spectrum analyzer, changing the
         value of the start frequency will change the value of the coupled parameters,
@@ -616,7 +616,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    def set_ResBwidth(self, value: int | float, unit: str = "Hz") -> None:
+    def set_resolution_bandwidth(self, value: int | float, unit: str = "Hz") -> None:
         """
         Sets the resolution bandwidth. Note that using this command turns
         the automatic resolution bandwidth setting OFF.
@@ -646,7 +646,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_ResBwidthAuto(self, state: str | int) -> None:
+    def set_resolution_bandwidth_auto(self, state: str | int) -> None:
         """
         Sets the automatic resolution bandwidth state. Setting the value to ON or 1 will
         result in the resolution bandwidth being coupled to the span. That is, when the
@@ -675,7 +675,7 @@ class MS2760A:
         else:
             raise ValueError(f"Unknown input! Must be ON, OFF, 1 or 0 instead of {state}")
 
-    def set_CenterFreq(self, value: int | float, unit: str = "Hz") -> None:
+    def set_center_frequency(self, value: int | float, unit: str = "Hz") -> None:
         """
         Sets the center frequency. Note that changing the value of the center frequency will
         change the value of the coupled parameters Start Frequency and Stop Frequency. It
@@ -702,7 +702,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_FreqSpan(self, value: int | float, unit: str = "Hz") -> None:
+    def set_span(self, value: int | float, unit: str = "Hz") -> None:
         """
         Sets the frequency span. Setting the value of <freq> to 0 Hz is the
         equivalent of setting the span mode to zero span. Note that changing
@@ -731,7 +731,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_Continuous(self, state: str | int) -> None:
+    def set_continuous(self, state: str | int) -> None:
         """
         Specifies whether the sweep/measurement is triggered continuously. If
         the value is set to ON or 1, another sweep/measurement is triggered as
@@ -759,9 +759,9 @@ class MS2760A:
             raise ValueError("Unknown input! See function description for more info.")
 
     # Define an alias
-    set_ContinuousMeas = set_Continuous
+    set_ContinuousMeas = set_continuous
 
-    def set_DataFormat(self, state: str = "ASCii") -> None:
+    def set_data_format(self, state: str = "ASCii") -> None:
         """
         Sets the data format. Only ASCii works!!!
 
@@ -781,11 +781,11 @@ class MS2760A:
         state = state.upper() if isinstance(state, str) else state
         if state in format_List:
             self.write(f":FORMat:TRACe:DATA {state}")
-            self.ask_DataFormat()
+            self.get_data_format()
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_MarkerExcursionState(self, state: str | int) -> None:
+    def set_marker_excursion_state(self, state: str | int) -> None:
         """
         Turn on/off marker excursion state.
 
@@ -806,7 +806,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_MarkerExcursion(self, value: int | float) -> None:
+    def set_marker_excursion(self, value: int | float) -> None:
         """
         Sets the excursion for a marker. The excursion is the vertical distance
         from the peak to the next highest valley which must be exceeded for a
@@ -823,7 +823,7 @@ class MS2760A:
         else:
             raise ValueError(f"Allowed range is 0dB to 200dB. Current value is {value}dB")
 
-    def set_NextPeak(self, markerNum: int = 1) -> None:
+    def set_next_peak(self, markerNum: int = 1) -> None:
         """
         Moves the marker to the next highest peak.
 
@@ -842,7 +842,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_MaxPeak(self, markerNum: int = 1) -> None:
+    def set_max_peak(self, markerNum: int = 1) -> None:
         """
         Moves the marker to the highest peak.
 
@@ -862,11 +862,11 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_MarkerPreset(self) -> None:
+    def set_marker_preset(self) -> None:
         """Presets all markers to their preset values."""
         self.write(":CALCulate:MARKer:APReset")
 
-    def set_CHPowerState(self, state: str | int) -> None:
+    def set_ch_power_state(self, state: str | int) -> None:
         """
         Sets the channel power measurement state.
         Sets the state of the channel power measurement, ON or OFF. When using
@@ -890,7 +890,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_TraceType(self, state: str = "NORM", traceNumber: int = 1) -> None:
+    def set_trace_type(self, state: str = "NORM", traceNumber: int = 1) -> None:
         """
         Sets the trace type.
 
@@ -923,7 +923,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_TraceSelected(self, traceNumber: int = 1) -> None:
+    def set_trace_selected(self, traceNumber: int = 1) -> None:
         """
         The selected trace will be used by operations that use a single trace.
         The max number of traces available to select is model specific.
@@ -946,7 +946,7 @@ class MS2760A:
         else:
             raise ValueError(f"Allowed range is 1 to 6. Current value is {traceNumber}")
 
-    def set_TraceState(self, state: str | int = "ON", traceNumber: int = 1) -> None:
+    def set_trace_state(self, state: str | int = "ON", traceNumber: int = 1) -> None:
         """
         The trace visibility state status. If it is OFF, the :TRAC:DATA?
         command will return NaN.
@@ -972,7 +972,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_RefLevel(self, level: float) -> None:
+    def set_reference_level(self, level: float) -> None:
         """
         Set the reference level in dBm.
 
@@ -992,7 +992,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_IFGainState(self, state: str | int) -> None:
+    def set_if_gain_state(self, state: str | int) -> None:
         """
         Sets the state of the IF gain ON or OFF. ON is only possible
         when reference level is set to <-10 dBm.
@@ -1015,7 +1015,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_DetectorType(
+    def set_detector_type(
         self,
         state: str = "POSitive",
         traceNumber: int = 1,
@@ -1045,7 +1045,7 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_CaptureTime(self, captureTime: float = 0, unit: str = "ms") -> None:
+    def set_capture_time(self, captureTime: float = 0, unit: str = "ms") -> None:
         """
         Determines how much time to spend taking samples for each portion of the spectrum.
 
@@ -1073,7 +1073,7 @@ class MS2760A:
     #   get/Save Data
     # =============================================================================
 
-    def get_Data(self, markerNumber: int = 1, returnArray: bool = False) -> dict | np.ndarray:
+    def get_data(self, markerNumber: int = 1, returnArray: bool = False) -> dict | np.ndarray:
         """
         This function will stop temporally set Continuous Measurement to OFF, extract
         the max. peak value and frequency and restore the Continuous Measurement to ON.
@@ -1085,23 +1085,23 @@ class MS2760A:
 
         """
 
-        self.set_Continuous("OFF")
+        self.set_continuous("OFF")
         try:
-            self.set_MarkerPreset()
-            self.set_MaxPeak()
-            marker_values = self.ask_MarkerValues(markerNumber)
+            self.set_marker_preset()
+            self.set_max_peak()
+            marker_values = self.get_marker_values(markerNumber)
             freq = marker_values[0]
             power = marker_values[1]
         finally:
-            self.set_MarkerPreset()
-            self.set_Continuous("ON")
+            self.set_marker_preset()
+            self.set_continuous("ON")
 
         if returnArray:
             return np.array([freq, power])
         else:
             return {"Frequency/Hz": freq, "Power/dBm": power}
 
-    def ExtractTtraceData(self, traceNumber: int = 1) -> np.ndarray:
+    def extract_trace_data_legacy(self, traceNumber: int = 1) -> np.ndarray:
         """
         Old function to keep legacy scripts working.
         Better use: ExtractTraceData()
@@ -1130,19 +1130,19 @@ class MS2760A:
 
         """
 
-        self.set_Continuous("OFF")
-        self.set_DataFormat("ASCii")
+        self.set_continuous("OFF")
+        self.set_data_format("ASCii")
         data = self.write(f":TRACe:DATA? {traceNumber}")
-        data = self.ask_DataFormat()
+        data = self.get_data_format()
         num_header = int(data[1]) + 2  # get the header size
         new_str = data[num_header:-5]  # truncate the header block and end block
         data_arr = new_str.split(",")
         Output = [float(item) for item in data_arr]
         Output = np.array(Output)
-        self.set_Continuous("ON")
+        self.set_continuous("ON")
         return Output
 
-    def ExtractTraceData(
+    def extract_trace_data(
         self, traceNumber: int = 1, clearTrace: bool = True, timeout: float = 20
     ) -> np.ndarray:
         """
@@ -1172,29 +1172,85 @@ class MS2760A:
         if traceNumber not in self._trace_List:
             raise ValueError(f"Invalid trace number: {traceNumber}. Must be in {self._trace_List}.")
 
-        self.set_Continuous("OFF")
+        self.set_continuous("OFF")
 
         # Check the data format
         if self._dataFormat != "ASC,8":
-            self.set_DataFormat("ASCii")
+            self.set_data_format("ASCii")
 
         if clearTrace:
             self.abort()
-            # self.ClearTrace(traceNumber)
-            self.Init()
+            # self.clear_trace(traceNumber)
+            self.init()
             start_time = time()
             complete = 0
             while complete == 0:
                 sleep(0.1)
-                complete = self.StatusOperation()
+                complete = self.get_status_operation()
                 if time() - start_time > timeout:
                     raise TimeoutError(f"Operation did not complete within {timeout:.2f} seconds.")
 
         data = self.write(f":TRACe:DATA? {traceNumber}")
-        data = self.ask_DataFormat()
+        data = self.get_data_format()
         num_header = int(data[1]) + 2  # get the header size
         new_str = data[num_header:-5]  # truncate the header block and end block
         data_arr = new_str.split(",")
         Output = np.array([float(item) for item in data_arr])
 
         return Output
+
+    # =============================================================================
+    # Aliases for backwards compatibility
+    # =============================================================================
+    Close = close
+    Idn = get_idn
+    StatusOperation = get_operation_status
+    Init = init
+    ClearTrace = clear_trace
+    ask_freq_Start = get_start_frequency
+    ask_freq_Stop = get_stop_frequency
+    ask_ResBwidth = get_resolution_bandwidth
+    ask_SingleOrContinuesMeas = get_continuous
+    ask_Configuration = get_configuration
+    ask_sweepTime = get_sweep_time
+    ask_ResBwidthAuto = get_resolution_bandwidth_auto
+    ask_DataPointCount = get_data_point_count
+    ask_MarkerExcursionState = get_marker_excursion_state
+    ask_MarkerExcursion = get_marker_excursion
+    ask_MarkerValues = get_marker_values
+    ask_CHPowerState = get_ch_power_state
+    ask_DataFormat = get_data_format
+    ask_CenterFreq = get_center_frequency
+    ask_FreqSpan = get_span
+    ask_TraceType = get_trace_type
+    ask_TraceSelected = get_trace_selected
+    ask_TraceState = get_trace_state
+    ask_RefLevel = get_reference_level
+    ask_IFGainState = get_if_gain_state
+    ask_DetectorType = get_detector_type
+    ask_CaptureTime = get_capture_time
+    set_DataPointCount = set_data_point_count
+    set_freq_Start = set_start_frequency
+    set_freq_Stop = set_stop_frequency
+    set_ResBwidth = set_resolution_bandwidth
+    set_ResBwidthAuto = set_resolution_bandwidth_auto
+    set_CenterFreq = set_center_frequency
+    set_FreqSpan = set_span
+    set_Continuous = set_continuous
+    set_DataFormat = set_data_format
+    set_MarkerExcursionState = set_marker_excursion_state
+    set_MarkerExcursion = set_marker_excursion
+    set_NextPeak = set_next_peak
+    set_MaxPeak = set_max_peak
+    set_MarkerPreset = set_marker_preset
+    set_CHPowerState = set_ch_power_state
+    set_TraceType = set_trace_type
+    set_TraceSelected = set_trace_selected
+    set_TraceState = set_trace_state
+    set_RefLevel = set_reference_level
+    set_IFGainState = set_if_gain_state
+    set_DetectorType = set_detector_type
+    set_CaptureTime = set_capture_time
+    get_Data = get_data
+    ExtractTtraceData = extract_trace_data_legacy
+    ExtractTraceData = extract_trace_data

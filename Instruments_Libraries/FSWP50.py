@@ -161,12 +161,11 @@ class FSWP50:
         """
         self.write("*WAI")
 
-    def get_opc(self) -> int:
+    def OPC(self) -> int:
         """Wait until the operation is complete (execute ``*OPC`` command)."""
         return int(self.query_float("*OPC?"))
 
-    opc = get_opc
-    OPC = get_opc
+    opc = OPC
 
     def abort(self) -> None:
         """Abort the measurement (execute ABORT command)."""
