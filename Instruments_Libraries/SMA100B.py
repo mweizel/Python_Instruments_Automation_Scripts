@@ -6,11 +6,11 @@ Created on Fir Feb 02 13:00:00 2024
 @author: mweizel
 """
 
-import numpy as np
-import pyvisa as visa
 
 
-class SMA100B():
+from .BaseInstrument import BaseInstrument
+
+class SMA100B(BaseInstrument):
     '''
     A class thats uses pyvisa to connect to an SMA100B Signal Generator.
     '''
@@ -20,80 +20,27 @@ class SMA100B():
         resource_str="ip_adress",
         visa_library="@ivi",
     ):
-        if "TCPIP" not in resource_str.upper():
-            resource_str = f"TCPIP::{resource_str}::INSTR"
-        
-        self._resource = visa.ResourceManager(visa_library).open_resource(
-            str(resource_str), read_termination="\n", query_delay=0.5
-        )
+        # BaseInstrument handles parsing of IP addresses if "TCPIP" is missing
+        super().__init__(resource_str=resource_str, visa_library=visa_library)
 
-        # Predefine Lists
-        self._StateLS_mapping = {
-            "on": 1,
-            "off": 0,
-            1: 1,
-            0: 0,
-            "1": 1,
-            "0": 0,
-            True: 1,
-            False: 0,
-        }
-
-        # Get name and identification
-        print(self.getIdn())
-
-    def query(self, message):
-        return self._resource.query(message)
+# =============================================================================
+# Communication Wrappers (Inherited from BaseInstrument)
+# =============================================================================
     
-    def write(self, message):
-        return self._resource.write(message)
+    # write, query, close (Close), reset are inherited.
 
-    def Close(self):
-        print("Instrument Rohde&Schwarz SMA100B is closed!")
-        return self._resource.close()
-
-    def reset(self):
-        return self.write('*RST')
-    
 # =============================================================================
 # Validate Variables
 # =============================================================================
 
-    def _validate_state(self, state: int | str) -> int:
-        state_normalized = self._StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [on,off,1,0,True,False].")
-        return state_normalized
-    
-# =============================================================================
-# Get Identication Command
-# =============================================================================
-    def getIdn(self) -> str:
-        '''
-        
-        Returns
-        -------
-        str
-            Instrument identification.
-
-        '''
-        return self.query('*IDN?')
+    # Uses BaseInstrument._parse_state which returns 'ON'/'OFF'.
     
 # =============================================================================
 # Ask Commands
 # =============================================================================
 
-    def ask_OutputImpedance(self) -> float:
-        """
-        
-        Returns
-        -------
-        float
-            Queries the impedance of the RF output.
-
-        """
+    def get_output_impedance(self) -> float:
+        """Queries the impedance of the RF output."""
         return float(self.query(":OUTPut1:IMP?"))
 
 
@@ -114,7 +61,7 @@ class SMA100B():
         ValueError
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
-        state = self._validate_state(state)
+        state = self._parse_state(state)
         self.write(f':OUTPut:ALL:STATe {state}')
 
 
@@ -131,7 +78,7 @@ class SMA100B():
         ValueError
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
-        state = self._validate_state(state)
+        state = self._parse_state(state)
         self.write(f':OUTPut {state}')
 
 
@@ -150,7 +97,7 @@ class SMA100B():
         """
         self.set_rf_output(state)
 
-    def set_DCOffset(self, value: int | float) -> None:
+    def set_dc_offset(self, value: int | float) -> None:
         """
         
 
@@ -160,11 +107,6 @@ class SMA100B():
             Sets the value of the DC offset.
             Range: -5 to 5
             Increment: 0.001
-
-        Returns
-        -------
-        None.
-
         """
         if value >= -5 and value <= 5:
             self.write(f":CSYNthesis:OFFSet {value}")
@@ -172,7 +114,7 @@ class SMA100B():
             raise ValueError("Allowed Offsets are numbers between -5 and 5!")
 
 
-    def set_CMOS_Voltage(self, value: int | float) -> None:
+    def set_cmos_voltage(self, value: int | float) -> None:
         """
         
 
@@ -188,17 +130,13 @@ class SMA100B():
         ValueError
             Wrong range Error.
 
-        Returns
-        -------
-        None.
-
         """
         if value >= 0.8 and value <= 2.7:
             self.write(f":CSYNthesis:VOLTage {value}")
         else:
             raise ValueError("Wrong Value. Allowed values are between o.8 and 2.7!")
             
-    def set_ClockSigPhase(self, value: int | float) -> None:
+    def set_clock_sig_phase(self, value: int | float) -> None:
         """
         
 
@@ -214,10 +152,6 @@ class SMA100B():
         ------
         ValueError
             Wrong Value Error.
-
-        Returns
-        -------
-        None.
 
         """
         if value >= -36000 and value <= 36000:
@@ -265,7 +199,7 @@ class SMA100B():
             raise ValueError("Not a valid input. Valid: CW | FIXed | SWEep | LIST | COMBined !")
             
 
-    def set_freq_CW(self, value: int | float, unit: str = None) -> None:
+    def set_freq_cw(self, value: int | float, unit: str = None) -> None:
         '''
         Parameters
         ----------
@@ -274,10 +208,6 @@ class SMA100B():
 
         unit : str (optional)
             Frequency Unit: 'GHz' or 'MHz' or 'Hz'
-
-        Returns
-        -------
-        None.
 
         '''
 
@@ -309,7 +239,7 @@ class SMA100B():
 # Activate Commands
 # =============================================================================
 
-    def activate_DCOffset(self, state) -> None:
+    def activate_dc_offset(self, state) -> None:
         '''Activates a DC offset.
         
         Parameters
@@ -317,7 +247,7 @@ class SMA100B():
         state : str
             'ON' 1 or 'OFF' 0
         '''
-        state = self._validate_state(state)
+        state = self._parse_state(state)
         self.write(f":CSYNthesis:OFFSet:STATe {state}")
         
     
@@ -342,12 +272,14 @@ class SMA100B():
         self.write(f'SOURce:POWer:LEVel:IMMediate:AMPlitude {value}')
   
     
-    def set_OutputPowerLevel(self, value: int | float) -> None:
-        """Sets the Signal Generator Output Power in dBm. Alias for set_rf_power().
-
-        Parameters
-        ----------
-        value : int/float
-            Output Power in dBm
-        """
-        self.set_rf_power(value)
+    # =============================================================================
+    # Aliases for backwards compatibility
+    # =============================================================================
+    
+    ask_OutputImpedance = get_output_impedance
+    set_DCOffset = set_dc_offset
+    set_CMOS_Voltage = set_cmos_voltage
+    set_ClockSigPhase = set_clock_sig_phase
+    set_freq_CW = set_freq_cw
+    activate_DCOffset = activate_dc_offset
+    set_OutputPowerLevel = set_rf_power
