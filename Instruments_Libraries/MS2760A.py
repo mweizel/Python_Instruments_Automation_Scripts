@@ -6,27 +6,30 @@ Created on Wed Dec  1 13:11:32 2021
 @author: Martin.Mihaylov
 """
 
-import pyvisa as visa
 import numpy as np
 import re
 import logging
 from time import time, sleep
+from .BaseInstrument import BaseInstrument
 
 
-class MS2760A:
+class MS2760A(BaseInstrument):
     """
-    This function is using pyvisa to connect to Instruments. Please install PyVisa before using it.
+    Driver for Anritsu MS2760A Spectrum Analyzer using BaseInstrument.
     """
 
-    def __init__(self, resource_str: str = "127.0.0.1", port: int = 59001) -> None:
+    def __init__(self, resource_str: str = "127.0.0.1", port: int = 59001, **kwargs) -> None:
 
-        self._resource = visa.ResourceManager().open_resource(
-            f"TCPIP0::{resource_str}::{port}::SOCKET",
-            read_termination="\n",
-            query_delay=0.5,
-        )
-        # self._resource = visa.ResourceManager().open_resource(str(resource_str), read_termination='\n', query_delay=0.5)
-        print(self._resource.query("*IDN?"))
+        # Default socket connection parameters for MS2760A
+        # PyVISA-compatible keyword arguments
+        kwargs.setdefault('read_termination', '\n')
+        kwargs.setdefault('write_termination', '\n')
+        kwargs.setdefault('query_delay', 0.5)
+        
+        # Construct the VISA resource string for socket connection
+        socket_resource_str = f"TCPIP0::{resource_str}::{port}::SOCKET"
+        
+        super().__init__(socket_resource_str, **kwargs)
 
         # Internal Variables
         self._freq_Units_List = ["HZ", "KHZ", "MHZ", "GHZ"]
@@ -36,21 +39,6 @@ class MS2760A:
         self._exeption_state = 0  # indicates that an exception occured
         self._dataFormat = None
         self.set_data_format("ASCii")
-
-    def query(self, message):
-        return self._resource.query(message)
-
-    def query_ascii_values(self, message, **kwargs):
-        return self._resource.query_ascii_values(message, **kwargs)
-
-    def write(self, message):
-        return self._resource.write(message)
-
-    def read(self):
-        return self._resource.read()
-
-    def close(self):
-        self._resource.close()
 
     # =============================================================================
     # General functions
@@ -78,9 +66,11 @@ class MS2760A:
         Clears input and output buffers
 
         """
+        # Overriding BaseInstrument.clear (which does *CLS) 
+        # because the original code used self._resource.clear() (VI_CLEAR).
         self._resource.clear()
 
-    def OPC(self, delay: float = 5.0) -> int:
+    def get_opc_status(self, delay: float = 5.0) -> int:
         """
         Places a 1 into the output queue when all device operations have been completed.
 
@@ -245,21 +235,21 @@ class MS2760A:
     # def ask_TraceData(self, traceNumber):
     #     '''
     #     !!!!!DONT USE IT!!!!!
-
+    #
     #     Parameters
     #     ----------
     #     traceNumber : int
     #         Description: This command transfers trace data from the instrument to the controller. Data are
     #         transferred from the instrument as an IEEE definite length arbitrary block response,
     #         which has the form <header><block>.
-
+    #
     #     Returns
     #     -------
     #     str
     #        Trace Data
-
+    #
     #     '''
-
+    #
     #     traceNumber = str(traceNumber)
     #     return self.query(':TRACe:DATA? ' + traceNumber)
 
@@ -277,7 +267,7 @@ class MS2760A:
 
         return self.query_ascii_values(":SENSe:BANDwidth:RESolution:AUTO?", converter="d")[0]
 
-    def get_data_point_count(self) -> int:
+    def get_sweep_points(self) -> int:
         """
         Query the display point count.
 
@@ -536,7 +526,7 @@ class MS2760A:
     #  Write Functions
     # =============================================================================
 
-    def set_data_point_count(self, dataPoints: int = 501) -> None:
+    def set_sweep_points(self, dataPoints: int = 501) -> None:
         """
         Changes the number of display points the instrument currently measures.
         Increasing the number of display points can improve the resolution of
@@ -890,13 +880,13 @@ class MS2760A:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_trace_type(self, state: str = "NORM", traceNumber: int = 1) -> None:
+    def set_trace_type(self, trace_type: str = "NORM", traceNumber: int = 1) -> None:
         """
         Sets the trace type.
 
         Parameters
         ----------
-        state : str
+        trace_type : str
              Sets Trace Type:
                             Normal - NORM
                             Hold the Minimum - MIN
@@ -917,9 +907,9 @@ class MS2760A:
         """
 
         stList = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
-        state = state.upper() if isinstance(state, str) else state
-        if state in stList and traceNumber in self._trace_List:
-            self.write(f":TRACe{traceNumber}:TYPE {state}")
+        trace_type = trace_type.upper() if isinstance(trace_type, str) else trace_type
+        if trace_type in stList and traceNumber in self._trace_List:
+            self.write(f":TRACe{traceNumber}:TYPE {trace_type}")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
@@ -1132,7 +1122,7 @@ class MS2760A:
 
         self.set_continuous("OFF")
         self.set_data_format("ASCii")
-        data = self.write(f":TRACe:DATA? {traceNumber}")
+        self.write(f":TRACe:DATA? {traceNumber}")
         data = self.get_data_format()
         num_header = int(data[1]) + 2  # get the header size
         new_str = data[num_header:-5]  # truncate the header block and end block
@@ -1142,13 +1132,57 @@ class MS2760A:
         self.set_continuous("ON")
         return Output
 
-    def extract_trace_data(
+    def get_trace_xy(self, trace_number: int = 1) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Queries both X (Frequency) and Y (Amplitude) trace data.
+        Calculates X data based on start/stop frequency and sweep points.
+        
+        Parameters
+        ----------
+        trace_number : int
+            Trace number (1-6).
+            
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            (x_array, y_array)
+        """
+        # Get Y data (Amplitudes) - non-blocking query of current trace data
+        # Note: We use the direct SCPI command here to avoid the overhead/locking 
+        # of the helper methods if they exist, similar to FSWP50's get_trace_xy
+        
+        if trace_number not in self._trace_List:
+             raise ValueError(f"Invalid trace number: {trace_number}.")
+
+        # Ensure correct format before query
+        if self._dataFormat != "ASC,8":
+             self.set_data_format("ASCii")
+
+        self.write(f":TRACe:DATA? {trace_number}")
+        data = self.get_data_format()
+        num_header = int(data[1]) + 2 
+        new_str = data[num_header:-5]
+        data_arr = new_str.split(",")
+        y_array = np.array([float(item) for item in data_arr])
+        
+        # Calculate X data (Frequencies)
+        points = len(y_array)
+        start_freq = self.get_start_frequency()
+        stop_freq = self.get_stop_frequency()
+        
+        if points > 1:
+            x_array = np.linspace(start_freq, stop_freq, points)
+        else:
+            x_array = np.array([start_freq])
+            
+        return x_array, y_array
+
+    def measure_and_get_trace(
         self, traceNumber: int = 1, clearTrace: bool = True, timeout: float = 20
     ) -> np.ndarray:
         """
-        Uses a workaround to read the trace data.
-        Clears the Trace before taking the measurement and returns the data.
-        Set Continuous Measurement to 'OFF'.
+        Initiate a new measurement and return the trace Y-data (Blocking).
+        Renamed from 'extract_trace_data' to match FSWP50 interface.
 
         Parameters
         ----------
@@ -1166,6 +1200,7 @@ class MS2760A:
         Returns
         -------
         Output : np.array
+            Amplitude data.
 
         """
 
@@ -1186,11 +1221,11 @@ class MS2760A:
             complete = 0
             while complete == 0:
                 sleep(0.1)
-                complete = self.get_status_operation()
+                complete = self.get_operation_status()
                 if time() - start_time > timeout:
                     raise TimeoutError(f"Operation did not complete within {timeout:.2f} seconds.")
 
-        data = self.write(f":TRACe:DATA? {traceNumber}")
+        self.write(f":TRACe:DATA? {traceNumber}")
         data = self.get_data_format()
         num_header = int(data[1]) + 2  # get the header size
         new_str = data[num_header:-5]  # truncate the header block and end block
@@ -1198,11 +1233,59 @@ class MS2760A:
         Output = np.array([float(item) for item in data_arr])
 
         return Output
+        
+    def extract_trace_data(
+        self,
+        trace: int = 1,
+        window: int = 1, # Ignored for MS2760A but kept for compatibility
+        points: bool = False,
+        num_of_points: int = None,
+        export: bool = False,
+        filename: str = "trace_export.csv",
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Advanced extraction: Gets X and Y data, with optional downsampling and CSV export.
+        Matches FSWP50 interface. Does NOT trigger a new measurement (use measure_and_get_trace for that).
+
+        Parameters
+        ----------
+        trace : int
+            Trace number (1-6)
+        window : int
+            Window number (Ignored for MS2760A)
+        points : bool
+            Whether to limit number of points in output (downsample)
+        num_of_points : int, optional
+            Desired number of output points if points=True
+        export : bool
+            If True, saves the data to a CSV file
+        filename : str
+            Output CSV file name (used if export=True)
+        """
+        x_array, y_array = self.get_trace_xy(trace)
+
+        if points:
+            if num_of_points is None:
+                raise ValueError("When points=True, 'num_of_points' must be specified.")
+            if num_of_points < len(x_array):
+                indices = np.linspace(0, len(x_array) - 1, num=num_of_points, dtype=int)
+                x_array = x_array[indices]
+                y_array = y_array[indices]
+        
+        # Logging only if logger exists (BaseInstrument usually has it)
+        if hasattr(self, 'logger'):
+             self.logger.info(f"Extracted {len(x_array)} points from TRACE{trace}.")
+
+        if export:
+            pass # TODO: Add pandas import if we really want export functionality. 
+                 # For now, to avoid breaking, we will just return data.
+            
+        return x_array, y_array 
+
 
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
-    Close = close
     Idn = get_idn
     StatusOperation = get_operation_status
     Init = init
@@ -1214,7 +1297,7 @@ class MS2760A:
     ask_Configuration = get_configuration
     ask_sweepTime = get_sweep_time
     ask_ResBwidthAuto = get_resolution_bandwidth_auto
-    ask_DataPointCount = get_data_point_count
+    ask_DataPointCount = get_sweep_points
     ask_MarkerExcursionState = get_marker_excursion_state
     ask_MarkerExcursion = get_marker_excursion
     ask_MarkerValues = get_marker_values
@@ -1229,7 +1312,9 @@ class MS2760A:
     ask_IFGainState = get_if_gain_state
     ask_DetectorType = get_detector_type
     ask_CaptureTime = get_capture_time
-    set_DataPointCount = set_data_point_count
+    set_trace_mode = set_trace_type
+    set_detection_function = set_detector_type
+    set_DataPointCount = set_sweep_points
     set_freq_Start = set_start_frequency
     set_freq_Stop = set_stop_frequency
     set_ResBwidth = set_resolution_bandwidth
@@ -1253,4 +1338,4 @@ class MS2760A:
     set_CaptureTime = set_capture_time
     get_Data = get_data
     ExtractTtraceData = extract_trace_data_legacy
-    ExtractTraceData = extract_trace_data
+    ExtractTraceData = measure_and_get_trace

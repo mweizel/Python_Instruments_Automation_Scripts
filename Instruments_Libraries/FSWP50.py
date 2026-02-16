@@ -5,36 +5,20 @@ Created on Wed Feb 26 20:21:23 2025
 @contributor: Rakibul Islam
 """
 
-import numpy as np
-from time import time, sleep
-import logging
-import pyvisa
-import pandas as pd
-import csv
-import os
+from time import sleep
 
 
-class FSWP50:
+from .BaseInstrument import BaseInstrument
+
+class FSWP50(BaseInstrument):
     """
     This class is using PyVISA to connect. Requires NI-VISA or Keysight VISA backend.
     """
 
     def __init__(self, address: str):
-        self.logger = logging.getLogger(__name__)
-        # Ensure a basic logging configuration if not already set
-        if not logging.getLogger().handlers:
-            logging.basicConfig(level=logging.INFO)
-
-        try:
-            rm = pyvisa.ResourceManager()
-            self.address = address
-            self._resource = rm.open_resource(f"TCPIP::{address}::INSTR")
-            self._resource.timeout = 10000  # in milliseconds
-            self.logger.info(f"Connected to: {self.get_idn()}")
-        except Exception as e:
-            self.logger.error(f"Failed to connect to {address}: {e}")
-            raise
-
+        # BaseInstrument handles connection and logging
+        super().__init__(resource_str=address)
+        
         # Internal Variables
         self._freq_Units_List = ["HZ", "KHZ", "MHZ", "GHZ"]
         self._state_List = ["OFF", "ON", 1, 0]
@@ -42,130 +26,16 @@ class FSWP50:
         self._window_List = list(range(1, 17))  # <n> in documentation
 
     # =============================================================================
-    # Communication Wrappers
+    # Communication Wrappers (Inherited from BaseInstrument)
     # =============================================================================
 
-    def write(self, command: str) -> None:
-        """Send a SCPI command to the instrument."""
-        try:
-            self.logger.debug(f"Write: {command}")
-            self._resource.write(command)
-        except Exception as e:
-            self.logger.error(f"Write failed: '{command}', Error: {e}")
-            raise
-
-    write_str = write
-
-    def write_float(self, command: str, value: float) -> None:
-        """Send a SCPI command with a float value."""
-        self.write(f"{command} {value}")
-
-    def query(self, command: str) -> str:
-        """Query the instrument and return a string."""
-        try:
-            self.logger.debug(f"Query: {command}")
-            response = self._resource.query(command).strip()
-            self.logger.debug(f"Response: {response}")
-            return response
-        except Exception as e:
-            self.logger.error(f"Query failed: '{command}', Error: {e}")
-            raise
-
-    def query_str_list(self, command: str) -> list:
-        """
-        Query the instrument and return a list of strings.
-        Automatically removes SCPI quotes (' or ") and strips whitespace.
-        """
-        response = self.query(command)
-        if not response or response.upper() == "NONE":
-            return []
-        return [s.strip().strip("'").strip('"') for s in response.split(",")]
-
-    def query_ascii_values(self, command: str, **kwargs) -> list:
-        """
-        Query the instrument for a list of numeric values using PyVISA's
-        optimized parser.
-        """
-        try:
-            self.logger.debug(f"Query ASCII Values: {command}")
-            return self._resource.query_ascii_values(command, **kwargs)
-        except Exception as e:
-            self.logger.error(f"Query ASCII Values failed: '{command}', Error: {e}")
-            raise
-
-    def query_float(self, command: str) -> float:
-        """Query the instrument and return a single float."""
-        # Use query_ascii_values even for single floats for consistency and robustness
-        return self.query_ascii_values(command)[0]
-
-    def query_float_list(self, command: str) -> list:
-        """Query the instrument and return a list of floats."""
-        return self.query_ascii_values(command)
-
-    def _parse_state(self, state) -> str:
-        """
-        Helper to parse various input types into SCPI 'ON' or 'OFF' strings.
-        Supports bool (True/False), numeric (1/0, 1.0/0.0), and strings ('ON'/'OFF', '1'/'0').
-        """
-        if isinstance(state, bool):
-            return "ON" if state else "OFF"
-
-        if isinstance(state, (int, float)):
-            if state == 1:
-                return "ON"
-            elif state == 0:
-                return "OFF"
-
-        s = str(state).strip().upper()
-        if s in ["ON", "1", "1.0"]:
-            return "ON"
-        elif s in ["OFF", "0", "0.0"]:
-            return "OFF"
-        else:
-            raise ValueError(f"Invalid state: '{state}'. Use True/False, 1/0, or 'ON'/'OFF'.")
-
-    def close(self) -> None:
-        """Closes the connection to the instrument."""
-        try:
-            self._resource.close()
-            self.logger.info(f"Connection to {self.address} closed.")
-        except Exception as e:
-            self.logger.error(f"Error closing connection: {e}")
-
-    Close = close
+    # ask_center_frequency = BaseInstrument.query_float # Placeholder usage? No, method exists below.
 
     # =============================================================================
     # Basic Functions
     # =============================================================================
 
-    def get_idn(self) -> str:
-        """Identify the Instrument."""
-        return self.query("*IDN?")
-
-    idn = get_idn
-    Idn = get_idn
-
-    def reset(self) -> None:
-        """Reset the instrument (execute ``*RST`` command)."""
-        self.write("*RST")
-
-    def clear(self) -> None:
-        """Clear the instrument status (execute ``*CLS`` command)."""
-        self.write("*CLS")
-
-    def wait(self) -> None:
-        """
-        Wait to continue. Prevents servicing of the subsequent commands until
-        all preceding commands have been executed and all signals have settled
-        (see also command synchronization and ``*OPC`` command).
-        """
-        self.write("*WAI")
-
-    def OPC(self) -> int:
-        """Wait until the operation is complete (execute ``*OPC`` command)."""
-        return int(self.query_float("*OPC?"))
-
-    opc = OPC
+    # get_idn, reset, clear, wait are inherited.
 
     def abort(self) -> None:
         """Abort the measurement (execute ABORT command)."""
@@ -181,7 +51,10 @@ class FSWP50:
         Queries all active channels. The query is useful to obtain the names of the existing
         channels, which are required to replace or delete the channels.
         """
-        return self.query_str_list("INSTrument:LIST?")
+        response = self.query("INSTrument:LIST?")
+        if not response or response.upper() == "NONE":
+            return []
+        return [s.strip().strip("'").strip('"') for s in response.split(",")]
 
     def create_channel(self, channel_type: str, channel_name: str) -> None:
         """
@@ -213,12 +86,18 @@ class FSWP50:
         """
         available_types = {
             "PNOISE": "Phase Noise",
+            "PNO": "Phase Noise",
             "SMONITOR": "Spectrum Monitor",
+            "SMON": "Spectrum Monitor",
             "SANALYZER": "Spectrum (R&S FSWP-B1)",
+            "SAN": "Spectrum (R&S FSWP-B1)",
             "IQ": "I/Q Analyzer",
             "PULSE": "Pulse Measurement",
+            "PULS": "Pulse Measurement",
             "ADEMOD": "Analog modulation analysis",
+            "ADEM": "Analog modulation analysis",
             "NOISE": "Noise Figure Measurements",
+            "NOIS": "Noise Figure Measurements",
             "SPUR": "Fast Spur Search",
             "TA": "Transient Analysis",
             "DDEM": "VSA - Vector Signal Analysis",
@@ -231,8 +110,6 @@ class FSWP50:
             )
 
         self.write(f"INSTrument:CREate {channel_type}, '{channel_name}'")
-
-    create_new_channel = create_channel
 
     def delete_channel(self, channel_name: str) -> None:
         """
@@ -292,14 +169,9 @@ class FSWP50:
         else:
             raise ValueError("Unknown unit! Use one of: HZ, KHZ, MHZ, GHZ")
 
-    set_CenterFreq = set_center_frequency
-
     def get_center_frequency(self) -> float:
         """Queries the current center frequency in Hz."""
         return self.query_float("FREQ:CENT?")
-
-    ask_center_frequency = get_center_frequency
-    ask_CenterFreq = get_center_frequency
 
     def set_start_frequency(self, start_freq: int | float, unit: str = "Hz") -> None:
         """
@@ -318,13 +190,9 @@ class FSWP50:
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    set_freq_Start = set_start_frequency
-
     def get_start_frequency(self) -> float:
         """Queries the current start frequency in Hz."""
         return self.query_float(":SENS:FREQ:STAR?")
-
-    ask_freq_Start = get_start_frequency
 
     def set_stop_frequency(self, stop_freq: int | float, unit: str = "Hz") -> None:
         """
@@ -343,13 +211,9 @@ class FSWP50:
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    set_freq_Stop = set_stop_frequency
-
     def get_stop_frequency(self) -> float:
         """Queries the current stop frequency in Hz."""
         return self.query_float(":SENS:FREQ:STOP?")
-
-    ask_freq_Stop = get_stop_frequency
 
     def set_span(self, span: int | float, unit: str = "Hz") -> None:
         """
@@ -368,13 +232,9 @@ class FSWP50:
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ, or GHZ.")
 
-    set_FreqSpan = set_span
-
     def get_span(self) -> float:
         """Queries the current frequency span in Hz."""
         return self.query_float("FREQ:SPAN?")
-
-    ask_FreqSpan = get_span
 
     # =============================================================================
     # Spectrum Analyzer - Bandwidth & Amplitude
@@ -397,14 +257,9 @@ class FSWP50:
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    set_ResBwidth = set_resolution_bandwidth
-
     def get_resolution_bandwidth(self) -> float:
         """Queries the current resolution bandwidth in Hz."""
         return self.query_float(":SENS:BAND:RES?")
-
-    ask_ResBwidth = get_resolution_bandwidth
-    ask_rbw = get_resolution_bandwidth
 
     def set_reference_level(self, ref_level: float) -> None:
         """
@@ -415,15 +270,11 @@ class FSWP50:
         ref_level : float
             Default unit: Depending on the selected diagram.
         """
-        self.write_float(":DISP:WIND:TRAC:Y:SCAL:RLEV", ref_level)
-
-    set_RefLevel = set_reference_level
+        self.write(f":DISP:WIND:TRAC:Y:SCAL:RLEV {ref_level}")
 
     def get_reference_level(self) -> float:
         """Queries the current reference level."""
         return self.query_float(":DISP:WIND:TRAC:Y:SCAL:RLEV?")
-
-    ask_RefLevel = get_reference_level
 
     def set_reference_level_lower(self, ref_level: float = 0) -> None:
         """
@@ -434,7 +285,7 @@ class FSWP50:
         ref_level : float, optional
             Default unit: Depending on the selected diagram.
         """
-        self.write_float(":DISP:WIND:TRAC:Y:SCAL:RLEV:LOW", ref_level)
+        self.write(f":DISP:WIND:TRAC:Y:SCAL:RLEV:LOW {ref_level}")
 
     def get_reference_level_lower(self) -> float:
         """Queries the minimum level displayed on the y-axis."""
@@ -464,7 +315,7 @@ class FSWP50:
         atten : float
             Attenuation value.
         """
-        self.write_float(":INP:ATT", atten)
+        self.write(f":INP:ATT {atten}")
 
     def get_input_attenuation(self) -> float:
         """Queries the input attenuation value."""
@@ -486,9 +337,6 @@ class FSWP50:
         state = self._parse_state(state)
         self.write(f"INITiate:CONT {state}")
 
-    set_Continuous = set_continuous
-    set_ContinuousMeas = set_continuous
-
     def init_single_measurement(self) -> None:
         """
         Restarts a (single) measurement that has been stopped (using ABORt)
@@ -502,8 +350,6 @@ class FSWP50:
         """
         self.write("INITiate:IMMediate")
 
-    Init = init
-
     def set_sweep_points(self, datapoints: int) -> None:
         """
         This command defines the number of measurement points to analyze after a measurement.
@@ -512,17 +358,13 @@ class FSWP50:
             datapoints (int): Number of data points (101 to 100001).
         """
         if 101 <= datapoints <= 100001:
-            self.write_float(":SENS:SWE:WIND:POIN", datapoints)
+            self.write(f":SENS:SWE:WIND:POIN {datapoints}")
         else:
             raise ValueError(f"Value must be between 101 and 100001, not {datapoints}")
-
-    set_DataPointCount = set_sweep_points
 
     def get_sweep_points(self) -> int:
         """Queries the number of measurement points."""
         return int(self.query_float(":SENS:SWE:WIND:POIN?"))
-
-    ask_DataPointCount = get_sweep_points
 
     # =============================================================================
     # Trace Acquisition, Extraction & Export
@@ -544,7 +386,7 @@ class FSWP50:
         if window_number not in self._window_List:
             raise ValueError(f"Unknown window number {window_number}! Should be between 1 and 16.")
 
-        data = self.query_float_list(f":TRAC{window_number}:DATA? TRACE{trace_number}")
+        data = self.query_ascii_values(f":TRAC{window_number}:DATA? TRACE{trace_number}")
         return np.array(data)
 
     def get_trace_xy(
@@ -563,8 +405,8 @@ class FSWP50:
         """
         trace_str = f"TRACE{trace_number}"
         try:
-            x = self.query_float_list(f"TRACe{window_number}:DATA:X? {trace_str}")
-            y = self.query_float_list(f"TRACe{window_number}:DATA:Y? {trace_str}")
+            x = self.query_ascii_values(f"TRACe{window_number}:DATA:X? {trace_str}")
+            y = self.query_ascii_values(f"TRACe{window_number}:DATA:Y? {trace_str}")
 
             if not x or not y or len(x) != len(y):
                 raise RuntimeError("Failed to retrieve or match trace data lengths.")
@@ -574,14 +416,12 @@ class FSWP50:
             self.logger.error(f"Error retrieving XY data: {e}")
             raise
 
-    get_phase_noise_data = get_trace_xy
-
     def measure_and_get_trace(
         self,
         traceNumber: int = 1,
+        window_number: int = 1,
         clearTrace: bool = True,
         timeout: float = 20,
-        window_number: int = 1,
     ) -> np.ndarray:
         """
         Initiate a new measurement and return the trace Y-data (Blocking).
@@ -609,15 +449,13 @@ class FSWP50:
             self.wait()
             start_time = time()
             while True:
-                if self.get_opc() == 1:
+                if self.OPC() == 1:
                     break
                 if time() - start_time > timeout:
                     raise TimeoutError(f"Operation did not complete within {timeout}s.")
                 sleep(0.1)
 
         return self.get_trace_data(traceNumber, window_number)
-
-    ExtractTraceData = measure_and_get_trace
 
     def extract_trace_data(
         self,
@@ -815,8 +653,6 @@ class FSWP50:
         conversion = {"HZ": 1, "KHZ": 1e3, "MHZ": 1e6, "GHZ": 1e9}
         return freq_hz / conversion[unit]
 
-    ask_start_offset = get_start_offset
-
     def set_stop_offset(self, stop_offset: int | float, unit: str = "Hz") -> None:
         """
         Sets the stop offset frequency for phase noise measurement.
@@ -850,8 +686,6 @@ class FSWP50:
         stop_hz = self.query_float("SENSe:FREQuency:STOP?")
         conversion = {"HZ": 1, "KHZ": 1e3, "MHZ": 1e6, "GHZ": 1e9}
         return stop_hz / conversion[unit]
-
-    ask_stop_offset = get_stop_offset
 
     def set_rbw_ratio(self, percentage: float) -> None:
         """
@@ -918,8 +752,6 @@ class FSWP50:
         else:
             raise RuntimeError(f"Unknown RBW mode detected: '{mode}'")
 
-    ask_rbw = get_rbw_pn
-
     def set_xcorr_factor_auto(self, factor: int = 1) -> None:
         """
         Sets the cross-correlation factor in automatic (normal) mode for phase noise.
@@ -952,7 +784,7 @@ class FSWP50:
         state = self._parse_state(enable)
         self.write(f"SWE:XOPT {state}")
         if enable and threshold is not None:
-            self.write_float("SWE:XOPT:THR", float(threshold))
+            self.write(f"SWE:XOPT:THR {float(threshold)}")
 
     def set_capture_range(self, mode: str) -> None:
         """
@@ -1093,7 +925,7 @@ class FSWP50:
         Sets the detection threshold for spur removal in dB.
         Reference: Page 500.
         """
-        self.write_float(f"DISP:WIND{window}:TRAC{trace}:SPUR:THR", threshold_dB)
+        self.write(f"DISP:WIND{window}:TRAC{trace}:SPUR:THR {threshold_dB}")
 
     def set_spur_sort_order(self, order: str = "POWer") -> None:
         """
@@ -1117,8 +949,6 @@ class FSWP50:
         self.write("INST:SEL 'PNOISE'")
         return self.query("SENS:SPUR:FILT:MOD?")
 
-    ask_spur_filter_mode = get_spur_filter_mode
-
     def set_spur_filter_harmonics(self, state: str | int = "OFF") -> None:
         """
         Sets whether harmonics are included in the spurious filter.
@@ -1138,3 +968,38 @@ class FSWP50:
         Queries the name of the currently selected spurious filter.
         """
         return self.query("SENS:SPUR:FILT:NAME?")
+
+    # =============================================================================
+    # Aliases for backwards compatibility
+    # =============================================================================
+    
+    ask_center_frequency = get_center_frequency
+    ask_CenterFreq = get_center_frequency
+    set_CenterFreq = set_center_frequency
+    set_freq_Start = set_start_frequency
+    ask_freq_Start = get_start_frequency
+    set_freq_Stop = set_stop_frequency
+    ask_freq_Stop = get_stop_frequency
+    set_FreqSpan = set_span
+    ask_FreqSpan = get_span
+    set_ResBwidth = set_resolution_bandwidth
+    ask_ResBwidth = get_resolution_bandwidth
+    ask_rbw = get_rbw_pn
+    set_RefLevel = set_reference_level
+    ask_RefLevel = get_reference_level
+    set_Continuous = set_continuous
+    set_ContinuousMeas = set_continuous
+    Init = init
+    set_DataPointCount = set_sweep_points
+    ask_DataPointCount = get_sweep_points
+    set_TraceType = set_trace_mode
+    set_trace_type = set_trace_mode
+    set_detector_type = set_detection_function
+    set_DetectorType = set_detector_type
+    get_phase_noise_data = get_trace_xy
+    ExtractTraceData = measure_and_get_trace
+    ask_start_offset = get_start_offset
+    ask_stop_offset = get_stop_offset
+    ask_spur_filter_mode = get_spur_filter_mode
+    create_new_channel = create_channel
+    
