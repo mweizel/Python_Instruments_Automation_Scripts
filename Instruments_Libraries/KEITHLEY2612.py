@@ -760,7 +760,7 @@ class KEITHLEY2612(BaseInstrument):
     # Measure/SET Methods
     # =============================================================================
 
-    def set_voltage_range_measures(self, channel: str, value: int | float) -> None:
+    def set_voltage_range_measure(self, channel: str, value: int | float) -> None:
         """This attribute contains the positive full-scale value of the measure range for voltage.
         Look up the datasheet! -> smuX.measure.rangeY.  You might want to keep it on auto!
 
@@ -870,12 +870,16 @@ class KEITHLEY2612(BaseInstrument):
             If measurement type is invalid.
         """
         channel = self._validate_channel(channel)
-        measurement_type = self._Measurement_Types.get(measurement_type.lower())
+        meas_code = self._Measurement_Types.get(measurement_type.lower())
 
         display_mapping = {
             "v": "_DCVOLTS", "i": "_DCAMPS", "r": "_OHMS", "p": "_WATTS",
         }
-        display_func = display_mapping.get(measurement_type)
+
+        if meas_code is None:
+             raise ValueError(f"Invalid measurement type '{measurement_type}'. Valid options: {list(display_mapping.keys())}")
+
+        display_func = display_mapping.get(meas_code)
         if display_func is None:
             raise ValueError(f"Invalid measurement type. Valid options: {list(display_mapping.keys())}")
 

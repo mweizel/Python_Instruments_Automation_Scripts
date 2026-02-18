@@ -46,9 +46,6 @@ import time
 import serial
 
 class RD3005:
-    isConnected = False
-    psu_com = None
-    status = {}
     
     def __init__(self, psu_com):
         '''
@@ -72,14 +69,12 @@ class RD3005:
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS
             )
-            psu_com.isOpen()
             self.psu_com = psu_com
             self.isConnected = True
             self.status=self.ask_Status()
         except:
             print("COM port failure:")
             print(sys.exc_info())
-            self.psu_com = None
             self.isConnected = False
     
     def Close(self):
@@ -90,11 +85,20 @@ class RD3005:
         self.psu_com.write(data.encode())
         out = ''
         time.sleep(delay)
-        while self.psu_com.inWaiting() > 0:
+        while self.psu_com.in_waiting > 0:
             out += self.psu_com.read(1).decode()
         if out != '':
             return out
         return None
+
+    def _query(self, command, delay=0.05):
+        resp = self.serWriteAndRecieve(command, delay)
+        if resp is None:
+            raise TimeoutError(f"No response for command '{command}'")
+        return resp
+
+    def _query_float(self, command, delay=0.05):
+        return float(self._query(command, delay))
     
     def getIdn(self):
         '''
@@ -106,7 +110,7 @@ class RD3005:
             Instrument identification 
 
         '''
-        return self.serWriteAndRecieve("*IDN?", 0.3)
+        return self._query("*IDN?", 0.3)
     
     def set_Volt(self, voltage, delay=0.01):
         '''
@@ -138,7 +142,7 @@ class RD3005:
             Voltage set.
 
         '''
-        return float(self.serWriteAndRecieve("VSET1?"))
+        return self._query_float("VSET1?")
     
     def read_Volt(self):
         '''
@@ -150,7 +154,7 @@ class RD3005:
             Voltage Measured
 
         '''
-        return float(self.serWriteAndRecieve("VOUT1?"))
+        return self._query_float("VOUT1?")
     
     
     def set_Amp(self, amp, delay=0.01):
@@ -183,7 +187,7 @@ class RD3005:
             current set.
 
         '''
-        return float(self.serWriteAndRecieve("ISET1?"))
+        return self._query_float("ISET1?")
     
     def read_Amp(self):
         '''
@@ -195,7 +199,7 @@ class RD3005:
             Current Measured
 
         '''
-        return float(self.serWriteAndRecieve("IOUT1?"))
+        return self._query_float("IOUT1?")
     
     def set_Out(self, state):
         '''
@@ -245,7 +249,8 @@ class RD3005:
             Get the state of the output and CC/CV
 
         '''
-        stat = ord(self.serWriteAndRecieve("STATUS?")[0])
+        resp = self._query("STATUS?")
+        stat = ord(resp[0])
         if (stat&(1 << 0))==0:
             self.status["Mode"]="CC"
         else:

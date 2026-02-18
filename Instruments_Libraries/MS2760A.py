@@ -308,7 +308,7 @@ class MS2760A(BaseInstrument):
 
         return self.query(":CALCulate:MARKer:EXCursion?")
 
-    def get_marker_values(self, markerNumber: int = None) -> list | tuple:
+    def get_marker_values(self, markerNumber: int | None = None) -> list | tuple:
         """
         Query the marker values.
 
@@ -1239,7 +1239,7 @@ class MS2760A(BaseInstrument):
         trace: int = 1,
         window: int = 1, # Ignored for MS2760A but kept for compatibility
         points: bool = False,
-        num_of_points: int = None,
+        num_of_points: int | None = None,
         export: bool = False,
         filename: str = "trace_export.csv",
     ) -> tuple[np.ndarray, np.ndarray]:

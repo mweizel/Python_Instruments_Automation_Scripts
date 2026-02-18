@@ -7,8 +7,9 @@ Created on Tue Feb 27 2025
 """
 
 import logging
+from typing import List, cast, Any
 import pyvisa
-from typing import List
+from pyvisa.resources import MessageBasedResource
 
 class BaseInstrument:
     """
@@ -46,7 +47,7 @@ class BaseInstrument:
 
         try:
             self._rm = pyvisa.ResourceManager(visa_library)
-            self._resource = self._rm.open_resource(resource_str, **kwargs)
+            self._resource = cast(MessageBasedResource, self._rm.open_resource(resource_str, **kwargs))
             self._resource.timeout = timeout
             self.logger.info(f"Connected to {resource_str}")
         except Exception as e:
@@ -120,7 +121,7 @@ class BaseInstrument:
             self.logger.error(f"Read failed: {e}")
             raise
 
-    def query_ascii_values(self, command: str, **kwargs) -> List[float]:
+    def query_ascii_values(self, command: str, **kwargs) -> List[Any]:
         """
         Query for a list of ASCII values (e.g., trace data).
 
@@ -134,11 +135,11 @@ class BaseInstrument:
         Returns
         -------
         list
-            List of values (floats by default).
+            List of values.
         """
         try:
             self.logger.debug(f"Query ASCII: {command}")
-            return self._resource.query_ascii_values(command, **kwargs)
+            return cast(List[Any], self._resource.query_ascii_values(command, **kwargs))
         except Exception as e:
             self.logger.error(f"Query ASCII failed: '{command}', Error: {e}")
             raise
@@ -274,6 +275,7 @@ class BaseInstrument:
     # =============================================================================
 
     Close = close
-    Idn = get_idn
+    idn = get_idn
     IDN = get_idn
+    opc = get_opc
     OPC = get_opc

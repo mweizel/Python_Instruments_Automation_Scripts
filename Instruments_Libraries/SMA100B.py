@@ -199,7 +199,7 @@ class SMA100B(BaseInstrument):
             raise ValueError("Not a valid input. Valid: CW | FIXed | SWEep | LIST | COMBined !")
             
 
-    def set_freq_cw(self, value: int | float, unit: str = None) -> None:
+    def set_freq_cw(self, value: int | float, unit: str | None = None) -> None:
         '''
         Parameters
         ----------

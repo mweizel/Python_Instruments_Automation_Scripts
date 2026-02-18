@@ -5,10 +5,14 @@ Created on Wed Feb 26 20:21:23 2025
 @contributor: Rakibul Islam
 """
 
-from time import sleep
+from time import time, sleep
+import numpy as np
+import pandas as pd
+import os
 
 
 from .BaseInstrument import BaseInstrument
+
 
 class FSWP50(BaseInstrument):
     """
@@ -18,7 +22,7 @@ class FSWP50(BaseInstrument):
     def __init__(self, address: str):
         # BaseInstrument handles connection and logging
         super().__init__(resource_str=address)
-        
+
         # Internal Variables
         self._freq_Units_List = ["HZ", "KHZ", "MHZ", "GHZ"]
         self._state_List = ["OFF", "ON", 1, 0]
@@ -28,8 +32,6 @@ class FSWP50(BaseInstrument):
     # =============================================================================
     # Communication Wrappers (Inherited from BaseInstrument)
     # =============================================================================
-
-    # ask_center_frequency = BaseInstrument.query_float # Placeholder usage? No, method exists below.
 
     # =============================================================================
     # Basic Functions
@@ -360,7 +362,8 @@ class FSWP50(BaseInstrument):
         if 101 <= datapoints <= 100001:
             self.write(f":SENS:SWE:WIND:POIN {datapoints}")
         else:
-            raise ValueError(f"Value must be between 101 and 100001, not {datapoints}")
+            raise ValueError(
+                f"Value must be between 101 and 100001, not {datapoints}")
 
     def get_sweep_points(self) -> int:
         """Queries the number of measurement points."""
@@ -382,11 +385,14 @@ class FSWP50(BaseInstrument):
             Window number between 1 and 16, by default 1
         """
         if trace_number not in self._trace_List:
-            raise ValueError(f"Unknown trace number {trace_number}! Should be between 1 and 6.")
+            raise ValueError(
+                f"Unknown trace number {trace_number}! Should be between 1 and 6.")
         if window_number not in self._window_List:
-            raise ValueError(f"Unknown window number {window_number}! Should be between 1 and 16.")
+            raise ValueError(
+                f"Unknown window number {window_number}! Should be between 1 and 16.")
 
-        data = self.query_ascii_values(f":TRAC{window_number}:DATA? TRACE{trace_number}")
+        data = self.query_ascii_values(
+            f":TRAC{window_number}:DATA? TRACE{trace_number}")
         return np.array(data)
 
     def get_trace_xy(
@@ -405,11 +411,14 @@ class FSWP50(BaseInstrument):
         """
         trace_str = f"TRACE{trace_number}"
         try:
-            x = self.query_ascii_values(f"TRACe{window_number}:DATA:X? {trace_str}")
-            y = self.query_ascii_values(f"TRACe{window_number}:DATA:Y? {trace_str}")
+            x = self.query_ascii_values(
+                f"TRACe{window_number}:DATA:X? {trace_str}")
+            y = self.query_ascii_values(
+                f"TRACe{window_number}:DATA:Y? {trace_str}")
 
             if not x or not y or len(x) != len(y):
-                raise RuntimeError("Failed to retrieve or match trace data lengths.")
+                raise RuntimeError(
+                    "Failed to retrieve or match trace data lengths.")
 
             return np.array(x), np.array(y)
         except Exception as e:
@@ -452,7 +461,8 @@ class FSWP50(BaseInstrument):
                 if self.OPC() == 1:
                     break
                 if time() - start_time > timeout:
-                    raise TimeoutError(f"Operation did not complete within {timeout}s.")
+                    raise TimeoutError(
+                        f"Operation did not complete within {timeout}s.")
                 sleep(0.1)
 
         return self.get_trace_data(traceNumber, window_number)
@@ -462,7 +472,7 @@ class FSWP50(BaseInstrument):
         trace: int = 1,
         window: int = 1,
         points: bool = False,
-        num_of_points: int = None,
+        num_of_points: int | None = None,
         export: bool = False,
         filename: str = "trace_export.csv",
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -488,21 +498,25 @@ class FSWP50(BaseInstrument):
 
         if points:
             if num_of_points is None:
-                raise ValueError("When points=True, 'num_of_points' must be specified.")
+                raise ValueError(
+                    "When points=True, 'num_of_points' must be specified.")
             if num_of_points < len(x_array):
-                indices = np.linspace(0, len(x_array) - 1, num=num_of_points, dtype=int)
+                indices = np.linspace(
+                    0, len(x_array) - 1, num=num_of_points, dtype=int)
                 x_array = x_array[indices]
                 y_array = y_array[indices]
 
-        self.logger.info(f"Extracted {len(x_array)} points from WINDOW{window}, TRACE{trace}.")
+        self.logger.info(
+            f"Extracted {len(x_array)} points from WINDOW{window}, TRACE{trace}.")
 
         if export:
-            self.export_trace_to_csv(y_array, x_data=x_array, filename=filename)
+            self.export_trace_to_csv(
+                y_array, x_data=x_array, filename=filename)
 
         return x_array, y_array
 
     def export_trace_to_csv(
-        self, y_data: np.ndarray, x_data: np.ndarray = None, filename: str = "trace_output.csv"
+        self, y_data: np.ndarray, x_data: np.ndarray | None = None, filename: str = "trace_output.csv"
     ):
         """
         Exports trace data to a CSV file using pandas.
@@ -525,10 +539,12 @@ class FSWP50(BaseInstrument):
                     raise ValueError("X and Y data must have the same length.")
                 df = pd.DataFrame({"X-Axis": x_data, "Y-Axis": y_data})
             else:
-                df = pd.DataFrame({"Index": np.arange(len(y_data)), "Y-Axis": y_data})
+                df = pd.DataFrame(
+                    {"Index": np.arange(len(y_data)), "Y-Axis": y_data})
 
             df.to_csv(filename, index=False)
-            self.logger.info(f"Trace data exported successfully to '{os.path.abspath(filename)}'")
+            self.logger.info(
+                f"Trace data exported successfully to '{os.path.abspath(filename)}'")
         except Exception as e:
             self.logger.error(f"Failed to export CSV: {e}")
             raise
@@ -556,9 +572,11 @@ class FSWP50(BaseInstrument):
         ]
         trace_mode = trace_mode.upper()
         if trace_mode in trace_mode_List:
-            self.write(f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {trace_mode}")
+            self.write(
+                f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {trace_mode}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError(
+                "Unknown input! See function description for more info.")
 
     def set_detection_function(
         self, det_func: str, trace_number: int = 1, window_number: int = 1
@@ -590,9 +608,11 @@ class FSWP50(BaseInstrument):
         ]
         det_func = det_func.upper()
         if det_func in det_func_List:
-            self.write(f":SENS:WIND{window_number}:DET{trace_number}:FUNC {det_func}")
+            self.write(
+                f":SENS:WIND{window_number}:DET{trace_number}:FUNC {det_func}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError(
+                "Unknown input! See function description for more info.")
 
     def set_trace_smoothing(self, window: int = 1, trace: int = 1, state: str | int = "ON") -> None:
         """
@@ -602,7 +622,8 @@ class FSWP50(BaseInstrument):
         """
         state = self._parse_state(state)
         self.write(f"DISP:WIND{window}:TRAC{trace}:SMO:STAT {state}")
-        self.logger.info(f"Smoothing set to {state} for TRACE{trace} in WINDOW{window}.")
+        self.logger.info(
+            f"Smoothing set to {state} for TRACE{trace} in WINDOW{window}.")
 
     def set_spur_hide(self, window: int = 1, trace: int = 1, state: str | int = "ON") -> None:
         """
@@ -612,7 +633,8 @@ class FSWP50(BaseInstrument):
         """
         state = self._parse_state(state)
         self.write(f"DISP:WIND{window}:TRAC{trace}:SPUR:SUPP {state}")
-        self.logger.info(f"Spur hiding set to {state} for TRACE{trace} in WINDOW{window}.")
+        self.logger.info(
+            f"Spur hiding set to {state} for TRACE{trace} in WINDOW{window}.")
 
     # =============================================================================
     # Phase Noise
@@ -700,7 +722,7 @@ class FSWP50(BaseInstrument):
             raise ValueError("Percentage must be between 0.1 and 30.")
 
         self.write("SWE:MODE NORM")
-        self.write_float("LIST:BWID:RAT", float(percentage))
+        self.write(f"LIST:BWID:RAT {percentage}")
 
     def set_rbw_absolute(self, half_decade: int, bandwidth: float, unit: str) -> None:
         """
@@ -737,7 +759,8 @@ class FSWP50(BaseInstrument):
         mode = self.query("SWE:MODE?").strip().upper()
         if mode == "NORM":
             percentage = float(self.query("LIST:BWID:RAT?"))
-            self.logger.info(f"RBW Mode: Automatic Ratio → {percentage}% of start offset")
+            self.logger.info(
+                f"RBW Mode: Automatic Ratio → {percentage}% of start offset")
             return percentage
         elif mode == "MAN":
             rbw_values = {}
@@ -747,7 +770,8 @@ class FSWP50(BaseInstrument):
                     rbw_values[ri] = val
                 except:
                     continue
-            self.logger.info("RBW Mode: Manual (Absolute values per half-decade)")
+            self.logger.info(
+                "RBW Mode: Manual (Absolute values per half-decade)")
             return rbw_values
         else:
             raise RuntimeError(f"Unknown RBW mode detected: '{mode}'")
@@ -768,9 +792,9 @@ class FSWP50(BaseInstrument):
         if factor < 1:
             raise ValueError("XCORR factor must be an integer >= 1.")
         self.write("SWE:MODE NORM")
-        self.write_float("SWE:XFAC", factor)
+        self.write(f"SWE:XFAC {factor}")
 
-    def set_xcorr_optimization(self, enable: bool, threshold: float = None) -> None:
+    def set_xcorr_optimization(self, enable: bool, threshold: float | None = None) -> None:
         """
         Configure XCORR optimization and optional threshold.
 
@@ -784,7 +808,7 @@ class FSWP50(BaseInstrument):
         state = self._parse_state(enable)
         self.write(f"SWE:XOPT {state}")
         if enable and threshold is not None:
-            self.write(f"SWE:XOPT:THR {float(threshold)}")
+            self.write(f"SWE:XOPT:THR {threshold}")
 
     def set_capture_range(self, mode: str) -> None:
         """
@@ -804,7 +828,8 @@ class FSWP50(BaseInstrument):
         }
         mode_key = mode.strip().upper()
         if mode_key not in mode_map:
-            raise ValueError(f"Invalid mode '{mode}'. Valid options: Normal, Wide, 40MHz")
+            raise ValueError(
+                f"Invalid mode '{mode}'. Valid options: Normal, Wide, 40MHz")
         self.write(f"SWE:CAPT:RANG {mode_map[mode_key]}")
 
     # =============================================================================
@@ -856,7 +881,7 @@ class FSWP50(BaseInstrument):
         """
         self.write("CALC:SNO:AOFF")
 
-    def set_decade_spot_noise(self, state: str, trace: int = 1, display: bool = True):
+    def set_decade_spot_noise(self, state: str, trace: int = 1, display: str = "ON"):
         """
         Enables or disables decade spot noise and assigns it to a trace.
 
@@ -866,8 +891,8 @@ class FSWP50(BaseInstrument):
             "ON" or "OFF".
         trace : int, optional
             Trace number (1-6). Default is 1.
-        display : bool, optional
-            Whether to show spot noise markers. Default is True.
+        display : str, optional
+            "ON" or "OFF".
         """
         state = self._parse_state(state)
         display = self._parse_state(display)
@@ -876,7 +901,7 @@ class FSWP50(BaseInstrument):
         self.write(f"DISP:SNIN:TRAC {trace}")
 
     def set_manual_spot_noise(
-        self, marker: int, offset: str, enable: bool = True, display: bool = True, trace: int = 1
+        self, marker: int, offset: str, enable: str = "ON", display: str = "ON", trace: int = 1
     ):
         """
         Enables or disables a custom (manual) spot noise marker.
@@ -887,10 +912,10 @@ class FSWP50(BaseInstrument):
             Spot noise marker index (1-6).
         offset : str
             Frequency offset with unit (e.g., "100kHz").
-        enable : bool, optional
-            True to enable, False to disable.
-        display : bool, optional
-            Whether to display.
+        enable : str, optional
+            "ON" or "OFF".
+        display : str, optional
+            "ON" or "OFF".
         trace : int, optional
             Trace number (1-6).
         """
@@ -972,7 +997,7 @@ class FSWP50(BaseInstrument):
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
-    
+
     ask_center_frequency = get_center_frequency
     ask_CenterFreq = get_center_frequency
     set_CenterFreq = set_center_frequency
@@ -1002,4 +1027,3 @@ class FSWP50(BaseInstrument):
     ask_stop_offset = get_stop_offset
     ask_spur_filter_mode = get_spur_filter_mode
     create_new_channel = create_channel
-    

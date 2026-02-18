@@ -6,34 +6,38 @@ Created on Mon Jul  21 18:56:32 2025
 """
 
 
+from typing import Any
 import numpy as np
-import pyvisa as visa
-import matlab
+import logging
+from .BaseInstrument import BaseInstrument
+# Try to import matlab engine
+try:
+    import matlab
+    MATLAB_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as e:
+    MATLAB_AVAILABLE = False
+    print("!" * 80)
+    print("WARNING: MATLAB Engine for Python is not installed or not working correctly.")
+    print("Generic functions will work, but IQTools-related functions will silently fail.")
+    print("To install, use pip with the version matching your MATLAB installation:")
+    print("  - R2024b: pip install matlabengine==24.2.*")
+    print("  - R2025a: pip install matlabengine==25.1.*")
+    print("  - R2025b: pip install matlabengine==25.2.*")
+    print("  - Other : pip install matlabengine")
+    print(f"Detailed Error: {e}")
+    print("!" * 80)
 
-
-class M8070B:
+class M8070B(BaseInstrument):
     """
     Start the M8070B Software. Go to Utilities-> SCPI Server Information.
     Copy the VISA resource string (usually localhost).
     """
 
     def __init__(self, resource_str="TCPIP0::localhost::hislip0::INSTR"):
-        self._resource = visa.ResourceManager().open_resource(str(resource_str), query_delay=0.5)
+        super().__init__(resource_str, query_delay=0.5)
         self._channelLS = [1, 2]  #
-        self._StateLS_mapping = {"on": 1, "off": 0, 1: 1, 0: 0, "1": 1, "0": 0, True: 1, False: 0}
-        print(self.getIdn())
-
-    def query(self, command):
-        return self._resource.query(command)
-
-    def write(self, command):
-        return self._resource.write(command)
-
-    def Close(self):
-        self._resource.close()
-
-    def getIdn(self):
-        return self.query("*IDN?").strip()
+        self._channelLS = [1, 2]  #
+        print(self.get_idn())
 
     # =============================================================================
     # Check functions
@@ -44,14 +48,6 @@ class M8070B:
         if channel not in self._channelLS:
             raise ValueError("Channel must be 1 or 2")
         return channel
-
-    def _validate_state(self, state: int | str) -> int:
-        state_normalized = self._StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [on,off,1,0,True,False].")
-        return state_normalized
 
     # =============================================================================
     # M8199B - Get Values and Modes
@@ -171,7 +167,7 @@ class M8070B:
             State must be 0 or 1.
         """
         channel = self._validate_channel(channel)
-        state_normalized = self._validate_state(state)
+        state_normalized = self._parse_state(state)
         self.write(f":OUTPut:STATe 'M2.DataOut{channel}', {state_normalized}")
 
     def set_rf_output(self, channel: int, state: int | str) -> None:
@@ -225,7 +221,6 @@ class M8070B:
         int
             Sample clock output state. 0 or 1.
         """
-        channel = self._validate_channel(channel)
         return int(self.query(f":OUTPut:STATe? 'M1.SampleClkOut2'"))
 
     def get_sample_clk_out2_power(self) -> float:
@@ -252,7 +247,7 @@ class M8070B:
         state : int | str
             One of: 0, 1, "off", "on"
         """
-        state_normalized = self._validate_state(state)
+        state_normalized = self._parse_state(state)
         self.write(f":OUTPut:STATe 'M1.SampleClkOut2', {state_normalized}")
 
     def set_sample_clk_out2_power(self, power: int | float) -> None:
@@ -301,6 +296,10 @@ class M8070B:
         """
         # 1) Validate channel
         channel = self._validate_channel(channel)
+        
+        if not MATLAB_AVAILABLE:
+            self.logger.warning("MATLAB not available. Skipping set_freq_CW.")
+            return
 
         # 2) Define constants
         # magnitude is zeros(1,1) in MATLAB; make it a 1×1 double
@@ -362,7 +361,7 @@ class M8070B:
         lo_f_center=None,
         segm_name=None,
         rms=None,
-    ) -> any:
+    ) -> Any:
         """
         Download a pre-generated IQ waveform to the AWG.
 
@@ -399,6 +398,10 @@ class M8070B:
             The output of the MATLAB `iqdownload` call (empty or status).
         """
         # fmt: off
+        if not MATLAB_AVAILABLE:
+            self.logger.warning("MATLAB not available. Skipping iqdownload.")
+            return
+
         # Build the var/val list
         args = [
             'segmentNumber', int(segment_number),
@@ -438,7 +441,7 @@ class M8070B:
         *,
         channel: int,
         tones: np.ndarray,
-        magnitudes_dB: np.ndarray = None,
+        magnitudes_dB: np.ndarray | None = None,
         phases: np.ndarray | str = 'Random',
         correction: int = 0,
         run: int = 1,
@@ -465,6 +468,10 @@ class M8070B:
         """
         # 1) Validate channel
         channel = self._validate_channel(channel)
+
+        if not MATLAB_AVAILABLE:
+            self.logger.warning("MATLAB not available. Skipping generate_multitone.")
+            return
 
         # 2) Prepare arrays
         frequency = np.asarray(tones, dtype=np.float64)      # 1-D
