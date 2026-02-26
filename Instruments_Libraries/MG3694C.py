@@ -26,12 +26,14 @@ import pyvisa.constants as vi_const
 import functools
 import time
 
-def auto_reconnect(func):
+from typing import Callable, Any
+
+def auto_reconnect(func: Callable) -> Callable:
     """
     Decorator that catches VISA errors, reconnects, and retries the command.
     """
     @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         attempts = 3
         for i in range(attempts):
             try:
@@ -43,7 +45,7 @@ def auto_reconnect(func):
                     print(f"Failed after {attempts} attempts. Error: {e}")
                     raise e
                 
-                print(f"Connection lost during {func.__name__}. Reconnecting (Attempt {i+1}/{attempts})...")
+                print(f"Connection lost during {getattr(func, '__name__', 'function')}. Reconnecting (Attempt {i+1}/{attempts})...")
                 try:
                     self.reconnect()
                 except Exception as reconnect_err:
@@ -51,96 +53,63 @@ def auto_reconnect(func):
                     time.sleep(1) # Wait a bit before next loop
     return wrapper
 
-class MG3694C():
+from typing import Union, Dict, cast
+from .BaseInstrument import BaseInstrument
+
+class MG3694C(BaseInstrument):
     """
     This class uses pyvisa to connect to an Anritsu MG3694C Signal Generator.
     """
 
     def __init__(
         self,
-        resource_str="192.168.0.254",
-        visa_library="@ivi",
+        resource_str: str = "192.168.0.254",
+        visa_library: str = "@ivi",
+        **kwargs
     ):
-        if "TCPIP" not in resource_str.upper():
-            self.resource_str = f"TCPIP::{resource_str}::INSTR"
-        else:
-            self.resource_str = resource_str
+        kwargs.setdefault('read_termination', '\n')
+        kwargs.setdefault('query_delay', 0.5)
+        self._pyvisa_kwargs = kwargs
+        super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
         self.visa_library = visa_library
-
-        self.connect()
-
-        # Predefine Lists
-        self._StateLS_mapping = {
-            "on": 1,
-            "off": 0,
-            1: 1,
-            0: 0,
-            "1": 1,
-            "0": 0,
-            True: 1,
-            False: 0,
-        }
-
-        # Get name and identification
-        print(f"Connected to: {self.getIdn()}")
+        
+        try:
+            self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)  # type: ignore
+        except visa.errors.VisaIOError:
+            pass
+            
+        print(f"Connected to: {self.get_idn()}")
     
     def connect(self):
-        """Opens connection and sets up attributes."""
-        rm = visa.ResourceManager(self.visa_library)
-        self._resource = rm.open_resource(
+        self._rm = visa.ResourceManager(self.visa_library)
+        self._resource = cast(visa.resources.MessageBasedResource, self._rm.open_resource(
             str(self.resource_str), 
-            read_termination="\n", 
-            query_delay=0.5
-        )
-        
-        # Enable Native TCP KeepAlive to prevent timeouts
+            **self._pyvisa_kwargs
+        ))
         try:
-            self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)
-        except visa.VisaIOError:
-            pass # Not all interfaces support this
+            self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)  # type: ignore
+        except visa.errors.VisaIOError:
+            pass
 
     def reconnect(self):
-        """Closes and re-opens the connection."""
         try:
             self._resource.close()
         except:
-            pass # Ignore errors if it was already closed
-        
-        time.sleep(1) # Give the socket a moment to clear
+            pass
+        time.sleep(1)
         self.connect()
 
     @auto_reconnect
-    def write(self, message, encoding="utf-8"):
-        self._resource.write(message, encoding=encoding)
+    def write(self, command: str) -> None:
+        super().write(command)
 
     @auto_reconnect
-    def query(self, message):
-        return self._resource.query(message)
+    def query(self, command: str) -> str:
+        return super().query(command)
     
     @auto_reconnect
-    def read(self):
+    def read(self) -> str:
         return self._resource.read()
-
-    def Close(self):
-        return self._resource.close()
-    
-    def reset(self):
-        return self.write('*RST')
-    
-    def getIdn(self):
-        return self.query('*IDN?')
-    
-    # =============================================================================
-    # Validate Variables
-    # =============================================================================
-
-    def _validate_state(self, state: int | str) -> int:
-        state_normalized = self._StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [on,off,1,0,True,False].")
-        return state_normalized
 
     # =============================================================================
     # Abort Command
@@ -157,7 +126,7 @@ class MG3694C():
     # =============================================================================
     # Ask Instrument about Stats and Parameters
     # =============================================================================
-    def ask_output_protection(self):
+    def get_output_protection(self):
         """
 
         Returns
@@ -169,7 +138,7 @@ class MG3694C():
         """
         return self.query(":OUTPut:PROTection?")
 
-    def ask_output_retrace(self):
+    def get_output_retrace(self):
         """
 
 
@@ -184,7 +153,7 @@ class MG3694C():
 
         return self.query(":OUTPut:PROTection:RETRace?")
 
-    def ask_output_impedance(self):
+    def get_output_impedance(self):
         """
 
 
@@ -198,7 +167,7 @@ class MG3694C():
 
         return self.query(":OUTPut:IMPedance?")
 
-    def ask_OutputPowerLevel(self):
+    def get_output_power_level(self):
         """
 
 
@@ -209,9 +178,9 @@ class MG3694C():
 
         """
 
-        return float(self.query(":SOURce:POWer:LEVel:IMMediate:AMPLitude?"))
+        return float(self.query(":SOURce:POWer:LEVel:IMMediate:AMPLitude?") or 0.0)
 
-    def ask_MaximalPowerLevel(self):
+    def get_maximal_power_level(self):
         """
 
 
@@ -228,7 +197,7 @@ class MG3694C():
     # =============================================================================
     # Ask Source Amplitude Modulation
     # =============================================================================
-    def ask_am_logsens(self):
+    def get_am_logsens(self):
         """
 
 
@@ -241,7 +210,7 @@ class MG3694C():
 
         return self.query(":SOURce:AM:LOGSens?")
 
-    def ask_am_logDepth(self):
+    def get_am_logdepth(self):
         """
 
 
@@ -255,7 +224,7 @@ class MG3694C():
 
         return self.query(":SOURce:AM:LOGDepth?")
 
-    def ask_am_internalWave(self):
+    def get_am_internal_wave(self):
         """
 
 
@@ -268,7 +237,7 @@ class MG3694C():
 
         return self.query(":SOURce:AM:INTernal:WAVE?")
 
-    def ask_am_internalFreq(self):
+    def get_am_internal_freq(self):
         """
 
 
@@ -282,7 +251,7 @@ class MG3694C():
 
         return self.query(":SOURce:AM:INTernal:FREQuency?")
 
-    def ask_am_state(self):
+    def get_am_state(self):
         """
 
 
@@ -295,7 +264,7 @@ class MG3694C():
 
         return self.query(":SOURce:AM:STATe?")
 
-    def ask_am_type(self):
+    def get_am_type(self):
         """
 
 
@@ -311,7 +280,7 @@ class MG3694C():
     # =============================================================================
     # Frequency Modulation
     # =============================================================================
-    def ask_fm_internalWave(self):
+    def get_fm_internal_wave(self):
         """
 
 
@@ -324,7 +293,7 @@ class MG3694C():
 
         return self.query(":SOURce:FM:INTernal:WAVE?")
 
-    def ask_fm_internalFreq(self):
+    def get_fm_internal_freq(self):
         """
 
 
@@ -337,7 +306,7 @@ class MG3694C():
         """
         return self.query(":SOURce:FM:INTernal:FREQuency?")
 
-    def ask_fm_mode(self):
+    def get_fm_mode(self):
         """
 
 
@@ -350,7 +319,7 @@ class MG3694C():
 
         return self.query(":SOURce:FM:MODE?")
 
-    def ask_fm_Bwidth(self):
+    def get_fm_bwidth(self):
         """
 
 
@@ -364,7 +333,7 @@ class MG3694C():
 
         return self.query(":SOURce:FM:BWIDth?")
 
-    def ask_fm_state(self):
+    def get_fm_state(self):
         """
 
 
@@ -380,7 +349,7 @@ class MG3694C():
     # =============================================================================
     # Frequency Commands
     # =============================================================================
-    def ask_freq_CW(self):
+    def get_freq_cw(self):
         """
 
 
@@ -391,9 +360,9 @@ class MG3694C():
 
         """
 
-        return float(self.query(":SOURce:FREQuency:CW?"))
+        return float(self.query(":SOURce:FREQuency:CW?") or 0.0)
 
-    def ask_freq_step(self):
+    def get_freq_step(self):
         """
 
 
@@ -406,7 +375,7 @@ class MG3694C():
 
         return self.query(":SOURce:FREQuency:CW:STEP:INCRement?")
 
-    def ask_freq_centerFreq(self):
+    def get_freq_center_freq(self):
         """
 
 
@@ -419,7 +388,7 @@ class MG3694C():
 
         return self.query(":SOURce:FREQuency:CENTer?")
 
-    def ask_freq_mode(self):
+    def get_freq_mode(self):
         """
 
 
@@ -432,7 +401,7 @@ class MG3694C():
 
         return self.query(":SOURce:FREQuency:MODE?")
 
-    def ask_freq_span(self):
+    def get_freq_span(self):
         """
 
 
@@ -445,7 +414,7 @@ class MG3694C():
 
         return self.query(":SOURce:FREQuencySPAN:?")
 
-    def ask_freq_start(self):
+    def get_freq_start(self):
         """
 
 
@@ -458,7 +427,7 @@ class MG3694C():
 
         return self.query(":SOURce:FREQuency:STARt?")
 
-    def ask_freq_stop(self):
+    def get_freq_stop(self):
         """
 
 
@@ -471,7 +440,7 @@ class MG3694C():
 
         return self.query(":SOURce:FREQuency:STOP?")
 
-    def ask_freq_unit(self):
+    def get_freq_unit(self):
         """
 
 
@@ -486,7 +455,7 @@ class MG3694C():
     # =============================================================================
     # Pulse Modulation
     # =============================================================================
-    def ask_pm_Bwidth(self):
+    def get_pm_bwidth(self):
         """
 
 
@@ -499,7 +468,7 @@ class MG3694C():
 
         return self.query(":SOURce:PM:BWIDth?")
 
-    def ask_pm_internalWave(self):
+    def get_pm_internal_wave(self):
         """
 
 
@@ -513,7 +482,7 @@ class MG3694C():
 
         return self.query(":SOURce:PM:INTernal:WAVE?")
 
-    def ask_pm_internalFreq(self):
+    def get_pm_internal_freq(self):
         """
 
 
@@ -527,7 +496,7 @@ class MG3694C():
 
         return self.query(":SOURce:PM:INTernal:FREQuency?")
 
-    def ask_pm_state(self):
+    def get_pm_state(self):
         """
 
 
@@ -557,7 +526,7 @@ class MG3694C():
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
 
-        state = self._validate_state(state)
+        state = self._parse_state(state)
         self.write(f":OUTPut:STATe {state}")
 
 
@@ -654,7 +623,7 @@ class MG3694C():
 
         self.write(f":SOURce:POWer:LEVel:IMMediate:AMPLitude {str(value)} dBm")
 
-    def set_OutputPowerLevel(self, value: int | float) -> None:
+    def set_output_power_level(self, value: int | float) -> None:
         """Sets the Signal Generator Output Power in dBm. Alias for set_rf_power().
 
         Parameters
@@ -704,7 +673,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_am_logDepth(self, value):
+    def set_am_logdepth(self, value):
         """
 
 
@@ -732,7 +701,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_am_internalWave(self, state):
+    def set_am_internal_wave(self, state):
         """
 
 
@@ -768,7 +737,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_am_internalFreq(self, value, unit):
+    def set_am_internal_freq(self, value, unit):
         """
 
 
@@ -794,7 +763,7 @@ class MG3694C():
 
         """
 
-        state = self.ask_am_internalFreq()
+        state = self.get_am_internal_freq()
         sinUnit = ["Hz", "kHz", "MHz"]
         if state == "SINE":
             if value >= 0.1 or value <= 1 and unit in sinUnit:
@@ -865,7 +834,7 @@ class MG3694C():
     # =============================================================================
     #     Correction Commands
     # =============================================================================
-    def set_correctionCommands(self, state):
+    def set_correction_commands(self, state):
         """
 
 
@@ -895,7 +864,7 @@ class MG3694C():
     # =============================================================================
     # Frequency Modulation
     # =============================================================================
-    def set_fm_internalWave(self, state):
+    def set_fm_internal_wave(self, state):
         """
 
 
@@ -931,7 +900,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_fm_internalFreq(self, value, unit):
+    def set_fm_internal_freq(self, value, unit):
         """
 
 
@@ -956,7 +925,7 @@ class MG3694C():
 
         """
 
-        state = self.ask_fm_internalFreq()
+        state = self.get_fm_internal_freq()
         sinUnit = ["Hz", "kHz", "MHz"]
         if state == "SINE":
             if value >= 0.1 or value <= 1 and unit in sinUnit:
@@ -1005,7 +974,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_fm_Bwidth(self, state):
+    def set_fm_bwidth(self, state):
         """
 
 
@@ -1037,7 +1006,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_fm_steta(self, state):
+    def set_fm_state(self, state):
         """
 
 
@@ -1067,7 +1036,7 @@ class MG3694C():
     # =============================================================================
     # Frequency Commands
     # =============================================================================
-    def set_freq_CW(self, value: int | float, unit: str = None) -> None:
+    def set_freq_cw(self, value: int | float, unit: str | None = None) -> None:
         """
         Parameters
         ----------
@@ -1302,7 +1271,7 @@ class MG3694C():
     # =============================================================================
     # Pulse Modulation
     # =============================================================================
-    def set_pm_Bwidth(self, state):
+    def set_pm_bwidth(self, state):
         """
 
 
@@ -1335,7 +1304,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_pm_internalWave(self, state):
+    def set_pm_internal_wave(self, state):
         """
 
 
@@ -1371,7 +1340,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_pm_internalFreq(self, value, unit):
+    def set_pm_internal_freq(self, value, unit):
         """
 
 
@@ -1397,7 +1366,7 @@ class MG3694C():
 
         """
 
-        state = self.ask_pm_internalFreq()
+        state = self.get_pm_internal_freq()
         sinUnit = ["Hz", "kHz", "MHz"]
         if state == "SINE":
             if value >= 0.1 or value <= 1 and unit in sinUnit:
@@ -1438,54 +1407,10 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def DisplayParamDict(self, Type):
-        """
-        This function will print all the adjusted parameters.
-        """
-        Headers = ["Params", "Vaue/Type/Info"]
-        Params = ["Adapter Type", "Max Frequency range", "Min Frequency range", "Wavelength"]
-        Data = [
-            self.ask_AdapterType(),
-            self.ask_freqRange("MAX"),
-            self.ask_freqRange("MIN"),
-            self.ask_Wavelength(),
-        ]
-
-        meas = Type
-        measList = ["Power", "Energy", "Current", "Voltage"]
-        if meas in measList:
-            if meas == "Power":
-                Params.append("Power Unit set")
-                Data.append(self.ask_PowerUnits())
-                Params.append("Power range auto")
-                Data.append(self.ask_AutoPowerRange())
-                Params.append("Power Range set")
-                Data.append(self.ask_PowerRange())
-
-            elif meas == "Energy":
-                Params.append("Energy range auto")
-                Data.append(self.ask_energyRange())
-
-            elif meas == "Voltage":
-                Params.append("Voltage range auto")
-                Data.append(self.ask_AutoVoltageRange())
-                Params.append("Voltage range")
-                Data.append(self.ask_voltRange())
-            elif meas == "Current":
-                Params.append("Current range auto")
-                Data.append(self.ask_AutoCurrentRange())
-                Params.append("Current range")
-                Data.append(self.ask_currentRange())
-
-        else:
-            print("Invalid Value! Function will be terminated.")
-
-        return Headers, Data, Params
-
-    # =============================================================================
+# =============================================================================
     # Get/Save Data
     # =============================================================================
-    def get_Data(self):
+    def get_data(self):
         """
 
 
@@ -1496,8 +1421,57 @@ class MG3694C():
 
         """
         OutPut = {}
-        Freq = self.ask_freq_CW()
-        Power = self.ask_OutputPowerLevel()
+        Freq = self.get_freq_cw()
+        Power = self.get_output_power_level()
         OutPut["Power/dBm"] = Power
-        OutPut["CW Frequency/" + self.ask_freq_unit()] = Freq
+        OutPut["CW Frequency/" + str(self.get_freq_unit())] = Freq
         return OutPut
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    getIdn = BaseInstrument.get_idn
+    Close = BaseInstrument.close
+    reset = BaseInstrument.reset
+    ask_output_protection = get_output_protection
+    ask_output_retrace = get_output_retrace
+    ask_output_impedance = get_output_impedance
+    ask_OutputPowerLevel = get_output_power_level
+    ask_MaximalPowerLevel = get_maximal_power_level
+    ask_am_logsens = get_am_logsens
+    ask_am_logDepth = get_am_logdepth
+    ask_am_internalWave = get_am_internal_wave
+    ask_am_internalFreq = get_am_internal_freq
+    ask_am_state = get_am_state
+    ask_am_type = get_am_type
+    ask_fm_internalWave = get_fm_internal_wave
+    ask_fm_internalFreq = get_fm_internal_freq
+    ask_fm_mode = get_fm_mode
+    ask_fm_Bwidth = get_fm_bwidth
+    ask_fm_state = get_fm_state
+    ask_freq_CW = get_freq_cw
+    ask_freq_step = get_freq_step
+    ask_freq_centerFreq = get_freq_center_freq
+    ask_freq_mode = get_freq_mode
+    ask_freq_span = get_freq_span
+    ask_freq_start = get_freq_start
+    ask_freq_stop = get_freq_stop
+    ask_freq_unit = get_freq_unit
+    ask_pm_Bwidth = get_pm_bwidth
+    ask_pm_internalWave = get_pm_internal_wave
+    ask_pm_internalFreq = get_pm_internal_freq
+    ask_pm_state = get_pm_state
+    set_OutputPowerLevel = set_output_power_level
+    set_am_logDepth = set_am_logdepth
+    set_am_internalWave = set_am_internal_wave
+    set_am_internalFreq = set_am_internal_freq
+    set_correctionCommands = set_correction_commands
+    set_fm_internalWave = set_fm_internal_wave
+    set_fm_internalFreq = set_fm_internal_freq
+    set_fm_Bwidth = set_fm_bwidth
+    set_fm_steta = set_fm_state
+    set_freq_CW = set_freq_cw
+    set_pm_Bwidth = set_pm_bwidth
+    set_pm_internalWave = set_pm_internal_wave
+    set_pm_internalFreq = set_pm_internal_freq
+    get_Data = get_data

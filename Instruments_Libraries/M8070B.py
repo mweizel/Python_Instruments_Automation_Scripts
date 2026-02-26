@@ -45,7 +45,7 @@ class M8070B(BaseInstrument):
     # Check functions
     # =============================================================================
 
-    def _validate_channel(self, channel: int) -> int:
+    def validate_channel(self, channel: int) -> int:
         channel = int(channel)
         if channel not in self._channelLS:
             raise ValueError("Channel must be 1 or 2")
@@ -68,7 +68,7 @@ class M8070B(BaseInstrument):
         float
             Differential amplitude setting.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f":SOURce:VOLTage:AMPLitude? 'M2.DataOut{channel}'"))
 
     def get_output_state(self, channel: int) -> int:
@@ -84,7 +84,7 @@ class M8070B(BaseInstrument):
         int
             Output state. 0 or 1.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(self.query(f":OUTPut:STATe? 'M2.DataOut{channel}'"))
 
     def get_delay(self, channel: int) -> float:
@@ -100,7 +100,7 @@ class M8070B(BaseInstrument):
         float
             Delay in seconds.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f":ARM:DELay? 'M2.DataOut{channel}'"))
 
     # =============================================================================
@@ -117,7 +117,7 @@ class M8070B(BaseInstrument):
         amplitude : int/float
             Amplitude setting in V. Must be between 0.1 and 2.7 V
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if 0.1 <= amplitude <= 2.7:
             self.write(f":SOURce:VOLTage:AMPLitude 'M2.DataOut{channel}', {amplitude}")
         else:
@@ -139,7 +139,7 @@ class M8070B(BaseInstrument):
         amplitude = V_rms * np.sqrt(2)
         self.set_amplitude(channel, amplitude)
 
-    def set_OutputPowerLevel(self, channel: int, powerdBm: int | float) -> None:
+    def set_output_power_level(self, channel: int, powerdBm: int | float) -> None:
         """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and 
         uses ``set_amplitude()`` internally. Alias for set_rf_power().
 
@@ -168,7 +168,7 @@ class M8070B(BaseInstrument):
             Channel must be 1 or 2.
             State must be 0 or 1.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         state_normalized = self._parse_state(state)
         self.write(f":OUTPut:STATe 'M2.DataOut{channel}', {state_normalized}")
 
@@ -188,7 +188,7 @@ class M8070B(BaseInstrument):
         delay : float
             Delay in seconds.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if not (-25e-9 <= delay <= 25e-9):
             raise ValueError(f"Delay must be between -25 and 25ns. You entered: {delay} s")
         self.write(f":ARM:DELay 'M2.DataOut{channel}',{delay}")
@@ -211,7 +211,7 @@ class M8070B(BaseInstrument):
         float
             Sample clock output frequency in Hz.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f":OUTPut:FREQuency? 'M1.SampleClkOut{channel}'"))
 
     def get_sample_clk_out2_state(self) -> int:
@@ -270,7 +270,7 @@ class M8070B(BaseInstrument):
     # M8199B Calling IQTools Functions
     # =============================================================================
 
-    def set_freq_CW(
+    def set_freq_cw(
         self,
         matlab_engine,
         channel: int,
@@ -297,7 +297,7 @@ class M8070B(BaseInstrument):
             AWG sample rate (default 256e9).
         """
         # 1) Validate channel
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         
         if not MATLAB_AVAILABLE:
             self.logger.warning("MATLAB not available. Skipping set_freq_CW.")
@@ -469,7 +469,7 @@ class M8070B(BaseInstrument):
             AWG sample rate (default 256e9).
         """
         # 1) Validate channel
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
 
         if not MATLAB_AVAILABLE:
             self.logger.warning("MATLAB not available. Skipping generate_multitone.")
@@ -522,3 +522,11 @@ class M8070B(BaseInstrument):
             'run',            run,
             nargout=0
         )
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    Close = BaseInstrument.close
+    set_freq_CW = set_freq_cw
+    _validate_channel = validate_channel
+    set_OutputPowerLevel = set_output_power_level

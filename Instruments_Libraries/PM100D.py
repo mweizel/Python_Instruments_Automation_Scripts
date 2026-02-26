@@ -8,105 +8,50 @@ Created on Thu Dec  2 08:27:01 2021
 
 import time
 import numpy as np
-import pyvisa as visa
+from typing import Optional, Union, Dict, List
+from .BaseInstrument import BaseInstrument
 
 
-class PM100D:
+class PM100D(BaseInstrument):
     """
     Thorlabs PM100-series power meter wrapper using PyVISA.
 
     You can construct either with:
       - resource_str="P00XXXXX"       # serial only (legacy behavior)
       - resource_str="USB0::...::INSTR"  # full VISA resource (also works)
-      - resource_name="USB0::...::INSTR" # explicit VISA resource
 
     Parameters
     ----------
     resource_str : str | None
         Either the device serial (e.g., 'P00XXXXX') or a full VISA string. Kept
         for backward compatibility.
-    resource_name : str | None
-        Explicit VISA resource name to open. If given, resource_str is ignored.
-    backend : str | None
+    visa_library : str
         Optional PyVISA backend string, e.g., '@py' for pyvisa-py.
-    timeout_ms : int
-        VISA I/O timeout in milliseconds.
     """
 
     def __init__(
         self,
-        resource_str: str | None = None,
-        *,
-        resource_name: str | None = None,
-        backend: str | None = None,
-        timeout_ms: int = 1000,
+        resource_str: str,
+        visa_library: str = '@py',
+        **kwargs
     ):
 
-        if resource_str is None and resource_name is None:
-            raise ValueError("Provide either 'resource_str' or 'resource_name'.")
-
         # Choose the effective VISA resource name
-        if resource_name is not None:
-            rn = str(resource_name)
+        s = str(resource_str)
+        if "::" in s or s.startswith("USB"):
+            # Caller passed a full VISA string in resource_str
+            rn = s
         else:
-            s = str(resource_str)
-            if "::" in s or s.startswith("USB"):
-                # Caller passed a full VISA string in resource_str
-                rn = s
-            else:
-                # Caller passed a bare serial; build a PM100D VISA address
-                # Vendor ID 0x1313 = Thorlabs; Product ID 0x8078 = PM100D USBTMC
-                rn = f"USB0::0x1313::0x8078::{s}::INSTR"
+            # Caller passed a bare serial; build a PM100D VISA address
+            # Vendor ID 0x1313 = Thorlabs; Product ID 0x8078 = PM100D USBTMC
+            rn = f"USB0::0x1313::0x8078::{s}::INSTR"
 
-        self._backend = backend
-        self._rm = visa.ResourceManager(backend) if backend else visa.ResourceManager()
-        self._resource_name = rn
-        self._resource = self._rm.open_resource(rn)
-        self._resource.timeout = int(timeout_ms)
-        self._resource.read_termination = "\n"
+        kwargs.setdefault('timeout', 1000)
+        kwargs.setdefault('read_termination', '\n')
+        super().__init__(rn, visa_library=visa_library, **kwargs)
 
         # Query *IDN? to verify connectivity (Thorlabs PM100* expected)
-        self.idn = self.getIdn()
-        print(self.idn)
-
-        # Predefine Lists
-        self._ON_OFF_StateLS_mapping = {
-            "on": "ON",
-            "off": "OFF",
-            1: "ON",
-            0: "OFF",
-            "1": "ON",
-            "0": "OFF",
-            True: "ON",
-            False: "OFF",
-        }
-
-    def query(self, message):
-        return self._resource.query(message)
-
-    def write(self, message):
-        return self._resource.write(message)
-
-    def Close(self):
-        """Closes the VISA resource."""
-        self._resource.close()
-        print("Instrument PM100D is closed!")
-
-    def getIdn(self) -> str:
-        """Returns the Instrument Identification: Thorlabs,PM100D"""
-        return self.query("*IDN?")
-
-    # =============================================================================
-    #     Checks and Validations
-    # =============================================================================
-
-    def _validate_on_off_state(self, state: int | str) -> str:
-        state_normalized = self._ON_OFF_StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [on,off,1,0,True,False].")
-        return state_normalized
+        print(self.get_idn())
 
     # =============================================================================
     #     Self Test
@@ -134,7 +79,7 @@ class PM100D:
     # =============================================================================
     # Configuration
     # =============================================================================
-    def ReadConfig(self) -> str:
+    def read_config(self) -> str:
         """
 
 
@@ -151,7 +96,7 @@ class PM100D:
     # Fetch last meassure Data
     # =============================================================================
 
-    def fetchData(self, allow_NaN: bool = False, delay: float | None = None) -> float:
+    def fetch_data(self, allow_NaN: bool = False, delay: float | None = None) -> float:
         """Reads last measurement data. WILL NOT START THE MEASUREMENT!
         Use readData() instead. Returns 'nan' if no data is available.
 
@@ -164,10 +109,10 @@ class PM100D:
         val = float(self.query(":FETCh?"))
         if abs(val) >= 9.0e37:
             delay = 1 if delay is None else delay
-            val = self.readData(delay=delay, allow_NaN=allow_NaN)
+            val = self.read_data(delay=delay, allow_NaN=allow_NaN)
         return val
 
-    def readData(self, allow_NaN: bool = False, delay: float | None = 1) -> float:
+    def read_data(self, allow_NaN: bool = False, delay: float | None = 1) -> float:
         """Starts a measurement and reads last measurement data.
 
         Returns
@@ -175,7 +120,7 @@ class PM100D:
         float
             last measurement data or 'nan' if no data is available.
         """
-        s = self.query(":READ?", delay=delay)  # triggers, waits, returns result
+        s = self._resource.query(":READ?", delay=delay)  # triggers, waits, returns result
         val = float(s)
         if abs(val) >= 9.0e37:
             if allow_NaN:
@@ -184,27 +129,13 @@ class PM100D:
                 raise OverflowError(f"READ? returned sentinel {val}")
         return val
 
-    # =============================================================================
-    # OPC Register
-    # =============================================================================
 
-    def OPC(self) -> str:
-        """
-
-
-        Returns
-        -------
-        str
-            Query the OPC value
-
-        """
-        return self.query("*OPC?")
 
     # =============================================================================
     # Initialize Commando
     # =============================================================================
 
-    def Init(self) -> None:
+    def init(self) -> None:
         """Start measurement.
 
 
@@ -219,7 +150,7 @@ class PM100D:
     # Abort Measurement
     # =============================================================================
 
-    def Abort(self) -> None:
+    def abort(self) -> None:
         """
 
 
@@ -236,7 +167,7 @@ class PM100D:
     # Adapter Settings
     # =============================================================================
 
-    def ask_AdapterType(self) -> str:
+    def get_adapter_type(self) -> str:
         """
 
 
@@ -248,7 +179,7 @@ class PM100D:
         """
         return self.query("INPut:ADAPter:TYPE?")
 
-    def set_AdapterType(self, state: str) -> None:
+    def set_adapter_type(self, state: str) -> None:
         """
 
 
@@ -277,7 +208,7 @@ class PM100D:
     # =============================================================================
     # Photodiode parameters
     # =============================================================================
-    def set_PD(self, state: str | int) -> None:
+    def set_pd(self, state: str | int) -> None:
         """
 
 
@@ -292,14 +223,14 @@ class PM100D:
             Error message.
 
         """
-        state = self._validate_on_off_state(state)
+        state = self._parse_state(state)
         self.write(f"INPut:PDIode:FILTer:LPASs:STATe {state}")
 
     # =============================================================================
     # Ask Instrument
     # =============================================================================
 
-    def ask_beeper(self) -> int:
+    def get_beeper(self) -> int:
         """
 
 
@@ -311,7 +242,7 @@ class PM100D:
         """
         return int(self.query("SYSTem:BEEPer:STATe?"))
 
-    def ask_calibration(self) -> str:
+    def get_calibration(self) -> str:
         """
 
 
@@ -324,7 +255,7 @@ class PM100D:
 
         return self.query("CALibration:STRing?")
 
-    def ask_PDPower(self) -> str:
+    def get_pd_power(self) -> str:
         """
 
 
@@ -337,7 +268,7 @@ class PM100D:
 
         return self.query("CORRection:POWer:PDIOde:RESPonse?")
 
-    def ask_Thermopile(self) -> str:
+    def get_thermopile(self) -> str:
         """
 
 
@@ -350,7 +281,7 @@ class PM100D:
 
         return self.query("POWer:THERmopile:RESPonse?")
 
-    def ask_Pyro(self) -> str:
+    def get_pyro(self) -> str:
         """
 
 
@@ -363,7 +294,7 @@ class PM100D:
 
         return self.query("ENERgy:PYRO:RESPonse?")
 
-    def ask_energyRange(self) -> str:
+    def get_energy_range(self) -> str:
         """
 
 
@@ -375,7 +306,7 @@ class PM100D:
         """
         return self.query("ENERgy:RANGe:UPPer?")
 
-    def ask_currentRange(self) -> str:
+    def get_current_range(self) -> str:
         """
 
 
@@ -387,7 +318,7 @@ class PM100D:
         """
         return self.query("CURRent:DC:UPPer?")
 
-    def ask_AutoCurrentRange(self) -> str:
+    def get_auto_current_range(self) -> str:
         """
 
 
@@ -399,7 +330,7 @@ class PM100D:
         """
         return self.query("CURRent:DC:AUTO?")
 
-    def ask_freqRange(self, state: str) -> str:
+    def get_freq_range(self, state: str) -> str:
         """Queries the frequency range.
 
 
@@ -430,7 +361,7 @@ class PM100D:
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_PowerUnits(self) -> str:
+    def get_power_units(self) -> str:
         """
 
 
@@ -443,7 +374,7 @@ class PM100D:
 
         return self.query("SENSe:POWer:DC:UNIT?")
 
-    def ask_AutoPowerRange(self) -> str:
+    def get_auto_power_range(self) -> str:
         """
 
 
@@ -456,7 +387,7 @@ class PM100D:
 
         return self.query("POWer:DC:RANGe:AUTO?")
 
-    def ask_PowerRange(self):
+    def get_power_range(self):
         """
 
 
@@ -469,7 +400,7 @@ class PM100D:
 
         return self.query("POWer:DC:RANGe:UPPer?")
 
-    def ask_voltRange(self):
+    def get_volt_range(self):
         """
 
 
@@ -482,7 +413,7 @@ class PM100D:
 
         return self.query("VOLTage:DC:UPPer?")
 
-    def ask_AutoVoltageRange(self):
+    def get_auto_voltage_range(self):
         """
 
 
@@ -495,7 +426,7 @@ class PM100D:
 
         return self.query("VOLTage:DC:AUTO?")
 
-    def ask_Wavelength(self):
+    def get_wavelength(self):
         """
 
 
@@ -508,7 +439,7 @@ class PM100D:
 
         return self.query("CORRection:WAVelength?")
 
-    def ask_BeamDiameter(self):
+    def get_beam_diameter(self):
         """
 
 
@@ -521,7 +452,7 @@ class PM100D:
 
         return self.query("CORRection:BEAMdiameter?")
 
-    def ask_Average(self):
+    def get_average(self):
         """
 
 
@@ -538,7 +469,7 @@ class PM100D:
     # Set Power,Energy,Current,Voltage Measurment Values aand Wavelength
     # =============================================================================
 
-    def set_PowerUnits(self, state: str) -> None:
+    def set_power_units(self, state: str) -> None:
         """
 
 
@@ -560,7 +491,7 @@ class PM100D:
         else:
             raise ValueError(f"Unknown input! You selected {state}. Allowed inputs are {stState}")
 
-    def set_AutoPowerRange(self, state: str | int) -> None:
+    def set_auto_power_range(self, state: str | int) -> None:
         """Switches the auto-ranging function on and off.
 
 
@@ -576,10 +507,10 @@ class PM100D:
             Error message.
 
         """
-        state = self._validate_on_off_state(state)
+        state = self._parse_state(state)
         self.write(f"POWer:DC:RANGe:AUTO {state}")
 
-    def set_PowerRange(self, value: float | int) -> None:
+    def set_power_range(self, value: float | int) -> None:
         """
 
 
@@ -596,12 +527,11 @@ class PM100D:
         """
 
         if type(value) == int or type(value) == float:
-            value = str(value)
-            self.write("POWer:DC:RANGe:UPPer " + value + " W")
+            self.write("POWer:DC:RANGe:UPPer " + str(value) + " W")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_AutoCurrentRange(self, state: str | int) -> None:
+    def set_auto_current_range(self, state: str | int) -> None:
         """Switches the auto-ranging function on and off.
 
 
@@ -617,10 +547,10 @@ class PM100D:
 
         """
 
-        state = self._validate_on_off_state(state)
+        state = self._parse_state(state)
         self.write(f"SENSe:CURRent:DC:RANGe:AUTO {state}")
 
-    def set_currentRange(self, value: float | int) -> None:
+    def set_current_range(self, value: float | int) -> None:
         """
 
 
@@ -638,12 +568,11 @@ class PM100D:
         """
 
         if type(value) == int or type(value) == float:
-            value = str(value)
-            self.write("SENSe:CURRent:DC:RANGe:UPPer " + value + " A")
+            self.write("SENSe:CURRent:DC:RANGe:UPPer " + str(value) + " A")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_AutoVoltageRange(self, state: str | int) -> None:
+    def set_auto_voltage_range(self, state: str | int) -> None:
         """Switches the auto-ranging function on and off.
 
 
@@ -660,10 +589,10 @@ class PM100D:
 
         """
 
-        state = self._validate_on_off_state(state)
+        state = self._parse_state(state)
         self.write(f"SENSe:VOLTage:DC:RANGe:AUTO {state}")
 
-    def set_voltageRange(self, value: float) -> None:
+    def set_voltage_range(self, value: float) -> None:
         """
 
 
@@ -680,12 +609,11 @@ class PM100D:
         """
 
         if type(value) == int or type(value) == float:
-            value = str(value)
-            self.write("SENSe:VOLTage:DC:RANGe:UPPer " + value + " V")
+            self.write("SENSe:VOLTage:DC:RANGe:UPPer " + str(value) + " V")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_energyRange(self, value: float | int) -> None:
+    def set_energy_range(self, value: float | int) -> None:
         """
 
 
@@ -702,12 +630,11 @@ class PM100D:
         """
 
         if type(value) == int or type(value) == float:
-            value = str(value)
-            self.write("SENSe:ENERgy:DC:RANGe:UPPer " + value + " J")
+            self.write("SENSe:ENERgy:DC:RANGe:UPPer " + str(value) + " J")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_WaveLength(self, value: float | int) -> None:
+    def set_wavelength(self, value: float | int) -> None:
         """
 
 
@@ -720,7 +647,7 @@ class PM100D:
 
         self.write(f"SENSe:CORRection:WAVelength {value} nm")
 
-    def set_Average(self, value: float | int) -> None:
+    def set_average(self, value: float | int) -> None:
         """
 
 
@@ -736,62 +663,62 @@ class PM100D:
     # Configure
     # =============================================================================
 
-    def ConfigPower(self) -> None:
+    def config_power(self) -> None:
         """
         Configure for power measurement.
 
         """
         self.write(":CONFigure:POWer")
 
-    def ConfigCurrent(self) -> None:
+    def config_current(self) -> None:
         """
         Configure for current measurement.
 
         """
         self.write(":CONFigure:CURRent:DC")
 
-    def ConfigVoltage(self) -> None:
+    def config_voltage(self) -> None:
         """
         Configure for voltage measurement.
 
         """
         self.write(":CONFigure::VOLTage:DC")
 
-    def ConfigEnergy(self) -> None:
+    def config_energy(self) -> None:
         """
         Configure for energy measurement.
 
         """
         self.write(":CONFigure:ENERgy")
 
-    def ConfigFreq(self) -> None:
+    def config_freq(self) -> None:
         """
         Configure for frequency measurement.
         """
         self.write(":CONFigure:FREQuency")
 
-    def ConfigPowerDensity(self) -> None:
+    def config_power_density(self) -> None:
         """
         Configure for power density measurement.
 
         """
         self.write(":CONFigure:PDENsity")
 
-    def ConfigEnergyDensity(self) -> None:
+    def config_energy_density(self) -> None:
         """
         Configure for energy density measurement.
 
         """
         self.write(":CONFigure:EDENsity")
 
-    def ConfigResistance(self) -> None:
+    def config_resistance(self) -> None:
         """
         Configure for sensor presence resistance measurement.
 
         """
         self.write(":CONFigure:RESistance")
 
-    def ConfigTemp(self) -> None:
+    def config_temp(self) -> None:
         """
         Configure for sensor temperature measurement.
 
@@ -802,62 +729,62 @@ class PM100D:
     # Perform Measurment
     # =============================================================================
 
-    def MeasPower(self) -> None:
+    def meas_power(self) -> None:
         """
         Performs a Power measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:POWer")
 
-    def MeasCurrent(self) -> None:
+    def meas_current(self) -> None:
         """
         Performs a current measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:CURRent:DC ")
 
-    def MeasVoltage(self) -> None:
+    def meas_voltage(self) -> None:
         """
         Performs a voltage measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:VOLTage:DC")
 
-    def MeasEnergy(self) -> None:
+    def meas_energy(self) -> None:
         """
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:ENERgy")
 
-    def MeasPowerDensity(self) -> None:
+    def meas_power_density(self) -> None:
         """
         Performs a power density measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:PDENsity")
 
-    def MeasEnergyDensity(self) -> None:
+    def meas_energy_density(self) -> None:
         """
         Performs an energy density measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:EDENsity")
 
-    def MeasResistance(self) -> None:
+    def meas_resistance(self) -> None:
         """
         Performs a sensor presence resistance measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:RESistance")
 
-    def MeasTemp(self) -> None:
+    def meas_temp(self) -> None:
         """
         Performs a sensor temperature measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
         """
         self.write("MEASure:TEMPerature")
 
-    def MeasFreq(self) -> None:
+    def meas_freq(self) -> None:
         """
         Performs a frequency measurement.
         Maxim: Does nothing? Measure with Init() or readData() instead!
@@ -868,35 +795,35 @@ class PM100D:
     # Measurment Test
     # =============================================================================
 
-    def adjustPowerMeas(self) -> None:
+    def adjust_power_meas(self) -> None:
         """Legacy function. Do not use.
         Adjust the power measurement interactively.
 
         """
         un = input("Set Power unit 'W' or 'dBm': ")
-        self.set_PowerUnits(un)
+        self.set_power_units(un)
         dis = input("Set Power Measurement Range 'auto' or 'manual': ")
         disList = ["auto", "manual"]
         if dis in disList:
             if dis == "auto":
-                self.set_AutoPowerRange("ON")
+                self.set_auto_power_range("ON")
             else:
-                self.set_AutoPowerRange("OFF")
+                self.set_auto_power_range("OFF")
                 val = float(input("Sets the upper Power range in W to: "))
-                self.set_PowerRange(val)
+                self.set_power_range(val)
         else:
             print("Invalid input! adjustPowerMeas() is stopped!")
 
-    def adjustEnergyMeas(self):
+    def adjust_energy_meas(self):
         """Legacy function. Do not use.
         Adjust the Energy Measurement interactively.
 
         """
         print("Energy is measured in J")
         value = float(input("Set Energy range in J: "))
-        self.set_energyRange(value)
+        self.set_energy_range(value)
 
-    def adjustVoltageRange(self):
+    def adjust_voltage_range(self):
         """Legacy function. Do not use.
         Adjust the Voltage Measurement interactively.
 
@@ -905,15 +832,15 @@ class PM100D:
         disList = ["auto", "manual"]
         if dis in disList:
             if dis == "auto":
-                self.set_AutoVoltageRange("ON")
+                self.set_auto_voltage_range("ON")
             else:
-                self.set_AutoVoltageRange("OFF")
+                self.set_auto_voltage_range("OFF")
                 value = float(input("Sets the upper range to: "))
-                self.set_voltageRange(value)
+                self.set_voltage_range(value)
         else:
             print("Invalid input! adjustVoltageRange() is stopped!")
 
-    def adjustCurrentRange(self):
+    def adjust_current_range(self):
         """Legacy function. Do not use.
         Adjust the Current Measurement interactively.
 
@@ -922,15 +849,15 @@ class PM100D:
         disList = ["auto", "manual"]
         if dis in disList:
             if dis == "auto":
-                self.set_AutoCurrentRange("ON")
+                self.set_auto_current_range("ON")
             else:
-                self.set_AutoVoltageRange("OFF")
+                self.set_auto_voltage_range("OFF")
                 value = float(input("Sets the upper range to: "))
-                self.set_currentRange(value)
+                self.set_current_range(value)
         else:
             print("Invalid input! adjustVoltageRange() is stopped!")
 
-    def set_Parameters(self, Type: str) -> None:
+    def set_parameters(self, Type: str) -> None:
         """Legacy function. Do not use.
         This function will set the measurement parameters interactively.
 
@@ -946,17 +873,17 @@ class PM100D:
         dissList = ["Power", "Energy", "Current", "Voltage"]
         if diss in dissList:
             if diss == "Power":
-                self.adjustPowerMeas()
+                self.adjust_power_meas()
             elif diss == "Energy":
-                self.adjustEnergyMeas()
+                self.adjust_energy_meas()
             elif diss == "Voltage":
-                self.adjustVoltageRange()
+                self.adjust_voltage_range()
             else:
-                self.adjustCurrentRange()
+                self.adjust_current_range()
         else:
             print("Invalid input! Function will be stopped!")
 
-    def DisplayParam(self, Type: str) -> None:
+    def display_param(self, Type: str) -> None:
         """Legacy function. Do not use.
         This function will print all the adjusted parameters.
 
@@ -969,31 +896,31 @@ class PM100D:
 
         """
 
-        print("Adapter Type: ", self.ask_AdapterType())
-        print("Max Frequency range: ", self.ask_freqRange("MAX"))
-        print("Min Frequency range: ", self.ask_freqRange("MIN"))
-        print("Wavelength: ", self.ask_Wavelength())
+        print("Adapter Type: ", self.get_adapter_type())
+        print("Max Frequency range: ", self.get_freq_range("MAX"))
+        print("Min Frequency range: ", self.get_freq_range("MIN"))
+        print("Wavelength: ", self.get_wavelength())
 
         meas = Type
         measList = ["Power", "Energy", "Current", "Voltage"]
         if meas in measList:
             if meas == "Power":
-                print("Power Unit set: ", self.ask_PowerUnits())
-                print("Power range auto: ", self.ask_AutoPowerRange())
-                print("Power Range set: ", self.ask_PowerRange())
+                print("Power Unit set: ", self.get_power_units())
+                print("Power range auto: ", self.get_auto_power_range())
+                print("Power Range set: ", self.get_power_range())
 
             elif meas == "Energy":
-                print("Energy range auto: ", self.ask_energyRange())
+                print("Energy range auto: ", self.get_energy_range())
             elif meas == "Voltage":
-                print("Voltage range auto: ", self.ask_AutoVoltageRange())
-                print("Voltage range: ", self.ask_voltRange())
+                print("Voltage range auto: ", self.get_auto_voltage_range())
+                print("Voltage range: ", self.get_volt_range())
             elif meas == "Current":
-                print("Current range auto: ", self.ask_AutoCurrentRange())
-                print("Current range: ", self.ask_currentRange())
+                print("Current range auto: ", self.get_auto_current_range())
+                print("Current range: ", self.get_current_range())
         else:
             print("Invalid Value! Function will be terminated.")
 
-    def DisplayParamDict(self, Type: str) -> None:
+    def display_param_dict(self, Type: str) -> tuple[list, list, list]:
         """This function will print all the adjusted parameters.
 
 
@@ -1016,10 +943,10 @@ class PM100D:
         Headers = ["Power", "Energy", "Current", "Voltage"]
         Params = ["Adapter Type", "Max Frequency range", "Min Frequency range", "Wavelength"]
         Data = [
-            self.ask_AdapterType(),
-            self.ask_freqRange("MAX"),
-            self.ask_freqRange("MIN"),
-            self.ask_Wavelength(),
+            self.get_adapter_type(),
+            self.get_freq_range("MAX"),
+            self.get_freq_range("MIN"),
+            self.get_wavelength(),
         ]
 
         meas = Type
@@ -1027,33 +954,33 @@ class PM100D:
         if meas in measList:
             if meas == "Power":
                 Params.append("Power Unit set")
-                Data.append(self.ask_PowerUnits())
+                Data.append(self.get_power_units())
                 Params.append("Power range auto")
-                Data.append(self.ask_AutoPowerRange())
+                Data.append(self.get_auto_power_range())
                 Params.append("Power Range set")
-                Data.append(self.ask_PowerRange())
+                Data.append(self.get_power_range())
 
             elif meas == "Energy":
                 Params.append("Energy range auto")
-                Data.append(self.ask_energyRange())
+                Data.append(self.get_energy_range())
 
             elif meas == "Voltage":
                 Params.append("Voltage range auto")
-                Data.append(self.ask_AutoVoltageRange())
+                Data.append(self.get_auto_voltage_range())
                 Params.append("Voltage range")
-                Data.append(self.ask_voltRange())
+                Data.append(self.get_volt_range())
             elif meas == "Current":
                 Params.append("Current range auto")
-                Data.append(self.ask_AutoCurrentRange())
+                Data.append(self.get_auto_current_range())
                 Params.append("Current range")
-                Data.append(self.ask_currentRange())
+                Data.append(self.get_current_range())
 
         else:
             print("Invalid Value! Function will be terminated.")
 
         return Headers, Data, Params
 
-    def PowerMeas(self) -> float:
+    def power_meas(self) -> float:
         """Legacy function. Do not use! Use get_Power instead.
         Performs a power measurement interactively.
 
@@ -1067,25 +994,26 @@ class PM100D:
 
         print("This Function performs Power measurements.")
         # print('To go on whit the measurments please check again the parameters set!')
-        self.set_Parameters("Power")
+        self.set_parameters("Power")
         print("#####################################")
-        self.DisplayParam("Power")
+        self.display_param("Power")
         print("#####################################")
 
         com = input("Should the measurement proceed yes/no: ")
         if com == "yes":
-            self.Init()
+            self.init()
             complete = "0"
             while complete != "1":
                 complete = self.OPC()
                 time.sleep(0.1)
-            self.ConfigPower()
-            self.MeasPower()
-            return self.fetchData()
+            self.config_power()
+            self.meas_power()
+            return self.fetch_data()
         else:
             print("Measurement is canceled!")
+            return float("nan")
 
-    def DefaultPowerMeas(self, WaveLength: float | int) -> float:
+    def default_power_meas(self, WaveLength: float | int) -> float:
         """Legacy function. Do not use! Use get_Power instead.
         Performs a power measurement with hard coded parameters!
         PowerRange is set to auto.
@@ -1102,21 +1030,21 @@ class PM100D:
 
         """
 
-        self.set_PowerUnits("dBm")
-        self.set_WaveLength(WaveLength)
-        self.set_AutoPowerRange("ON")
+        self.set_power_units("dBm")
+        self.set_wavelength(WaveLength)
+        self.set_auto_power_range("ON")
 
-        self.ConfigPower()
-        self.MeasPower()
-        self.Init()
+        self.config_power()
+        self.meas_power()
+        self.init()
         complete = "0"
         while complete != "1":
             complete = self.OPC()
             time.sleep(0.1)
 
-        return self.fetchData()
+        return self.fetch_data()
 
-    def DefaultPowerMeas_W(self, WaveLength: float | int) -> float:
+    def default_power_meas_w(self, WaveLength: float | int) -> float:
         """Legacy function. Do not use! Use get_Power instead.
         Performs a power measurement with hard coded parameters!
         PowerRange is set to auto.
@@ -1133,31 +1061,31 @@ class PM100D:
 
         """
 
-        self.set_PowerUnits("W")
-        self.set_WaveLength(WaveLength)
-        self.set_AutoPowerRange("ON")
+        self.set_power_units("W")
+        self.set_wavelength(WaveLength)
+        self.set_auto_power_range("ON")
 
-        self.ConfigPower()
-        self.MeasPower()
-        self.Init()
+        self.config_power()
+        self.meas_power()
+        self.init()
         complete = "0"
         while complete != "1":
             complete = self.OPC()
             time.sleep(0.1)
-        return self.fetchData()
+        return self.fetch_data()
 
-    def PowerSpecifications(self) -> None:
+    def power_specifications(self) -> None:
         """Legacy function. Do not use.
         This function will print all the adjusted parameters for the power measurement.
 
         """
 
-        self.DisplayParam("Power")
+        self.display_param("Power")
 
-    def get_Power(
+    def get_power(
         self,
-        unit: str = None,
-        waveLength: float = None,
+        unit: str | None = None,
+        waveLength: float | None = None,
         *,
         allow_NaN: bool = False,
         delay: float | None = None,
@@ -1183,28 +1111,98 @@ class PM100D:
         """
 
         if unit != None:
-            self.set_PowerUnits(unit)
+            self.set_power_units(unit)
         if waveLength != None:
-            self.set_WaveLength(waveLength)
-        if self.ReadConfig() == "POW":
+            self.set_wavelength(waveLength)
+        if self.read_config() == "POW":
             pass
         else:
-            self.ConfigPower()
+            self.config_power()
 
-        self.Init()
+        self.init()
         complete = "0"
         while complete != "1":  # From Maxim: This does not work.
             complete = self.OPC()
             time.sleep(0.1)
-        return self.fetchData(allow_NaN=allow_NaN, delay=delay)
+        return self.fetch_data(allow_NaN=allow_NaN, delay=delay)
 
-    def ask_Power(
+    def get_power(
         self,
-        unit: str = None,
-        waveLength: float = None,
+        unit: str | None = None,
+        waveLength: float | None = None,
         *,
         allow_NaN: bool = False,
         delay: float | None = None,
     ) -> float:
         """Calls get_Power()."""
-        return self.get_Power(unit, waveLength, allow_NaN, delay)
+        return self.get_power(unit=unit, waveLength=waveLength, allow_NaN=allow_NaN, delay=delay)
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    ReadConfig = read_config
+    fetchData = fetch_data
+    readData = read_data
+    Init = init
+    Abort = abort
+    ask_AdapterType = get_adapter_type
+    set_AdapterType = set_adapter_type
+    set_PD = set_pd
+    ask_beeper = get_beeper
+    ask_calibration = get_calibration
+    ask_PDPower = get_pd_power
+    ask_Thermopile = get_thermopile
+    ask_Pyro = get_pyro
+    ask_energyRange = get_energy_range
+    ask_currentRange = get_current_range
+    ask_AutoCurrentRange = get_auto_current_range
+    ask_freqRange = get_freq_range
+    ask_PowerUnits = get_power_units
+    ask_AutoPowerRange = get_auto_power_range
+    ask_PowerRange = get_power_range
+    ask_voltRange = get_volt_range
+    ask_AutoVoltageRange = get_auto_voltage_range
+    ask_Wavelength = get_wavelength
+    ask_BeamDiameter = get_beam_diameter
+    ask_Average = get_average
+    set_PowerUnits = set_power_units
+    set_AutoPowerRange = set_auto_power_range
+    set_PowerRange = set_power_range
+    set_AutoCurrentRange = set_auto_current_range
+    set_currentRange = set_current_range
+    set_AutoVoltageRange = set_auto_voltage_range
+    set_voltageRange = set_voltage_range
+    set_energyRange = set_energy_range
+    set_WaveLength = set_wavelength
+    set_Average = set_average
+    ConfigPower = config_power
+    ConfigCurrent = config_current
+    ConfigVoltage = config_voltage
+    ConfigEnergy = config_energy
+    ConfigFreq = config_freq
+    ConfigPowerDensity = config_power_density
+    ConfigEnergyDensity = config_energy_density
+    ConfigResistance = config_resistance
+    ConfigTemp = config_temp
+    MeasPower = meas_power
+    MeasCurrent = meas_current
+    MeasVoltage = meas_voltage
+    MeasEnergy = meas_energy
+    MeasPowerDensity = meas_power_density
+    MeasEnergyDensity = meas_energy_density
+    MeasResistance = meas_resistance
+    MeasTemp = meas_temp
+    MeasFreq = meas_freq
+    adjustPowerMeas = adjust_power_meas
+    adjustEnergyMeas = adjust_energy_meas
+    adjustVoltageRange = adjust_voltage_range
+    adjustCurrentRange = adjust_current_range
+    set_Parameters = set_parameters
+    DisplayParam = display_param
+    DisplayParamDict = display_param_dict
+    PowerMeas = power_meas
+    DefaultPowerMeas = default_power_meas
+    DefaultPowerMeas_W = default_power_meas_w
+    PowerSpecifications = power_specifications
+    get_Power = get_power
+    ask_Power = get_power

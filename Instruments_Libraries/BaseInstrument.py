@@ -30,12 +30,20 @@ class BaseInstrument:
         **kwargs : dict
             Additional arguments passed to `open_resource`.
         """
-        # Auto-format IP address if needed
-        # We assume it's an IP address if no '::' is present AND it's not a Serial/COM port
-        upper_res = resource_str.upper()
-        if "::" not in resource_str and not upper_res.startswith("COM") and "ASRL" not in upper_res:
-             resource_str = f"TCPIP::{resource_str}::INSTR"
+        import re
         
+        # Auto-format IP address or localhost to TCPIP VISA string if needed
+        # We assume it's an IP/locahost if it perfectly matches an IPv4 format or 'localhost'
+        ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$|^localhost$', re.IGNORECASE)
+        
+        # If the user just gave an IP, add the TCPIP...INSTR decorators
+        if ip_pattern.match(resource_str):
+             resource_str = f"TCPIP::{resource_str}::INSTR"
+        # If it's an IP with a port (socket), example: 192.168.1.1:5025
+        elif re.match(r'^(\d{1,3}\.){3}\d{1,3}:\d+$|^localhost:\d+$', resource_str, re.IGNORECASE):
+             ip, port = resource_str.split(':')
+             resource_str = f"TCPIP::{ip}::{port}::SOCKET"
+             
         self.resource_str = resource_str
         self.logger = logging.getLogger(f"{self.__class__.__name__}({resource_str})")
         

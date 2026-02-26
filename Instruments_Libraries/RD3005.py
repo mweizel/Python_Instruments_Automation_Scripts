@@ -5,8 +5,6 @@ Created on Mon Aug  1 12:14:47 2022
 @author: Martin.Mihaylov 
 """
 
-
-
 '''
 The script is take https://github.com/uberdaff/kd3005p/blob/master/kd3005p.py
 and cosmetically preprocessed.
@@ -27,260 +25,217 @@ and cosmetically preprocessed.
 #  MA 02110-1301, USA.
 #  
 #
-# Requirement: pyserial
+# Requirement: pyvisa (migrated from pyserial)
 #
-# getIdn() - Get instrument identification
-# set_Volt(tal) - Set the voltage on the output
-# ask_Volt() - Get the 'set' voltage
-# read_Volt() - Get a measurement of the voltage
-# set_Amp(tal) - Set the current limit
-# ask_Amp() - Get the 'set' current limit
-# read_Amp() - Get a measurement of the output current
-# set_Out(bool) - Set the state of the output
-# set_Ocp(bool) - Set the state of the over current protection
-# ask_Status() - Get the state of the output and CC/CV
+# get_idn() - Get instrument identification
+# set_volt(tal) - Set the voltage on the output
+# get_volt() - Get the 'set' voltage
+# read_volt() - Get a measurement of the voltage
+# set_amp(tal) - Set the current limit
+# get_amp() - Get the 'set' current limit
+# read_amp() - Get a measurement of the output current
+# set_out(bool) - Set the state of the output
+# set_ocp(bool) - Set the state of the over current protection
+# get_status() - Get the state of the output and CC/CV
 '''
 
-import sys
 import time
-import serial
+import pyvisa
+import pyvisa.constants
+from typing import Dict, Any, Optional
+from .BaseInstrument import BaseInstrument
 
-class RD3005:
+class RD3005(BaseInstrument):
     
-    def __init__(self, psu_com):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
         '''
-        
-
         Parameters
         ----------
-        psu_com : str
+        resource_str : str
             COM Port
-
-        Returns
-        -------
-        None
-
         '''
+        # Let BaseInstrument handle the pyvisa connection.
+        # We enforce serial settings required by RD3005 inline.
         try:
-            psu_com = serial.Serial(
-                port=psu_com,
-                baudrate=9600,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS
+            kwargs.setdefault('baud_rate', 9600)
+            kwargs.setdefault('data_bits', 8)
+            kwargs.setdefault('parity', pyvisa.constants.Parity.none)
+            kwargs.setdefault('stop_bits', pyvisa.constants.StopBits.one)
+            kwargs.setdefault('read_termination', "")
+            kwargs.setdefault('write_termination', "")
+            super().__init__(
+                resource_str,
+                visa_library=visa_library,
+                **kwargs
             )
-            self.psu_com = psu_com
-            self.isConnected = True
-            self.status=self.ask_Status()
-        except:
+            self.status: Dict[str, str] = {}
+            self.status = self.get_status()
+        except pyvisa.errors.VisaIOError as e:
             print("COM port failure:")
-            print(sys.exc_info())
-            self.isConnected = False
+            print(e)
     
-    def Close(self):
-        self.psu_com.close()
-        print('Instrument KD3005 is closed!')
-    
-    def serWriteAndRecieve(self, data, delay=0.05): 
-        self.psu_com.write(data.encode())
-        out = ''
+    def serWriteAndRecieve(self, data: str, delay: float = 0.05) -> Optional[str]: 
+        self._resource.write_raw(data.encode())
         time.sleep(delay)
-        while self.psu_com.in_waiting > 0:
-            out += self.psu_com.read(1).decode()
-        if out != '':
-            return out
+        
+        # PyVISA backends provide bytes_in_buffer for Serial/USB profiles.
+        target_bytes = getattr(self._resource, 'bytes_in_buffer', 0)
+        if target_bytes > 0:
+            out = self._resource.read_bytes(target_bytes).decode()
+            if out != '':
+                return out
         return None
 
-    def _query(self, command, delay=0.05):
+    def _query_local(self, command: str, delay: float = 0.05) -> str:
         resp = self.serWriteAndRecieve(command, delay)
         if resp is None:
             raise TimeoutError(f"No response for command '{command}'")
         return resp
 
-    def _query_float(self, command, delay=0.05):
-        return float(self._query(command, delay))
+    def _query_float(self, command: str, delay: float = 0.05) -> float:
+        return float(self._query_local(command, delay))
     
-    def getIdn(self):
+    def get_idn(self) -> str:
         '''
-        
-
         Returns
         -------
-        TYPE  str
+        str
             Instrument identification 
-
         '''
-        return self._query("*IDN?", 0.3)
+        return self._query_local("*IDN?", 0.3)
     
-    def set_Volt(self, voltage, delay=0.01):
+    def set_volt(self, voltage: float, delay: float = 0.01) -> None:
         '''
-        
-
         Parameters
         ----------
         voltage : int/float
             Set the voltage on the Display
-            
-        delay : 0.01s Delay 
-            
-
-        Returns
-        -------
-        None
-
+        delay : float
+            0.01s Delay 
         '''
         self.serWriteAndRecieve("VSET1:"+"{:1.2f}".format(voltage))
         time.sleep(delay) 
     
-    def ask_Volt(self):
+    def get_volt(self) -> float:
         '''
-        
-
         Returns
         -------
-        TYPE float
+        float
             Voltage set.
-
         '''
         return self._query_float("VSET1?")
     
-    def read_Volt(self):
+    def read_volt(self) -> float:
         '''
-        
-
         Returns
         -------
-        TYPE float
+        float
             Voltage Measured
-
         '''
         return self._query_float("VOUT1?")
     
     
-    def set_Amp(self, amp, delay=0.01):
+    def set_amp(self, amp: float, delay: float = 0.01) -> None:
         '''
-        
-
         Parameters
         ----------
         amp : int/float
             Set the current on the Display
-            
-        delay : 0.01s Delay 
-            
-
-        Returns
-        -------
-        None
-
+        delay : float
+            0.01s Delay 
         '''
         self.serWriteAndRecieve("ISET1:"+"{:1.3f}".format(amp))
         time.sleep(delay) 
     
-    def ask_Amp(self):
+    def get_amp(self) -> float:
         '''
-        
-
         Returns
         -------
-        TYPE float
+        float
             current set.
-
         '''
         return self._query_float("ISET1?")
     
-    def read_Amp(self):
+    def read_amp(self) -> float:
         '''
-        
-
         Returns
         -------
-        TYPE float
+        float
             Current Measured
-
         '''
         return self._query_float("IOUT1?")
     
-    def set_Out(self, state):
+    def set_out(self, state: str) -> None:
         '''
-        
-
         Parameters
         ----------
         state : str (ON/OFF)
             Turn Output ON and OFF
-
-        Returns
-        -------
-        None.
-
         '''
-        if(state == 'ON'):
+        state_norm = self._parse_state(state)
+        if state_norm == "ON":
             self.serWriteAndRecieve("OUT1")
-        elif(state == 'OFF'):
+        elif state_norm == "OFF":
             self.serWriteAndRecieve("OUT0")
     
-    def set_Ocp(self, state):
+    def set_ocp(self, state: str) -> None:
         '''
-        
-
         Parameters
         ----------
         state : str (ON/OFF)
             Set the state of the overcurrent protection ON and OFF
-
-        Returns
-        -------
-        None.
-
         '''
-        if(state == 'ON'):
+        state_norm = self._parse_state(state)
+        if state_norm == "ON":
             self.serWriteAndRecieve("OCP1")
-        elif(state == 'OFF'):
+        elif state_norm == "OFF":
             self.serWriteAndRecieve("OCP0")
     
-    def ask_Status(self):
+    def get_status(self) -> Dict[str, str]:
         '''
-        
-
         Returns
         -------
-        TYPE
+        dict
             Get the state of the output and CC/CV
-
         '''
-        resp = self._query("STATUS?")
+        resp = self._query_local("STATUS?")
         stat = ord(resp[0])
-        if (stat&(1 << 0))==0:
-            self.status["Mode"]="CC"
+        self.status = {}
+        if (stat & (1 << 0)) == 0:
+            self.status["Mode"] = "CC"
         else:
-            self.status["Mode"]="CV"
-        if (stat&(1 << 6))==0:
-            self.status["Output"]="Off"
+            self.status["Mode"] = "CV"
+        if (stat & (1 << 6)) == 0:
+            self.status["Output"] = "Off"
         else:
-            self.status["Output"]="On"
+            self.status["Output"] = "On"
         return self.status
 
-# =============================================================================
-# Get/Save Data
-# =============================================================================
-
-    def get_data(self):
+    def get_data(self) -> Dict[str, float]:
         '''
-        
-
         Returns
         -------
         OutPut : dict
             Return a dictionary with the measured voltage and current.
-
         '''
         OutPut = {}
-        Voltage = self.read_Volt()
-        Current = self.read_Amp()
+        Voltage = self.read_volt()
+        Current = self.read_amp()
         OutPut['Voltage/V'] = Voltage
         OutPut['Current/A'] = Current
         
-        return  OutPut       
-        
-    
+        return OutPut
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    getIdn = get_idn
+    set_Volt = set_volt
+    ask_Volt = get_volt
+    read_Volt = read_volt
+    set_Amp = set_amp
+    ask_Amp = get_amp
+    read_Amp = read_amp
+    set_Out = set_out
+    set_Ocp = set_ocp
+    ask_Status = get_status

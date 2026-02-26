@@ -8,31 +8,27 @@ Created on Tue Feb 15 10:57:49 2022
 
 import numpy as np
 import pyvisa as visa
+from .BaseInstrument import BaseInstrument
+from typing import List, Dict, Union
 
 
     
-class APPH:
-    def __init__(self, resource_str):
-
-        self._resource = visa.ResourceManager().open_resource(str(resource_str),query_delay  = 0.5,read_termination = '\n')
-        print(self._resource.query('*IDN?'))
+class APPH(BaseInstrument):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
+        kwargs.setdefault('query_delay', 0.5)
+        kwargs.setdefault('read_termination', '\n')
+        super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
+        print(self.get_idn())
 
         
-    def query(self, message):
-        return self._resource.query(message)
+
     
-    def write(self, message):
-        return self._resource.write(message)
-    
-    def Close(self):
-        print('AnaPico AG,APPH20G is closed!')
-        self._resource.close()
         
         
 # =============================================================================
 # Initiate System
 # =============================================================================
-    def Init(self):
+    def init(self):
         '''
         
 
@@ -48,7 +44,7 @@ class APPH:
 # Abort
 # =============================================================================
 
-    def Abort(self):
+    def abort(self):
         '''
         
 
@@ -65,7 +61,7 @@ class APPH:
 # ASK
 # =============================================================================
 
-    def ask_CalcFreq(self):
+    def get_calc_freq(self):
         '''
         
 
@@ -80,7 +76,7 @@ class APPH:
 
 
 
-    def ask_CalcPower(self):
+    def get_calc_power(self):
         '''
         
 
@@ -96,7 +92,7 @@ class APPH:
 
 
     
-    def ask_DUTPortVoltage(self):
+    def get_dut_port_voltage(self):
         '''
         
 
@@ -112,7 +108,7 @@ class APPH:
     
     
     
-    def ask_DUTPortStatus(self):
+    def get_dut_port_status(self):
         '''
         
 
@@ -133,7 +129,7 @@ class APPH:
     
     
     
-    def ask_SysMeasMode(self):
+    def get_sys_meas_mode(self):
         '''
         
 
@@ -148,7 +144,7 @@ class APPH:
     
     
     
-    def ask_SystemError(self):
+    def get_system_error(self):
         '''
         
 
@@ -169,7 +165,7 @@ class APPH:
 # Ask Phase Noise
 # =============================================================================
 
-    def ask_PMTraceJitter(self):
+    def get_pm_trace_jitter(self):
         '''
         
 
@@ -186,7 +182,7 @@ class APPH:
         
         
         
-    def ask_PMTraceNoise(self):
+    def get_pm_trace_noise(self):
         '''
         
 
@@ -202,7 +198,7 @@ class APPH:
     
     
     
-    def ask_PN_IFGain(self):
+    def get_pn_if_gain(self):
         '''
         
 
@@ -218,7 +214,7 @@ class APPH:
     
     
     
-    def ask_PN_StartFreq(self):
+    def get_pn_start_freq(self):
         '''
         
 
@@ -234,7 +230,7 @@ class APPH:
     
     
     
-    def ask_PN_StopFreq(self):
+    def get_pn_stop_freq(self):
         '''
         
 
@@ -248,7 +244,7 @@ class APPH:
     
     
     
-    def ask_PNSpot(self,value):
+    def get_pn_spot(self,value):
         '''
         
 
@@ -277,7 +273,7 @@ class APPH:
 # =============================================================================
 
     
-    def ask_ANTraceFreq(self):
+    def get_an_trace_freq(self):
         '''
         
 
@@ -293,7 +289,7 @@ class APPH:
     
     
     
-    def ask_ANTraceNoise(self):
+    def get_an_trace_noise(self):
         '''
         
 
@@ -310,7 +306,7 @@ class APPH:
     
     
     
-    def ask_ANTraceSpurFreq(self):
+    def get_an_trace_spur_freq(self):
         '''
         
 
@@ -327,7 +323,7 @@ class APPH:
     
     
     
-    def ask_ANTraceSpurPower(self):
+    def get_an_trace_spur_power(self):
         '''
         
 
@@ -344,7 +340,7 @@ class APPH:
     
     
     
-    def ask_ANSpot(self,value):
+    def get_an_spot(self,value):
         '''
         
 
@@ -373,7 +369,7 @@ class APPH:
 # =============================================================================
 
 
-    def ask_FNTraceFreq(self):
+    def get_fn_trace_freq(self):
         '''
         
 
@@ -389,7 +385,7 @@ class APPH:
     
     
     
-    def ask_FNTraceNoise(self):
+    def get_fn_trace_noise(self):
         '''
         
 
@@ -404,7 +400,7 @@ class APPH:
     
     
     
-    def ask_FNTraceSpurFreq(self):
+    def get_fn_trace_spur_freq(self):
         '''
         
 
@@ -419,7 +415,7 @@ class APPH:
     
     
     
-    def ask_FNTraceSpurPower(self):
+    def get_fn_trace_spur_power(self):
         '''
         
 
@@ -435,7 +431,7 @@ class APPH:
     
     
     
-    def ask_FNSpot(self,value):
+    def get_fn_spot(self,value):
         '''
         
 
@@ -461,7 +457,7 @@ class APPH:
 # Ask Voltage controlled Oscillator
 # =============================================================================
 
-    def ask_VCOTraceFreq(self):
+    def get_vco_trace_freq(self):
         '''
         
 
@@ -477,7 +473,7 @@ class APPH:
     
     
     
-    def ask_VCOTracePNoise(self,chan):
+    def get_vco_trace_p_noise(self,chan):
         '''
         
 
@@ -508,7 +504,7 @@ class APPH:
             
             
             
-    def ask_VCOTracePower(self):
+    def get_vco_trace_power(self):
         '''
         
 
@@ -524,7 +520,7 @@ class APPH:
     
     
     
-    def ask_VCOTraceVoltage(self):
+    def get_vco_trace_voltage(self):
         '''
         
 
@@ -541,7 +537,7 @@ class APPH:
     
     
     
-    def ask_VSOTestFreq(self):
+    def get_vso_test_freq(self):
         '''
         
 
@@ -556,7 +552,7 @@ class APPH:
     
     
     
-    def ask_VSOTestNoise(self):
+    def get_vso_test_noise(self):
         '''
         
 
@@ -572,7 +568,7 @@ class APPH:
     
     
     
-    def ask_VCOTestPower(self):
+    def get_vco_test_power(self):
         '''
         
 
@@ -588,7 +584,7 @@ class APPH:
     
     
     
-    def ask_VCOTestStart(self):
+    def get_vco_test_start(self):
         '''
         
 
@@ -605,7 +601,7 @@ class APPH:
     
     
     
-    def ask_VCOTestStop(self):
+    def get_vco_test_stop(self):
         '''
         
 
@@ -622,7 +618,7 @@ class APPH:
     
     
     
-    def ask_VCOTestISupply(self):
+    def get_vco_test_i_supply(self):
         '''
         
 
@@ -637,7 +633,7 @@ class APPH:
     
     
     
-    def ask_VCOKPuShing(self):
+    def get_vcok_pu_shing(self):
         '''
         
 
@@ -653,7 +649,7 @@ class APPH:
     
     
     
-    def ask_VCOKVCO(self):
+    def get_vcokvco(self):
         '''
         
 
@@ -669,7 +665,7 @@ class APPH:
     
     
         
-    def ask_VCOTYPE(self):
+    def get_vcotype(self):
         '''
         
 
@@ -684,7 +680,7 @@ class APPH:
     
     
     
-    def ask_VCOTestPNoise(self):
+    def get_vco_test_p_noise(self):
         '''
         
 
@@ -699,7 +695,7 @@ class APPH:
     
     
     
-    def ask_VCOTestPnoiseOFFSet(self,state):
+    def get_vco_test_pnoise_off_set(self,state):
         '''
         
 
@@ -729,7 +725,7 @@ class APPH:
     
     
     
-    def ask_VCOTestPoint(self):
+    def get_vco_test_point(self):
         '''
         
 
@@ -746,7 +742,7 @@ class APPH:
 # SET
 # =============================================================================
 
-    def set_Output(self,status):
+    def set_output(self,status):
         '''
         
 
@@ -775,7 +771,7 @@ class APPH:
     
     
     
-    def set_SysMeasMode(self,state):
+    def set_sys_meas_mode(self,state):
         '''
         
 
@@ -811,7 +807,7 @@ class APPH:
             
             
             
-    def set_FreqExecute(self):
+    def set_freq_execute(self):
         '''
         
 
@@ -827,7 +823,7 @@ class APPH:
         
         
         
-    def set_PowerExecute(self):
+    def set_power_execute(self):
         '''
         
 
@@ -843,7 +839,7 @@ class APPH:
         
         
         
-    def set_CalcAverage(self,event):
+    def set_calc_average(self,event):
         '''
         
         
@@ -868,7 +864,7 @@ class APPH:
         
 
 
-    def set_DUTPortVoltage(self,value):
+    def set_dut_port_voltage(self,value):
         '''
         
 
@@ -889,7 +885,7 @@ class APPH:
         self.write(':SOURce:TUNE:DUT:VOLT '+str(value))
         
     
-    def set_DUTPortStatus(self,state):
+    def set_dut_port_status(self,state):
         '''
         
 
@@ -922,7 +918,7 @@ class APPH:
 # Set Phase Noise
 # =============================================================================
 
-    def set_PNIFGain(self,value):
+    def set_pnif_gain(self,value):
         '''
         
 
@@ -951,7 +947,7 @@ class APPH:
             
             
             
-    def set_PNStartFreq(self,value):
+    def set_pn_start_freq(self,value):
         '''
         
 
@@ -970,7 +966,7 @@ class APPH:
         self.write(':SENSe:PN:FREQuency:STARt '+str(value))
         
         
-    def set_PNStopFreq(self,value):
+    def set_pn_stop_freq(self,value):
         '''
         
 
@@ -995,7 +991,7 @@ class APPH:
 # =============================================================================
         
 
-    def set_VCOWait(self,state,value):
+    def set_vco_wait(self,state,value):
         '''
         
 
@@ -1028,7 +1024,7 @@ class APPH:
         
         
         
-    def set_VCOTestFreq(self,state):
+    def set_vco_test_freq(self,state):
         '''
         
 
@@ -1058,7 +1054,7 @@ class APPH:
             
             
             
-    def set_VCOTestNoise(self,state):
+    def set_vco_test_noise(self,state):
         '''
         
 
@@ -1089,7 +1085,7 @@ class APPH:
     
     
     
-    def set_VCOTestPower(self,state):
+    def set_vco_test_power(self,state):
         '''
         
 
@@ -1121,7 +1117,7 @@ class APPH:
             
             
     
-    def set_VCOTestStart(self,value):
+    def set_vco_test_start(self,value):
         '''
         
 
@@ -1142,7 +1138,7 @@ class APPH:
         
         
     
-    def set_VCOTestStop(self,value):
+    def set_vco_test_stop(self,value):
         '''
         
 
@@ -1163,7 +1159,7 @@ class APPH:
         
         
         
-    def set_VCOTestISupply(self,state):
+    def set_vco_test_i_supply(self,state):
         '''
         
 
@@ -1193,7 +1189,7 @@ class APPH:
         
         
     
-    def set_VCOKPuShing(self,state):
+    def set_vcok_pu_shing(self,state):
         '''
         
 
@@ -1224,7 +1220,7 @@ class APPH:
     
     
     
-    def set_VCOKVCO(self,state):
+    def set_vcokvco(self,state):
         '''
         
 
@@ -1255,7 +1251,7 @@ class APPH:
     
     
     
-    def set_VCOTYPE(self,typ):
+    def set_vcotype(self,typ):
         '''
         
 
@@ -1286,7 +1282,7 @@ class APPH:
         
         
         
-    def set_VCOTestPNoise(self,state):
+    def set_vco_test_p_noise(self,state):
         '''
         
 
@@ -1316,7 +1312,7 @@ class APPH:
             
             
             
-    def set_VCOTestPnoiseOFFSet(self,value1,value2,value3,value4):
+    def set_vco_test_pnoise_off_set(self,value1=0,value2=0,value3=0,value4=0):
         '''
         
 
@@ -1346,12 +1342,12 @@ class APPH:
 
         '''
         
-        self.write(':SENSe:VCO:TEST:Pnoise:OFFSet ' +str(value1)+','+str(value3)+','\
-                   +str(value4)+','+str(value4))
+        self.write(':SENSe:VCO:TEST:Pnoise:OFFSet ' +str(value1)+','+str(value2)+','\
+                   +str(value3)+','+str(value4))
         
             
             
-    def set_VCOTestPoint(self,value):
+    def set_vco_test_point(self,value):
         '''
         
 
@@ -1398,11 +1394,11 @@ class APPH:
         This is a small example how to make a phase noise measurement.
         '''
         
-        self.set_SysMeasMode('PN') # select phase noise measurement
-        self.Init()                # start measurement
-        self.set_CalcAverage('ALL') # wait for the measurement to finish
-        err = self.ask_SystemError()     # check if measurement was successful
-        val = self.ask_PNSpot(value) #request spot noise value at 1MHz offset
+        self.set_sys_meas_mode('PN') # select phase noise measurement
+        self.init()                # start measurement
+        self.set_calc_average('ALL') # wait for the measurement to finish
+        err = self.get_system_error()     # check if measurement was successful
+        val = self.get_pn_spot(value) #request spot noise value at 1MHz offset
         ResultDic = {}
         ResultDic['Error Value'] = err # Write Error status if 0 no errors!
         ResultDic['Spot Phase Noise @ ' +str(value)] = val
@@ -1414,10 +1410,10 @@ class APPH:
         '''
         This is a small example how to make a phase noise measurement.
         '''
-        self.set_SysMeasMode('AN') # select amplitude noise measurement
-        self.Init()                # start measurement
-        err = self.ask_SystemError()     # check if measurement was successful
-        val = self.ask_ANSpot(value) #request spot noise value at 1MHz offset
+        self.set_sys_meas_mode('AN') # select amplitude noise measurement
+        self.init()                # start measurement
+        err = self.get_system_error()     # check if measurement was successful
+        val = self.get_an_spot(value) #request spot noise value at 1MHz offset
         ResultDic = {}
         ResultDic['Error Value'] = err #Write Error status if 0 no errors!
         ResultDic['Spot Amplitude Noise @ ' +str(value)] = val
@@ -1430,10 +1426,10 @@ class APPH:
         '''
         This is a small example how to make a frequency noise measurement.
         '''
-        self.set_SysMeasMode('FN') # select amplitude noise measurement
-        self.Init()                # start measurement
-        err = self.ask_SystemError()     # check if measurement was successful
-        val = self.ask_FNSpot(value) #request spot noise value at 1MHz offset
+        self.set_sys_meas_mode('FN') # select amplitude noise measurement
+        self.init()                # start measurement
+        err = self.get_system_error()     # check if measurement was successful
+        val = self.get_fn_spot(value) #request spot noise value at 1MHz offset
         ResultDic = {}
         ResultDic['Error Value'] = err #Write Error status if 0 no errors!
         ResultDic['Spot Frequency Noise @ ' +str(value)] = val
@@ -1447,40 +1443,40 @@ class APPH:
         '''
         
         # Config
-        self.set_SysMeasMode('VCO') # Select VCO characterization
-        self.set_VCOTestFreq('ON') # Enable frequency parameter
-        self.set_VCOTestISupply('ON') # Enable supply current parameter
-        self.set_VCOKPuShing('ON') # Enable pushing parameter
-        self.set_VCOKVCO('ON') # Enable Kvco parameter
-        self.set_VCOTestPNoise('ON') # Enable spot noise parameter
-        self.set_VCOTestPnoiseOFFSet(NoieseOffset1,NoieseOffset2) # Set two spot noise offsets: 1.2kHz, 100kHz
-        self.set_VCOTestPower('ON') # Enable power parameter
+        self.set_sys_meas_mode('VCO') # Select VCO characterization
+        self.set_vco_test_freq('ON') # Enable frequency parameter
+        self.set_vco_test_i_supply('ON') # Enable supply current parameter
+        self.set_vcok_pu_shing('ON') # Enable pushing parameter
+        self.set_vcokvco('ON') # Enable Kvco parameter
+        self.set_vco_test_p_noise('ON') # Enable spot noise parameter
+        self.set_vco_test_pnoise_off_set(NoieseOffset1,NoieseOffset2) # Set two spot noise offsets: 1.2kHz, 100kHz
+        self.set_vco_test_power('ON') # Enable power parameter
         
         
         # Measurement
-        self.set_VCOTYPE('VCO') # Set DUT Type (VCO or VCXO)
-        self.set_VCOTestPoint(measPoints) # Set 11 measurement points
-        self.set_VCOTestStart(tunRangeMin) # Set tuning range minimum to 0.5V
-        self.set_VCOTestStop(tunRangeMax) # Set tuning range maximum to 10V
-        self.set_DUTPortVoltage(SupplyVoltage) # Set supply voltage to 6V
-        self.set_DUTPortStatus('ON') # Enable supply voltage
-        self.Init()                # Start measurement
+        self.set_vcotype('VCO') # Set DUT Type (VCO or VCXO)
+        self.set_vco_test_point(measPoints) # Set 11 measurement points
+        self.set_vco_test_start(tunRangeMin) # Set tuning range minimum to 0.5V
+        self.set_vco_test_stop(tunRangeMax) # Set tuning range maximum to 10V
+        self.set_dut_port_voltage(SupplyVoltage) # Set supply voltage to 6V
+        self.set_dut_port_status('ON') # Enable supply voltage
+        self.init()                # Start measurement
         
         
         # Loop
-        self.set_VCOWait('ALL',delay) # Wait for the measurement to finish
-        err = self.ask_SystemError() # Check if measurement was successful
+        self.set_vco_wait('ALL',delay) # Wait for the measurement to finish
+        err = self.get_system_error() # Check if measurement was successful
         ResultDic = {}
         
         
         # Read results
-        ResultDic['control voltage'] = self.ask_VCOTraceVoltage() # request control voltage data array
-        ResultDic['frequency data'] = self.ask_VCOTraceFreq() # Request frequency data array
-        ResultDic['Kvco data'] = self.ask_VCOKVCO() # Request Kvco data array
-        ResultDic['pushing data'] = self.ask_VCOKPuShing() # Request pushing data array
-        ResultDic['supply current data'] = self.ask_VCOTestISupply() # Request supply current data array
-        ResultDic['power level'] = self.ask_VCOTracePower() # Request power level data array
-        ResultDic['spot noise data array @offset #1 (1.2kHz)'] = self.ask_VCOTestPnoiseOFFSet(1) # Request spot noise data array @offset #1 (1.2kHz)
+        ResultDic['control voltage'] = self.get_vco_trace_voltage() # request control voltage data array
+        ResultDic['frequency data'] = self.get_vco_trace_freq() # Request frequency data array
+        ResultDic['Kvco data'] = self.get_vcokvco() # Request Kvco data array
+        ResultDic['pushing data'] = self.get_vcok_pu_shing() # Request pushing data array
+        ResultDic['supply current data'] = self.get_vco_test_i_supply() # Request supply current data array
+        ResultDic['power level'] = self.get_vco_trace_power() # Request power level data array
+        ResultDic['spot noise data array @offset #1 (1.2kHz)'] = self.get_vco_test_pnoise_off_set(1) # Request spot noise data array @offset #1 (1.2kHz)
         ResultDic['Error Value'] = err # Write Error status if 0 no errors!
         
         
@@ -1489,3 +1485,70 @@ class APPH:
         
 
         
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    Close = BaseInstrument.close
+    Init = init
+    Abort = abort
+    ask_CalcFreq = get_calc_freq
+    ask_CalcPower = get_calc_power
+    ask_DUTPortVoltage = get_dut_port_voltage
+    ask_DUTPortStatus = get_dut_port_status
+    ask_SysMeasMode = get_sys_meas_mode
+    ask_SystemError = get_system_error
+    ask_PMTraceJitter = get_pm_trace_jitter
+    ask_PMTraceNoise = get_pm_trace_noise
+    ask_PN_IFGain = get_pn_if_gain
+    ask_PN_StartFreq = get_pn_start_freq
+    ask_PN_StopFreq = get_pn_stop_freq
+    ask_PNSpot = get_pn_spot
+    ask_ANTraceFreq = get_an_trace_freq
+    ask_ANTraceNoise = get_an_trace_noise
+    ask_ANTraceSpurFreq = get_an_trace_spur_freq
+    ask_ANTraceSpurPower = get_an_trace_spur_power
+    ask_ANSpot = get_an_spot
+    ask_FNTraceFreq = get_fn_trace_freq
+    ask_FNTraceNoise = get_fn_trace_noise
+    ask_FNTraceSpurFreq = get_fn_trace_spur_freq
+    ask_FNTraceSpurPower = get_fn_trace_spur_power
+    ask_FNSpot = get_fn_spot
+    ask_VCOTraceFreq = get_vco_trace_freq
+    ask_VCOTracePNoise = get_vco_trace_p_noise
+    ask_VCOTracePower = get_vco_trace_power
+    ask_VCOTraceVoltage = get_vco_trace_voltage
+    ask_VSOTestFreq = get_vso_test_freq
+    ask_VSOTestNoise = get_vso_test_noise
+    ask_VCOTestPower = get_vco_test_power
+    ask_VCOTestStart = get_vco_test_start
+    ask_VCOTestStop = get_vco_test_stop
+    ask_VCOTestISupply = get_vco_test_i_supply
+    ask_VCOKPuShing = get_vcok_pu_shing
+    ask_VCOKVCO = get_vcokvco
+    ask_VCOTYPE = get_vcotype
+    ask_VCOTestPNoise = get_vco_test_p_noise
+    ask_VCOTestPnoiseOFFSet = get_vco_test_pnoise_off_set
+    ask_VCOTestPoint = get_vco_test_point
+    set_Output = set_output
+    set_SysMeasMode = set_sys_meas_mode
+    set_FreqExecute = set_freq_execute
+    set_PowerExecute = set_power_execute
+    set_CalcAverage = set_calc_average
+    set_DUTPortVoltage = set_dut_port_voltage
+    set_DUTPortStatus = set_dut_port_status
+    set_PNIFGain = set_pnif_gain
+    set_PNStartFreq = set_pn_start_freq
+    set_PNStopFreq = set_pn_stop_freq
+    set_VCOWait = set_vco_wait
+    set_VCOTestFreq = set_vco_test_freq
+    set_VCOTestNoise = set_vco_test_noise
+    set_VCOTestPower = set_vco_test_power
+    set_VCOTestStart = set_vco_test_start
+    set_VCOTestStop = set_vco_test_stop
+    set_VCOTestISupply = set_vco_test_i_supply
+    set_VCOKPuShing = set_vcok_pu_shing
+    set_VCOKVCO = set_vcokvco
+    set_VCOTYPE = set_vcotype
+    set_VCOTestPNoise = set_vco_test_p_noise
+    set_VCOTestPnoiseOFFSet = set_vco_test_pnoise_off_set
+    set_VCOTestPoint = set_vco_test_point

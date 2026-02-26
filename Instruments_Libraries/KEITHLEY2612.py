@@ -35,7 +35,8 @@ class KEITHLEY2612(BaseInstrument):
         else:
             self.logger.info(f"Connected to: {idn}")
 
-        self._resource.read_termination = "\n"
+        kwargs.setdefault('read_termination', '\n')
+        self._resource.read_termination = kwargs['read_termination']
 
         # Internal Variables
         self._ChannelLS = ["a", "b"]
@@ -56,7 +57,7 @@ class KEITHLEY2612(BaseInstrument):
     # Checks and Validations
     # =============================================================================
 
-    def _validate_channel(self, channel: str) -> str:
+    def validate_channel(self, channel: str) -> str:
         """
         Validate and normalize channel input.
 
@@ -80,7 +81,7 @@ class KEITHLEY2612(BaseInstrument):
             raise ValueError(f"Invalid channel '{channel}'. Must be one of: {self._ChannelLS}")
         return channel
 
-    def _validate_state(self, state: int | str | bool, output: bool = False) -> str:
+    def validate_state(self, state: int | str | bool, output: bool = False) -> str:
         """
         Validate and normalize state input.
 
@@ -123,7 +124,7 @@ class KEITHLEY2612(BaseInstrument):
             raise ValueError(f"Invalid state '{state}'. Valid options: on/off/high_z or 1/0/2")
         return normalized
 
-    def _format_scientific(self, value: int | float, precision: int = 4) -> str:
+    def format_scientific(self, value: int | float, precision: int = 4) -> str:
         """
         Format number in scientific notation consistently.
 
@@ -154,7 +155,7 @@ class KEITHLEY2612(BaseInstrument):
             Select channel A or B
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         self.write(f"smu{channel}.reset()")
 
     def clear_error_queue(self) -> None:
@@ -175,7 +176,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
             
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.i())"))
 
     def get_voltage(self, channel: str) -> float:
@@ -188,7 +189,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.v())"))
 
     def get_power(self, channel: str) -> float:
@@ -201,7 +202,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.p())"))
 
     def get_resistance(self, channel: str) -> float:
@@ -214,7 +215,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.r())"))
 
     def read_measurement(self, channel: str, type_: str) -> float:
@@ -238,7 +239,7 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If the measurement type is unknown.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         meas_type = self._Measurement_Types.get(type_.lower())
         if meas_type is None:
             raise ValueError("Unknown input! See function description for more info.")
@@ -259,7 +260,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.rangev)"))
 
     def get_current_range_measure(self, channel: str) -> float:
@@ -276,7 +277,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.rangei)"))
 
     def get_auto_voltage_range_measure(self, channel: str) -> int:
@@ -294,7 +295,7 @@ class KEITHLEY2612(BaseInstrument):
         int
             1 if enabled, 0 if disabled.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.measure.autorangev)")))
 
     def get_auto_current_range_measure(self, channel: str) -> int:
@@ -312,7 +313,7 @@ class KEITHLEY2612(BaseInstrument):
         int
             1 if enabled, 0 if disabled.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.measure.autorangei)")))
 
     # =============================================================================
@@ -333,7 +334,7 @@ class KEITHLEY2612(BaseInstrument):
         bool
             True if limit reached, False otherwise.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         response = self.query(f"print(smu{channel}.source.compliance)").lower()
         return response == "true"
 
@@ -352,7 +353,7 @@ class KEITHLEY2612(BaseInstrument):
         int
             1 if enabled, 0 if disabled.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.autorangev)")))
 
     def get_auto_current_range(self, channel: str) -> int:
@@ -370,7 +371,7 @@ class KEITHLEY2612(BaseInstrument):
         int
             1 if enabled, 0 if disabled.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.autorangei)")))
 
     def get_voltage_range(self, channel: str) -> float:
@@ -383,7 +384,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.source.rangev)"))
 
     def get_current_range(self, channel: str) -> float:
@@ -396,7 +397,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.source.rangei)"))
 
     def get_voltage_limit(self, channel: str) -> float:
@@ -409,7 +410,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.source.levelv)"))
 
     def get_current_limit(self, channel: str) -> float:
@@ -422,7 +423,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.source.leveli)"))
 
     def get_voltage_setting(self, channel: str) -> float:
@@ -435,7 +436,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.source.levelv)"))
 
     def get_current_setting(self, channel: str) -> float:
@@ -448,7 +449,7 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
 
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.source.leveli)"))
 
     def get_output_source_function(self, channel: str) -> int:
@@ -465,7 +466,7 @@ class KEITHLEY2612(BaseInstrument):
         int
             1 if voltage, 0 if current.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.func)")))
 
     # =============================================================================
@@ -476,7 +477,7 @@ class KEITHLEY2612(BaseInstrument):
         """
         TODO: This function should be checked. Also is doesn't return anything at the moment.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         self.query(f"printbuffer({str(start)},{str(stop)},smu{str(channel)})")
 
     # =============================================================================
@@ -494,8 +495,8 @@ class KEITHLEY2612(BaseInstrument):
         state : int | str | bool
             Output state (e.g., 'ON', 'OFF', 1, 0, True, False).
         """
-        channel = self._validate_channel(channel)
-        state_normalized = self._validate_state(state, output=True)
+        channel = self.validate_channel(channel)
+        state_normalized = self.validate_state(state, output=True)
         self.write(f"smu{channel}.source.output = smu{channel}.OUTPUT_{state_normalized}")
 
     def set_out(self, channel: str, state: int | str | bool) -> None:
@@ -517,8 +518,8 @@ class KEITHLEY2612(BaseInstrument):
         state : int | str | bool
             Status (e.g., 'ON' or 'OFF').
         """
-        channel = self._validate_channel(channel)
-        state_normalized = self._validate_state(state)
+        channel = self.validate_channel(channel)
+        state_normalized = self.validate_state(state)
         self.write(f"smu{channel}.source.autorangev = smu{channel}.AUTORANGE_{state_normalized}")
 
     def set_auto_current_range(self, channel: str, state: int | str | bool) -> None:
@@ -532,8 +533,8 @@ class KEITHLEY2612(BaseInstrument):
         state : int | str | bool
             Status (e.g., 'ON' or 'OFF').
         """
-        channel = self._validate_channel(channel)
-        state_normalized = self._validate_state(state)
+        channel = self.validate_channel(channel)
+        state_normalized = self.validate_state(state)
         self.write(f"smu{channel}.source.autorangei = smu{channel}.AUTORANGE_{state_normalized}")
 
     def set_voltage_range(self, channel: str, value: int | float) -> None:
@@ -547,8 +548,8 @@ class KEITHLEY2612(BaseInstrument):
         value : int | float
             Voltage range in Volts.
         """
-        channel = self._validate_channel(channel)
-        value_formatted = self._format_scientific(value=value, precision=0)
+        channel = self.validate_channel(channel)
+        value_formatted = self.format_scientific(value=value, precision=0)
         self.write(f"smu{channel}.source.rangev = {value_formatted}")
 
     def set_current_range(self, channel: str, value: int | float) -> None:
@@ -562,8 +563,8 @@ class KEITHLEY2612(BaseInstrument):
         value : int | float
             Current range in Amperes.
         """
-        channel = self._validate_channel(channel)
-        value_formatted = self._format_scientific(value=value, precision=0)
+        channel = self.validate_channel(channel)
+        value_formatted = self.format_scientific(value=value, precision=0)
         self.write(f"smu{channel}.source.rangei = {value_formatted}")
 
     def set_voltage_limit(self, channel: str, limit: int | float, high_voltage: bool = False) -> None:
@@ -584,7 +585,7 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If limit is out of range.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if high_voltage:
             if not (self._absolute_Voltage_Limits["min"] <= limit <= self._absolute_Voltage_Limits["max"]):
                 raise ValueError(
@@ -597,7 +598,7 @@ class KEITHLEY2612(BaseInstrument):
                     "If you want more than 10V, use high_voltage = True."
                 )
 
-        limit_str = self._format_scientific(value=limit, precision=4)
+        limit_str = self.format_scientific(value=limit, precision=4)
         self.write(f"smu{channel}.source.limitv = {limit_str}")
 
     def set_current_limit(self, channel: str, limit: int | float) -> None:
@@ -617,13 +618,13 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If limit is out of range.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if not (self._Current_Limits["min"] < limit < self._Current_Limits["max"]):
             raise ValueError(
                 f"Current limit must be between {self._Current_Limits['min']} and {self._Current_Limits['max']} A"
             )
 
-        limit_str = self._format_scientific(value=limit, precision=4)
+        limit_str = self.format_scientific(value=limit, precision=4)
         self.write(f"smu{channel}.source.limiti = {limit_str}")
 
     def set_voltage(self, channel: str, voltage: int | float, high_voltage: bool = False) -> None:
@@ -644,7 +645,7 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If voltage is out of range.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if high_voltage:
             if not (self._absolute_Voltage_Limits["min"] <= voltage <= self._absolute_Voltage_Limits["max"]):
                 raise ValueError(
@@ -657,7 +658,7 @@ class KEITHLEY2612(BaseInstrument):
                     "If you want more than 10V, use high_voltage = True."
                 )
 
-        voltage_str = self._format_scientific(value=voltage, precision=4)
+        voltage_str = self.format_scientific(value=voltage, precision=4)
         self.write(f"smu{channel}.source.levelv = {voltage_str}")
 
     def set_current(self, channel: str, current: int | float) -> None:
@@ -676,12 +677,12 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If current is out of range.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if not (self._Current_Limits["min"] < current < self._Current_Limits["max"]):
             raise ValueError(
                 f"Current must be between {self._Current_Limits['min']} and {self._Current_Limits['max']} A"
             )
-        current_str = self._format_scientific(value=current, precision=4)
+        current_str = self.format_scientific(value=current, precision=4)
         self.write(f"smu{channel}.source.leveli = {current_str}")
 
     def set_output_source_function(self, channel: str, function: str) -> None:
@@ -700,7 +701,7 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If function is invalid.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         function = function.lower()
 
         if function in ["volt", "voltage"]:
@@ -725,7 +726,7 @@ class KEITHLEY2612(BaseInstrument):
         toff : int | float
             Off time.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         self.write(f"ConfigPulseIMeasureV(smu{channel},{str(value)},{str(ton)},{str(toff)})")
 
     def set_offmode(self, channel: str, mode: str | int) -> None:
@@ -744,7 +745,7 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If mode is invalid.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
 
         mode_mapping = {
             0: "NORMAL", 1: "ZERO", 2: "HIGH_Z",
@@ -776,8 +777,8 @@ class KEITHLEY2612(BaseInstrument):
         value : int | float
             Range in Volts.
         """
-        channel = self._validate_channel(channel)
-        value_formatted = self._format_scientific(value=value, precision=0)
+        channel = self.validate_channel(channel)
+        value_formatted = self.format_scientific(value=value, precision=0)
         self.write(f"smu{channel}.measure.rangev = {value_formatted}")
 
     def set_current_range_measure(self, channel: str, value: int | float) -> None:
@@ -796,8 +797,8 @@ class KEITHLEY2612(BaseInstrument):
         value : int | float
             Range in Amperes.
         """
-        channel = self._validate_channel(channel)
-        value_formatted = self._format_scientific(value=value, precision=0)
+        channel = self.validate_channel(channel)
+        value_formatted = self.format_scientific(value=value, precision=0)
         self.write(f"smu{channel}.measure.rangei = {value_formatted}")
 
     def set_measurement_range(self, channel: str, measurement_type: str, range_value: int | float) -> None:
@@ -823,9 +824,9 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If measurement type is invalid.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         measurement_type = measurement_type.lower()
-        range_str = self._format_scientific(range_value, precision=0)
+        range_str = self.format_scientific(range_value, precision=0)
 
         if measurement_type in ["volt", "voltage"]:
             self.write(f"smu{channel}.measure.rangev = {range_str}")
@@ -850,7 +851,7 @@ class KEITHLEY2612(BaseInstrument):
         if channel is None:
             self.write("display.screen = display.SMUA_SMUB")
         else:
-            channel = self._validate_channel(channel)
+            channel = self.validate_channel(channel)
             self.write(f"display.screen = display.SMU{channel.upper()}")
 
     def set_display_measurement_function(self, channel: str, measurement_type: str) -> None:
@@ -869,7 +870,7 @@ class KEITHLEY2612(BaseInstrument):
         ValueError
             If measurement type is invalid.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         meas_code = self._Measurement_Types.get(measurement_type.lower())
 
         display_mapping = {
@@ -915,7 +916,7 @@ class KEITHLEY2612(BaseInstrument):
                 "channels": [ch.upper() for ch in self._ChannelLS],
             }
         else:
-            channel = self._validate_channel(channel)
+            channel = self.validate_channel(channel)
             return {
                 "voltage_V": self.get_voltage(channel),
                 "current_A": self.get_current(channel),
@@ -939,7 +940,7 @@ class KEITHLEY2612(BaseInstrument):
         current_limit : float
             Current compliance in Amperes.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         self.set_channel_display(channel)
         self.set_output_source_function(channel, "voltage")
         self.set_display_measurement_function(channel, "current")
@@ -959,7 +960,7 @@ class KEITHLEY2612(BaseInstrument):
         voltage_limit : float
             Voltage compliance in Volts.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         self.set_channel_display(channel)
         self.set_output_source_function(channel, "current")
         self.set_display_measurement_function(channel, "voltage")
@@ -1176,3 +1177,10 @@ class KEITHLEY2612(BaseInstrument):
     set_ChannelDisplay = set_channel_display
     set_DisplayMeasurementFunction = set_display_measurement_function
     get_Data = get_data
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    Close = BaseInstrument.close
+    _validate_state = validate_state
+    _validate_channel = validate_channel
+    _format_scientific = format_scientific

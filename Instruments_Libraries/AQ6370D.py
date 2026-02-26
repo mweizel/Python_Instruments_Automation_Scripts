@@ -31,7 +31,7 @@ class AQ6370D(BaseInstrument):
 # Start Sweep
 # =============================================================================
 
-    def StartSweep(self):
+    def start_sweep(self):
         '''
         Makes a sweep
         '''
@@ -45,7 +45,7 @@ class AQ6370D(BaseInstrument):
 # Stop Measurment
 # =============================================================================
 
-    def Stop(self):
+    def stop(self):
         '''
         
 
@@ -65,7 +65,7 @@ class AQ6370D(BaseInstrument):
 # ASK 
 # =============================================================================
 
-    def get_DisplayAutoY(self):
+    def get_display_auto_y(self):
         '''
         
 
@@ -88,7 +88,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_DisplayYUnit(self):
+    def get_display_y_unit(self):
         '''
         Queries the units of the main scale of the level axis.
         DBM = dBm
@@ -121,7 +121,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_WavelengthStart(self):
+    def get_wavelength_start(self):
         '''
         
 
@@ -139,7 +139,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_WavelengthStop(self):
+    def get_wavelength_stop(self):
         '''
         
 
@@ -157,7 +157,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_CenterWavelenght(self):
+    def get_center_wavelenght(self):
         '''
         
         Returns
@@ -173,7 +173,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_DataFormat(self):
+    def get_data_format(self):
         '''
         
 
@@ -195,7 +195,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_UnitX(self):
+    def get_unit_x(self):
         '''
         
         Returns
@@ -222,7 +222,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_TraceState(self):
+    def get_trace_state(self):
         '''
         
 
@@ -244,7 +244,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_TraceActive(self):
+    def get_trace_active(self):
         '''
         
 
@@ -263,7 +263,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_CentralWavelenght(self):
+    def get_central_wavelenght(self):
         '''
         
 
@@ -281,7 +281,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_Span(self):
+    def get_span(self):
         '''
         
 
@@ -300,7 +300,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_TraceResolution(self,state):
+    def get_trace_resolution(self,state):
         '''
         
 
@@ -335,7 +335,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_BWResolution(self):
+    def get_bw_resolution(self):
         '''
         
 
@@ -352,7 +352,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_Sensitivity(self):
+    def get_sensitivity(self):
         '''
         
 
@@ -383,7 +383,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_AverageCount(self):
+    def get_average_count(self):
         '''
         
 
@@ -401,7 +401,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_SegmentPoints(self):
+    def get_segment_points(self):
         '''
         
 
@@ -420,7 +420,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_SamplePoints(self):
+    def get_sample_points(self):
         '''
         
 
@@ -437,7 +437,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_SamplePointsAuto(self):
+    def get_sample_points_auto(self):
         '''
         
 
@@ -461,7 +461,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_SweepSpeed(self):
+    def get_sweep_speed(self):
         '''
         
 
@@ -484,7 +484,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_TraceDataX(self,state):
+    def get_trace_data_x(self,state):
         '''
         
 
@@ -519,7 +519,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_TraceDataY(self,state):
+    def get_trace_data_y(self,state):
         '''
         
 
@@ -553,7 +553,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_SweepMode(self):
+    def get_sweep_mode(self):
         '''
         
 
@@ -579,7 +579,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def get_TraceAttribute(self,state):
+    def get_trace_attribute(self,state):
         '''
         
 
@@ -636,7 +636,7 @@ class AQ6370D(BaseInstrument):
 # SET
 # =============================================================================
 
-    def set_DisplayYUnit(self,state):
+    def set_display_y_unit(self,state):
         '''
         
 
@@ -668,7 +668,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_WavelengthStart(self,value,unit):
+    def set_wavelength_start(self,value,unit):
         '''
         
 
@@ -700,7 +700,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_WavelengthStop(self,value,unit):
+    def set_wavelength_stop(self,value,unit):
         '''
         Set the measurement condition
         measurement stop wavelength
@@ -717,7 +717,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_DataFormat(self,unit):
+    def set_data_format(self,unit):
         '''
         
 
@@ -779,7 +779,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_UnitX(self,unit):
+    def set_unit_x(self,unit):
         '''
         
 
@@ -810,7 +810,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_CenterWavelenght(self,value,unit):
+    def set_center_wavelenght(self,value,unit):
         '''
         
 
@@ -843,7 +843,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_Span(self,value, unit):
+    def set_span(self,value, unit):
         '''
         
 
@@ -870,7 +870,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_BWResolution(self,value,unit):
+    def set_bw_resolution(self,value,unit):
         '''
         
 
@@ -902,7 +902,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_Sensitivity(self,unit):
+    def set_sensitivity(self,unit):
         '''
         
 
@@ -939,7 +939,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_AverageCount(self,value):
+    def set_average_count(self,value):
         '''
         
 
@@ -961,7 +961,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_SegmentPoints(self,value):
+    def set_segment_points(self,value):
         '''
         
 
@@ -984,7 +984,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_SamplePoints(self,value):
+    def set_sample_points(self,value):
         '''
         
 
@@ -1006,7 +1006,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_SweepSpeed(self,value):
+    def set_sweep_speed(self,value):
         '''
         
 
@@ -1035,7 +1035,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_SamplePointsAuto(self,state):
+    def set_sample_points_auto(self,state):
         '''
         
 
@@ -1067,7 +1067,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_TraceActive(self,state):
+    def set_trace_active(self,state):
         '''
         
 
@@ -1098,7 +1098,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_SweepMode(self,state):
+    def set_sweep_mode(self,state):
         '''
         
 
@@ -1129,7 +1129,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def set_TraceAttribute(self,trace,state):
+    def set_trace_attribute(self,trace,state):
         '''
         
 
@@ -1179,7 +1179,7 @@ class AQ6370D(BaseInstrument):
 # get Data
 # =============================================================================
 
-    def get_Data(self,state):
+    def get_data(self,state):
 
         
         '''
@@ -1191,11 +1191,11 @@ class AQ6370D(BaseInstrument):
         sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
         if state in sState:
             #Get Headers
-            HeaderX = self.get_UnitX()
-            HeaderY = self.get_DisplayYUnit()
+            HeaderX = self.get_unit_x()
+            HeaderY = self.get_display_y_unit()
             #Get Data
-            dataX = self.get_TraceDataX(state)
-            dataY = self.get_TraceDataY(state)
+            dataX = self.get_trace_data_x(state)
+            dataY = self.get_trace_data_y(state)
             
             #create CSV
             data = {str(HeaderX):dataX,str(HeaderY):dataY}
@@ -1209,7 +1209,7 @@ class AQ6370D(BaseInstrument):
     
     
     
-    def print_ParamsOSA(self):
+    def print_params_osa(self):
         '''
         
 
@@ -1221,25 +1221,25 @@ class AQ6370D(BaseInstrument):
         '''
         
         print('################ OSA Parameters ################')
-        print('Y-Axis units = ',self.get_DisplayYUnit())
-        print('X-Axis units = ',self.get_UnitX())
-        print('Start Wavelength = ',self.get_WavelengthStart())
-        print('Stop Wavelength = ',self.get_WavelengthStop())
-        print('Bandwidth Resolution = ',self.get_BWResolution())
-        print('Center Wavelength = ',self.get_CenterWavelenght())
-        print('Span = ',self.get_Span())
-        print('Output data format = ',self.get_DataFormat())
-        print('Displayed trace = ',self.get_TraceState())
-        print('Selected Trace = ',self.get_TraceActive())
-        print('Averaging Points = ',self.get_AverageCount())
-        print('Sample Points = ',self.get_SamplePoints())
-        print('Sweep speed = ',self.get_SweepSpeed())
-        print('Sweep Mode = ',self.get_SweepMode())
+        print('Y-Axis units = ',self.get_display_y_unit())
+        print('X-Axis units = ',self.get_unit_x())
+        print('Start Wavelength = ',self.get_wavelength_start())
+        print('Stop Wavelength = ',self.get_wavelength_stop())
+        print('Bandwidth Resolution = ',self.get_bw_resolution())
+        print('Center Wavelength = ',self.get_center_wavelenght())
+        print('Span = ',self.get_span())
+        print('Output data format = ',self.get_data_format())
+        print('Displayed trace = ',self.get_trace_state())
+        print('Selected Trace = ',self.get_trace_active())
+        print('Averaging Points = ',self.get_average_count())
+        print('Sample Points = ',self.get_sample_points())
+        print('Sweep speed = ',self.get_sweep_speed())
+        print('Sweep Mode = ',self.get_sweep_mode())
         print('################ OSA Parameters ################')
         
      
     
-    def get_ParamsOSA(self):
+    def get_params_osa(self):
         '''
         
 
@@ -1253,22 +1253,22 @@ class AQ6370D(BaseInstrument):
                   'Bandwidth Resolution','Center Wavelength','Span','Output data format',
                   'Displayed trace','Selected Trace','Averaging Points','Sample Points',
                   'Sweep speed','Sweep Mode']
-        Data = []
+        Data: list = []
 
-        Data.append(self.get_DisplayYUnit())
-        Data.append(self.get_UnitX())
-        Data.append(self.get_WavelengthStart())
-        Data.append(self.get_WavelengthStop())
-        Data.append(self.get_BWResolution())
-        Data.append(self.get_CenterWavelenght())
-        Data.append(self.get_Span())
-        Data.append(self.get_DataFormat())
-        Data.append(self.get_TraceState())
-        Data.append(self.get_TraceActive())
-        Data.append(self.get_AverageCount())
-        Data.append(self.get_SamplePoints())
-        Data.append(self.get_SweepSpeed())
-        Data.append(self.get_SweepMode())
+        Data.append(self.get_display_y_unit())
+        Data.append(self.get_unit_x())
+        Data.append(self.get_wavelength_start())
+        Data.append(self.get_wavelength_stop())
+        Data.append(self.get_bw_resolution())
+        Data.append(self.get_center_wavelenght())
+        Data.append(self.get_span())
+        Data.append(self.get_data_format())
+        Data.append(self.get_trace_state())
+        Data.append(self.get_trace_active())
+        Data.append(self.get_average_count())
+        Data.append(self.get_sample_points())
+        Data.append(self.get_sweep_speed())
+        Data.append(self.get_sweep_mode())
 
         
         return Header,Data
@@ -1277,26 +1277,75 @@ class AQ6370D(BaseInstrument):
     # Aliases for backwards compatibility
     # =============================================================================
 
-    ask_DisplayAutoY = get_DisplayAutoY
-    ask_DisplayYUnit = get_DisplayYUnit
-    ask_WavelengthStart = get_WavelengthStart
-    ask_WavelengthStop = get_WavelengthStop
-    ask_CenterWavelenght = get_CenterWavelenght
-    ask_DataFormat = get_DataFormat
-    ask_UnitX = get_UnitX
-    ask_TraceState = get_TraceState
-    ask_TraceActive = get_TraceActive
-    ask_CentralWavelenght = get_CentralWavelenght
-    ask_Span = get_Span
-    ask_TraceResolution = get_TraceResolution
-    ask_BWResolution = get_BWResolution
-    ask_Sensitivity = get_Sensitivity
-    ask_AverageCount = get_AverageCount
-    ask_SegmentPoints = get_SegmentPoints
-    ask_SamplePoints = get_SamplePoints
-    ask_SamplePointsAuto = get_SamplePointsAuto
-    ask_SweepSpeed = get_SweepSpeed
-    ask_TraceDataX = get_TraceDataX
-    ask_TraceDataY = get_TraceDataY
-    ask_SweepMode = get_SweepMode
-    ask_TraceAttribute = get_TraceAttribute
+    ask_DisplayAutoY = get_display_auto_y
+    ask_DisplayYUnit = get_display_y_unit
+    ask_WavelengthStart = get_wavelength_start
+    ask_WavelengthStop = get_wavelength_stop
+    ask_CenterWavelenght = get_center_wavelenght
+    ask_DataFormat = get_data_format
+    ask_UnitX = get_unit_x
+    ask_TraceState = get_trace_state
+    ask_TraceActive = get_trace_active
+    ask_CentralWavelenght = get_central_wavelenght
+    ask_Span = get_span
+    ask_TraceResolution = get_trace_resolution
+    ask_BWResolution = get_bw_resolution
+    ask_Sensitivity = get_sensitivity
+    ask_AverageCount = get_average_count
+    ask_SegmentPoints = get_segment_points
+    ask_SamplePoints = get_sample_points
+    ask_SamplePointsAuto = get_sample_points_auto
+    ask_SweepSpeed = get_sweep_speed
+    ask_TraceDataX = get_trace_data_x
+    ask_TraceDataY = get_trace_data_y
+    ask_SweepMode = get_sweep_mode
+    ask_TraceAttribute = get_trace_attribute
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    Close = BaseInstrument.close
+    get_Data = get_data
+    set_DisplayYUnit = set_display_y_unit
+    set_BWResolution = set_bw_resolution
+    set_SamplePoints = set_sample_points
+    get_TraceActive = get_trace_active
+    get_DisplayYUnit = get_display_y_unit
+    set_DataFormat = set_data_format
+    get_AverageCount = get_average_count
+    get_DataFormat = get_data_format
+    get_WavelengthStop = get_wavelength_stop
+    set_TraceActive = set_trace_active
+    get_DisplayAutoY = get_display_auto_y
+    get_SamplePoints = get_sample_points
+    get_WavelengthStart = get_wavelength_start
+    get_UnitX = get_unit_x
+    get_TraceAttribute = get_trace_attribute
+    set_TraceAttribute = set_trace_attribute
+    set_AverageCount = set_average_count
+    get_SegmentPoints = get_segment_points
+    set_Sensitivity = set_sensitivity
+    get_CenterWavelenght = get_center_wavelenght
+    get_TraceDataY = get_trace_data_y
+    set_Span = set_span
+    set_CenterWavelenght = set_center_wavelenght
+    get_TraceResolution = get_trace_resolution
+    get_TraceDataX = get_trace_data_x
+    set_WavelengthStart = set_wavelength_start
+    print_ParamsOSA = print_params_osa
+    StartSweep = start_sweep
+    get_SamplePointsAuto = get_sample_points_auto
+    Stop = stop
+    get_CentralWavelenght = get_central_wavelenght
+    get_SweepSpeed = get_sweep_speed
+    get_BWResolution = get_bw_resolution
+    set_SegmentPoints = set_segment_points
+    get_TraceState = get_trace_state
+    get_SweepMode = get_sweep_mode
+    set_UnitX = set_unit_x
+    set_WavelengthStop = set_wavelength_stop
+    set_SamplePointsAuto = set_sample_points_auto
+    get_ParamsOSA = get_params_osa
+    get_Sensitivity = get_sensitivity
+    get_Span = get_span
+    set_SweepMode = set_sweep_mode
+    set_SweepSpeed = set_sweep_speed

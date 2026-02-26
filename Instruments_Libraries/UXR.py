@@ -7,42 +7,32 @@ Created on Mon Dec  1 20:17:32 2024
 """
 
 import numpy as np
-import pyvisa as visa
 from os.path import splitext
 from datetime import datetime
+from typing import Any
+from .BaseInstrument import BaseInstrument
 
 
-class UXR:
+class UXR(BaseInstrument):
     """
     This class is using pyvisa to connect to Instruments. Please install PyVisa before using it.
     """
 
     def __init__(
         self,
-        resource_str="TCPIP0::KEYSIGH-Q75EBO9.local::hislip0::INSTR",
-        num_channel=2,
-        visa_library="@ivi",  # If you have problems try "@py"!
-        # Or try setting Keysight visa32.dll as primary!
+        resource_str: str = "TCPIP0::KEYSIGH-Q75EBO9.local::hislip0::INSTR",
+        visa_library: str = "@ivi",  # If you have problems try "@py"!
+        num_channel: int = 2,
+        **kwargs
     ):
-        self._resource = visa.ResourceManager(visa_library).open_resource(
-            str(resource_str), read_termination="\n", query_delay=0.5
-        )
-        print(self.IDN())
+        kwargs.setdefault('read_termination', '\n')
+        kwargs.setdefault('query_delay', 0.5)
+        super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
+        print(self.get_idn())
 
         # Internal Variables and Predefined Lists
         self._types_channel = list(range(1, num_channel + 1))
         self._waveform_format = "ASC"
-        self._types_channel = list(range(1, num_channel + 1))
-        self._StateLS_mapping = {
-            "on": "ON",
-            "off": "OFF",
-            1: "ON",
-            0: "OFF",
-            "1": "ON",
-            "0": "OFF",
-            True: "ON",
-            False: "OFF",
-        }
 
         # Default Settings
         self.system_header("off")  # Default is off and should stay off!!!
@@ -50,12 +40,9 @@ class UXR:
         self.waveform_format("WORD")  # Data Aquisition is only implemented for WORD yet.
         self.waveform_streaming("off")
 
-    def query(self, message):
-        return self._resource.query(message)
-
     def query_binary_values(
-        self, message, datatype="h", container=np.array, data_points=int(0), **kwargs
-    ):
+        self, message: str, datatype: Any = "h", container: Any = np.array, data_points: int = 0, **kwargs
+    ) -> Any:
         return self._resource.query_binary_values(
             message,
             datatype=datatype,
@@ -64,17 +51,11 @@ class UXR:
             **kwargs,
         )
 
-    def write(self, message):
-        return self._resource.write(message)
-
-    def Close(self):
-        self._resource.close()
-
     # =============================================================================
     # Checks and Validations
     # =============================================================================
 
-    def _validate_generic(self, value: str | int, valid_List: list) -> str:
+    def _validate_generic(self, value: Any, valid_List: list) -> Any:
         if value not in valid_List:
             raise ValueError(f"Invalid value given! Value can be one of {valid_List}.")
         return value
@@ -86,51 +67,6 @@ class UXR:
                 f"Invalid channel number given! Channel Number can be one of {self._types_channel}."
             )
         return channel
-
-    def _validate_state(self, state: int | str) -> str:
-        state_normalized = self._StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [ON,OFF,1,0,True,False].")
-        return state_normalized
-
-    # =============================================================================
-    # * (Common) Commands
-    # =============================================================================
-
-    def clear_status(self) -> None:
-        """The ``*CLS`` command clears all status and error registers."""
-        self.write("*CLS")
-
-    def IDN(self) -> str:
-        """The ``*IDN?`` query returns the company name, oscilloscope model number, serial
-        number, and software version by returning this string:
-        Keysight Technologies,<Model #>,<USXXXXXXXX>,<Rev #>[,<Options>]
-
-        Returns
-        -------
-        str
-            Keysight Technologies,DSO9404A,USXXXXXXXX,XX.XX.XXXX
-        """
-        return self.query("*IDN?")
-
-    def OPC(self) -> int:
-        """Places a “1” into the output queue when all device
-        operations have been completed
-
-        Returns
-        -------
-        TYPE str
-            1 or 0
-        """
-        return int(self.query("*OPC?"))
-
-    def reset(self) -> None:
-        """The ``*RST`` command performs a default setup which is the same as pressing the
-        oscilloscope front panel [Default Setup] key.
-        """
-        self.write("*RST")
 
     # =============================================================================
     # : (Root Level) Commands
@@ -164,7 +100,7 @@ class UXR:
         """
         self.write(":AUToscale")
 
-    def autoscale_channels(self, value: str | None = None) -> str:
+    def autoscale_channels(self, value: str | None = None) -> str | None:
         """The :AUToscale:CHANnels command selects whether to apply autoscale to all of
         the input channels or just the input channels that are currently displayed.
 
@@ -235,7 +171,7 @@ class UXR:
         """
         self.write(":SING")
 
-    def status(self, key: str | None = None, value: int | None = None) -> int:
+    def status(self, key: str | None = None, value: int | None = None) -> int | None:
         """The :STATus? query shows whether the specified channel, function, wmemory,
         histogram, measurement trend, measurement spectrum, or equalized waveform is
         on or off.
@@ -282,7 +218,7 @@ class UXR:
         ]
         if key is not None:
             key = self._validate_generic(key.upper(), _types_key)
-            if int(value) <= 16:  # For CHAN <=2, for FUNC <=16, ... etc.
+            if value is not None and int(value) <= 16:  # For CHAN <=2, for FUNC <=16, ... etc.
                 return int(self.query(f":STATus? {key}{value}"))
         else:
             return int(self.query(f":STATus? CHANnel1"))
@@ -297,7 +233,7 @@ class UXR:
     # :CHANnel<N> Commands
     # =============================================================================
 
-    def channel_display(self, channel: int, state: int | str | None = None) -> int:
+    def channel_display(self, channel: int, state: int | str | None = None) -> int | None:
         """The :CHANnel<N>:DISPlay command turns the display of the specified channel on
         or off.
 
@@ -317,12 +253,12 @@ class UXR:
         """
         channel = self._validate_channel(channel)
         if state is not None:
-            state = self._validate_state(state)
+            state = self._parse_state(state)
             self.write(f":CHANnel{channel}:DISPlay {state}")
         else:  # query
             return int(self.query(f":CHANnel{channel}:DISPlay?"))
 
-    def channel_range(self, channel: int, range_value: float | None = None) -> float:
+    def channel_range(self, channel: int, range_value: float | None = None) -> float | None:
         """The :CHANnel<N>:RANGe command defines the full-scale vertical axis of the
         selected channel. The values represent the full-scale deflection factor of the
         vertical axis in volts. These values change as the probe attenuation factor is changed.
@@ -356,7 +292,7 @@ class UXR:
         else:  # query
             return float(self.query(f":CHANnel{channel}:RANGe?"))
 
-    def channel_scale(self, channel: int, scale_value: float | None = None) -> float:
+    def channel_scale(self, channel: int, scale_value: float | None = None) -> float | None:
         """The :CHANnel<N>:SCALe command sets the vertical scale, or units per division, of
         the selected channel. This command is the same as the front-panel channel scale.
 
@@ -422,7 +358,7 @@ class UXR:
                     datatype="B",  # Capitcal B for unsigned byte
                     container=bytes,
                 )
-                f.write(screen_bytes)  # type: ignore[arg-type]
+                f.write(screen_bytes)
             print(f"Screen image written to {img_path}")
         except Exception as e:
             self._resource.timeout = old_timeout  # restore original timeout
@@ -434,7 +370,7 @@ class UXR:
     # :FUNCtion Commands
     # =============================================================================
 
-    def function_display(self, function_num: int, state: int | str | None = None) -> int:
+    def function_display(self, function_num: int, state: int | str | None = None) -> int | None:
         """The :FUNCtion<N>:DISPlay command turns the display of the specified function_num on
         or off.
 
@@ -460,7 +396,7 @@ class UXR:
         if int(function_num) < 1 or int(function_num) > 16:
             raise ValueError("Invalid Argument. Expected one of: 1-16")
         if state is not None:
-            state = self._validate_state(state)
+            state = self._parse_state(state)
             self.write(f":FUNCtion{function_num}:DISPlay {state}")
         else:  # query
             return int(self.query(f":FUNCtion{function_num}:DISPlay?"))
@@ -469,7 +405,7 @@ class UXR:
     # :SYSTem Commands
     # =============================================================================
 
-    def system_header(self, state: int | str | None = None) -> int:
+    def system_header(self, state: int | str | None = None) -> int | None:
         """!!!! SHOULD BE OFF !!!!
         The :SYSTem:HEADer command specifies whether the instrument will output a
         header for query responses. When :SYSTem:HEADer is set to ON, the query
@@ -491,7 +427,7 @@ class UXR:
             Expected one of: {{ON | 1} | {OFF | 0}}
         """
         if state is not None:
-            state = self._validate_state(state)
+            state = self._parse_state(state)
             self.write(f":SYSTem:HEADer {state}")
         else:  # query
             return int(self.query(":SYSTem:HEADer?"))
@@ -500,7 +436,7 @@ class UXR:
     # :WAVeform Commands
     # =============================================================================
 
-    def waveform_byteorder(self, value: str = "LSBFIRST") -> str:
+    def waveform_byteorder(self, value: str | None = "LSBFIRST") -> str | None:
         """The :WAVeform:BYTeorder command selects the order in which bytes are
         transferred from (or to) the oscilloscope using WORD and LONG formats
 
@@ -531,10 +467,10 @@ class UXR:
         start: int | None = None,
         size: int | None = None,
         datatype: str = "h",
-        container: type = np.array,
+        container: Any = np.array,
         data_points: int = 0,
         **kwargs,
-    ) -> np.ndarray:
+    ) -> Any:
         """
         The :WAVeform:DATA? query outputs waveform data to the computer over the
         remote interface. The data is copied from a waveform memory, function, or
@@ -601,7 +537,7 @@ class UXR:
                 "Only 'WORD' format is currently supported."
             )
 
-    def waveform_format(self, value: str | None = None) -> str:
+    def waveform_format(self, value: str | None = None) -> str | None:
         """The :WAVeform:FORMat command sets the data transmission mode for waveform
         data output. This command controls how the data is formatted when it is sent from
         the oscilloscope, and pertains to all waveforms.
@@ -642,7 +578,7 @@ class UXR:
         """
         return int(self.query(":WAVeform:POINts?"))
 
-    def waveform_source(self, key: str | None = None, value: int | None = None) -> str:
+    def waveform_source(self, key: str | None = None, value: int | None = None) -> str | None:
         """The :WAVeform:SOURce command selects a channel, function, waveform
         memory, or histogram as the waveform source
         TODO: No checks implemented
@@ -666,7 +602,7 @@ class UXR:
         else:
             return self.query(":WAVeform:SOURce?")
 
-    def waveform_streaming(self, state: int | str | None = None) -> int:
+    def waveform_streaming(self, state: int | str | None = None) -> int | None:
         """When enabled, :WAVeform:STReaming allows more than 999,999,999 bytes of
         data to be transferred from the Infiniium oscilloscope to a PC when using the
         :WAVeform:DATA? query.
@@ -682,7 +618,7 @@ class UXR:
             {1 | 0}
         """
         if state is not None:
-            state = self._validate_state(state)
+            state = self._parse_state(state)
             self.write(f":WAVeform:STReaming {state}")
         else:  # query
             return int(self.query(":WAVeform:STReaming?"))

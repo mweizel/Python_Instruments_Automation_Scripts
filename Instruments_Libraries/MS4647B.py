@@ -28,7 +28,7 @@ class MS4647B(BaseInstrument):
     # Return to local
     # =============================================================================
 
-    def RTL(self):
+    def rtl(self):
         """
 
 
@@ -44,7 +44,7 @@ class MS4647B(BaseInstrument):
     # Ask
     # =============================================================================
 
-    def get_SubSystem(self):
+    def get_sub_system(self):
         """
 
 
@@ -58,7 +58,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":SENSe:HOLD:FUNCtion?")
 
-    def get_SweepCount(self, ChanNumber):
+    def get_sweep_count(self, ChanNumber):
         """
 
 
@@ -85,7 +85,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_TestSet(self, ChanNumber):
+    def get_test_set(self, ChanNumber):
         """
 
 
@@ -111,7 +111,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_SysErrors(self):
+    def get_sys_errors(self):
         """
 
 
@@ -124,7 +124,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":SYST:ERR:COUN?")
 
-    def get_StatOperation(self):
+    def get_stat_operation(self):
         """
 
 
@@ -140,7 +140,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":STAT:OPER:COND?")
 
-    def get_StatOperationRegister(self):
+    def get_stat_operation_register(self):
         """
 
 
@@ -154,7 +154,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":STATus:OPERation:ENABle?")
 
-    def get_FreqSpan(self, ChanNumber):
+    def get_freq_span(self, ChanNumber):
         """
 
 
@@ -181,7 +181,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_CenterFreq(self, ChanNumber):
+    def get_center_freq(self, ChanNumber):
         """
 
 
@@ -212,7 +212,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_CWFreq(self, ChanNumber):
+    def get_cw_freq(self, ChanNumber):
         """
 
 
@@ -241,7 +241,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_DataFreq(self, ChanNumber):
+    def get_data_freq(self, ChanNumber):
         """
 
 
@@ -267,7 +267,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_SweepChannelStatus(self):
+    def get_sweep_channel_status(self):
         """
 
 
@@ -281,7 +281,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":DISP:ACT:CHAN:SWE:STAT?")
 
-    def get_AssignetDataPort(self, value):
+    def get_assignet_data_port(self, value):
         """
 
 
@@ -309,13 +309,13 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_ParamFormInFile(self):
+    def get_param_form_in_file(self):
         """
         Outputs the parameter format displayed in an SNP data file.
         """
         return self.query(":FORMat:SNP:PARameter?")
 
-    def get_RFState(self):
+    def get_rf_state(self):
         """
 
 
@@ -328,7 +328,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":SYST:HOLD:RF?")
 
-    def get_SetAverageState(self, ChanNumber):
+    def get_set_average_state(self, ChanNumber):
         """
 
 
@@ -354,7 +354,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_AverageFunctionType(self, ChanNumber):
+    def get_average_function_type(self, ChanNumber):
         """
 
 
@@ -380,7 +380,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_AverageCount(self, ChanNumber):
+    def get_average_count(self, ChanNumber):
         """
 
 
@@ -406,7 +406,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_TransferData(self, name, portNumb):
+    def get_transfer_data(self, name, portNumb):
         """
 
 
@@ -433,7 +433,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.s" + str(portNumb) + "p"
         return self.query(":MMEM:TRAN? " + '"' + path + '"')
 
-    def get_TransferDataCSV(self, name):
+    def get_transfer_data_csv(self, name):
         """
 
 
@@ -458,7 +458,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.csv"
         return self.query(":MMEM:TRAN? " + '"' + path + '"')
 
-    def get_ResolutionBW(self, ChanNumber):
+    def get_resolution_bw(self, ChanNumber):
         """
 
 
@@ -477,7 +477,7 @@ class MS4647B(BaseInstrument):
 
         return float(self.query(":SENS" + str(ChanNumber) + ":BAND?"))
 
-    def get_PowerOnPort(self, segment, ChanNumber):
+    def get_power_on_port(self, segment, ChanNumber):
         """
 
 
@@ -504,7 +504,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def get_SmoothingState(self, ChanNumber):
+    def get_smoothing_state(self, ChanNumber):
         """
 
 
@@ -523,7 +523,7 @@ class MS4647B(BaseInstrument):
         """
         return float(self.query(":CALC" + str(ChanNumber) + ":SMO?"))
 
-    def get_DisplayTrace(self):
+    def get_display_trace(self):
         """
 
 
@@ -535,7 +535,7 @@ class MS4647B(BaseInstrument):
         """
         return self.query(":DISPlay:WINDow:ACTivate?")
 
-    def get_DisplayCount(self):
+    def get_display_count(self):
         """
 
 
@@ -547,7 +547,7 @@ class MS4647B(BaseInstrument):
         """
         return float(self.query(":DISP:COUN?"))
 
-    def get_DisplayTitle(self):
+    def get_display_title(self):
         """
 
 
@@ -560,7 +560,7 @@ class MS4647B(BaseInstrument):
         """
         return self.query(":DISP:WIND1:TITL?")
 
-    def get_SelectParameter(self):
+    def get_select_parameter(self):
         """
 
 
@@ -572,7 +572,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":CALC1:PAR1:DEF?")
 
-    def get_SweepDelay(self):
+    def get_sweep_delay(self):
         """
 
 
@@ -584,7 +584,7 @@ class MS4647B(BaseInstrument):
 
         return self.query(":SENS1:SWE:DEL?")
 
-    def get_SweepTime(self):
+    def get_sweep_time(self):
         """
 
 
@@ -599,7 +599,7 @@ class MS4647B(BaseInstrument):
     # Set
     # =============================================================================
 
-    def set_ClearAverage(self, ChanNumber):
+    def set_clear_average(self, ChanNumber):
         """
 
 
@@ -625,7 +625,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SubSystemHold(self):
+    def set_sub_system_hold(self):
         """
 
 
@@ -639,7 +639,7 @@ class MS4647B(BaseInstrument):
 
         self.write(":SENS:HOLD:FUNC HOLD")
 
-    def set_SubSystemSing(self):
+    def set_sub_system_sing(self):
         """
 
 
@@ -654,7 +654,7 @@ class MS4647B(BaseInstrument):
 
         self.write(":SENS:HOLD:FUNC SING")
 
-    def set_SubSystemCont(self):
+    def set_sub_system_cont(self):
         """
 
 
@@ -667,7 +667,7 @@ class MS4647B(BaseInstrument):
 
         self.write(":SENS:HOLD:FUNC CONT")
 
-    def set_DisplayScale(self):
+    def set_display_scale(self):
         """
 
 
@@ -679,7 +679,7 @@ class MS4647B(BaseInstrument):
 
         self.write(":DISPlay:Y:AUTO")
 
-    def set_TS3739(self, ChanNumber, state):
+    def set_ts3739(self, ChanNumber, state):
         """
 
 
@@ -710,7 +710,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_ClearError(self):
+    def set_clear_error(self):
         """
 
 
@@ -723,7 +723,7 @@ class MS4647B(BaseInstrument):
 
         self.write(":SYST:ERR:CLE")
 
-    def set_DisplayColorReset(self):
+    def set_display_color_reset(self):
         """
 
 
@@ -736,7 +736,7 @@ class MS4647B(BaseInstrument):
 
         self.write(":DISP:COL:RES")
 
-    def set_StatOperationRegister(self, value):
+    def set_stat_operation_register(self, value):
         """
 
 
@@ -758,7 +758,7 @@ class MS4647B(BaseInstrument):
         value = int(value)
         self.write(":STAT:OPER:ENAB " + str(value))
 
-    def set_StartFreq(self, ChanNumber, value):
+    def set_start_freq(self, ChanNumber, value):
         """
 
 
@@ -786,7 +786,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_StopFreq(self, ChanNumber, value):
+    def set_stop_freq(self, ChanNumber, value):
         """
 
 
@@ -814,7 +814,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_CenterFreq(self, ChanNumber, value):
+    def set_center_freq(self, ChanNumber, value):
         """
 
 
@@ -842,7 +842,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_CWFreq(self, ChanNumber, value):
+    def set_cw_freq(self, ChanNumber, value):
         """
 
 
@@ -870,7 +870,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SweepChannelStatus(self, state):
+    def set_sweep_channel_status(self, state):
         """
 
 
@@ -895,7 +895,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_AssignetDataPort(self, ChanNumber, value1, value2):
+    def set_assignet_data_port(self, ChanNumber, value1, value2):
         """
 
 
@@ -942,7 +942,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_ParamFormInFile(self, unit):
+    def set_param_form_in_file(self, unit):
         """
 
         Parameters
@@ -970,7 +970,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_RFState(self, state):
+    def set_rf_state(self, state):
         """
 
 
@@ -995,7 +995,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SetAverageState(self, ChanNumber, state):
+    def set_set_average_state(self, ChanNumber, state):
         """
 
 
@@ -1025,7 +1025,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_AverageFunctionType(self, ChanNumber, state):
+    def set_average_function_type(self, ChanNumber, state):
         """
 
 
@@ -1057,7 +1057,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_AverageCount(self, ChanNumber, value):
+    def set_average_count(self, ChanNumber, value):
         """
 
 
@@ -1089,7 +1089,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_ResolutionBW(self, ChanNumber, value):
+    def set_resolution_bw(self, ChanNumber, value):
         """
 
 
@@ -1118,7 +1118,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_PowerOnPort(self, segment, ChanNumber, value):
+    def set_power_on_port(self, segment, ChanNumber, value):
         """
 
 
@@ -1149,7 +1149,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SmoothingState(self, ChanNumber, state):
+    def set_smoothing_state(self, ChanNumber, state):
         """
 
 
@@ -1178,7 +1178,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SmoothingAPERture(self, ChanNumber, value):
+    def set_smoothing_ape_rture(self, ChanNumber, value):
         """
 
 
@@ -1204,7 +1204,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_DisplayTrace(self, ChanNumber):
+    def set_display_trace(self, ChanNumber):
         """
 
 
@@ -1230,7 +1230,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_DisplayCount(self, ChannelNumber):
+    def set_display_count(self, ChannelNumber):
         """
 
 
@@ -1260,7 +1260,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_DisplayTitle(self, ChannelName):
+    def set_display_title(self, ChannelName):
         """
 
 
@@ -1285,7 +1285,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SelectParameter(self, S_Param):
+    def set_select_parameter(self, S_Param):
         """
 
 
@@ -1330,7 +1330,7 @@ class MS4647B(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_SweepDelay(self, time):
+    def set_sweep_delay(self, time):
         """
 
         Parameters
@@ -1345,7 +1345,7 @@ class MS4647B(BaseInstrument):
         """
         self.write(":SENS1:SWE:DEL " + str(time))
 
-    def set_SweepTime(self, time):
+    def set_sweep_time(self, time):
         """
 
 
@@ -1366,7 +1366,7 @@ class MS4647B(BaseInstrument):
     # Save
     # =============================================================================
 
-    def SaveData(self, name, portNumb):
+    def save_data(self, name, portNumb):
         """
 
 
@@ -1392,7 +1392,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.s" + str(portNumb) + "p"
         self.write(":MMEM:STOR " + '"' + path + '"')
 
-    def SaveDataCSV(self, name):
+    def save_data_csv(self, name):
         """
 
 
@@ -1418,7 +1418,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.csv"
         self.write(":MMEM:STOR " + '"' + path + '"')
 
-    def SaveImage(self, name):
+    def save_image(self, name):
         """
 
 
@@ -1444,7 +1444,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.png"
         self.write(":MMEMory:STORe:IMAGe " + '"' + path + '"')
 
-    def DeleteData(self, name, portNumb):
+    def delete_data(self, name, portNumb):
         """
 
 
@@ -1469,7 +1469,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.s" + str(portNumb) + "p"
         self.write(":MMEMory:DEL " + '"' + path + '"')
 
-    def DeleteDataCSV(self, name):
+    def delete_data_csv(self, name):
         """
 
 
@@ -1494,7 +1494,7 @@ class MS4647B(BaseInstrument):
         path = str(path) + str(name) + "_.csv"
         self.write(":MMEMory:DEL " + '"' + path + '"')
 
-    def SaveTransferData(self, file, path, name, portNumb):
+    def save_transfer_data(self, file, path, name, portNumb):
         """
 
 
@@ -1523,7 +1523,7 @@ class MS4647B(BaseInstrument):
                 f.write(line)
                 f.write("\n")
 
-    def SaveTransferDataCSV(self, file, path, name):
+    def save_transfer_data_csv(self, file, path, name):
         """
 
 
@@ -1557,32 +1557,103 @@ class MS4647B(BaseInstrument):
     # =============================================================================
     
     getIdn = BaseInstrument.get_idn
-    ask_SubSystem = get_SubSystem
-    ask_SweepCount = get_SweepCount
-    ask_TestSet = get_TestSet
-    ask_SysErrors = get_SysErrors
-    ask_StatOperation = get_StatOperation
-    ask_StatOperationRegister = get_StatOperationRegister
-    ask_FreqSpan = get_FreqSpan
-    ask_CenterFreq = get_CenterFreq
-    ask_CWFreq = get_CWFreq
-    ask_DataFreq = get_DataFreq
-    ask_SweepChannelStatus = get_SweepChannelStatus
-    ask_AssignetDataPort = get_AssignetDataPort
-    ask_ParamFormInFile = get_ParamFormInFile
-    ask_RFState = get_RFState
-    ask_SetAverageState = get_SetAverageState
-    ask_AverageFunctionType = get_AverageFunctionType
-    ask_AverageCount = get_AverageCount
-    ask_TransferData = get_TransferData
-    ask_TransferDataCSV = get_TransferDataCSV
-    ask_ResolutionBW = get_ResolutionBW
-    ask_PowerOnPort = get_PowerOnPort
-    ask_SmoothingState = get_SmoothingState
-    ask_DisplayTrace = get_DisplayTrace
-    ask_DisplayCount = get_DisplayCount
-    ask_DisplayTitle = get_DisplayTitle
-    ask_SelectParameter = get_SelectParameter
-    ask_SweepDelay = get_SweepDelay
-    ask_SweepTime = get_SweepTime
+    ask_SubSystem = get_sub_system
+    ask_SweepCount = get_sweep_count
+    ask_TestSet = get_test_set
+    ask_SysErrors = get_sys_errors
+    ask_StatOperation = get_stat_operation
+    ask_StatOperationRegister = get_stat_operation_register
+    ask_FreqSpan = get_freq_span
+    ask_CenterFreq = get_center_freq
+    ask_CWFreq = get_cw_freq
+    ask_DataFreq = get_data_freq
+    ask_SweepChannelStatus = get_sweep_channel_status
+    ask_AssignetDataPort = get_assignet_data_port
+    ask_ParamFormInFile = get_param_form_in_file
+    ask_RFState = get_rf_state
+    ask_SetAverageState = get_set_average_state
+    ask_AverageFunctionType = get_average_function_type
+    ask_AverageCount = get_average_count
+    ask_TransferData = get_transfer_data
+    ask_TransferDataCSV = get_transfer_data_csv
+    ask_ResolutionBW = get_resolution_bw
+    ask_PowerOnPort = get_power_on_port
+    ask_SmoothingState = get_smoothing_state
+    ask_DisplayTrace = get_display_trace
+    ask_DisplayCount = get_display_count
+    ask_DisplayTitle = get_display_title
+    ask_SelectParameter = get_select_parameter
+    ask_SweepDelay = get_sweep_delay
+    ask_SweepTime = get_sweep_time
     
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    Close = BaseInstrument.close
+    SaveDataCSV = save_data_csv
+    SaveImage = save_image
+    RTL = rtl
+    get_ResolutionBW = get_resolution_bw
+    SaveData = save_data
+    get_SweepDelay = get_sweep_delay
+    set_SetAverageState = set_set_average_state
+    get_CWFreq = get_cw_freq
+    set_ParamFormInFile = set_param_form_in_file
+    get_CenterFreq = get_center_freq
+    get_RFState = get_rf_state
+    set_SweepDelay = set_sweep_delay
+    get_TransferDataCSV = get_transfer_data_csv
+    get_AverageCount = get_average_count
+    set_SmoothingAPERture = set_smoothing_ape_rture
+    DeleteDataCSV = delete_data_csv
+    set_CenterFreq = set_center_freq
+    set_PowerOnPort = set_power_on_port
+    get_DisplayTrace = get_display_trace
+    SaveTransferData = save_transfer_data
+    get_AssignetDataPort = get_assignet_data_port
+    set_StopFreq = set_stop_freq
+    set_DisplayScale = set_display_scale
+    get_SubSystem = get_sub_system
+    set_RFState = set_rf_state
+    set_ClearError = set_clear_error
+    set_SmoothingState = set_smoothing_state
+    set_AverageCount = set_average_count
+    get_StatOperation = get_stat_operation
+    set_DisplayTrace = set_display_trace
+    set_AssignetDataPort = set_assignet_data_port
+    get_AverageFunctionType = get_average_function_type
+    set_CWFreq = set_cw_freq
+    set_AverageFunctionType = set_average_function_type
+    set_ResolutionBW = set_resolution_bw
+    get_PowerOnPort = get_power_on_port
+    SaveTransferDataCSV = save_transfer_data_csv
+    set_SweepChannelStatus = set_sweep_channel_status
+    get_SweepTime = get_sweep_time
+    get_StatOperationRegister = get_stat_operation_register
+    DeleteData = delete_data
+    set_SubSystemSing = set_sub_system_sing
+    set_SelectParameter = set_select_parameter
+    set_TS3739 = set_ts3739
+    get_TransferData = get_transfer_data
+    get_DataFreq = get_data_freq
+    get_SweepChannelStatus = get_sweep_channel_status
+    get_SetAverageState = get_set_average_state
+    get_FreqSpan = get_freq_span
+    set_SweepTime = set_sweep_time
+    set_DisplayTitle = set_display_title
+    set_SubSystemCont = set_sub_system_cont
+    set_SubSystemHold = set_sub_system_hold
+    set_DisplayCount = set_display_count
+    get_ParamFormInFile = get_param_form_in_file
+    get_SysErrors = get_sys_errors
+    get_SelectParameter = get_select_parameter
+    set_StartFreq = set_start_freq
+    get_SweepCount = get_sweep_count
+    set_StatOperationRegister = set_stat_operation_register
+    get_DisplayCount = get_display_count
+    get_SmoothingState = get_smoothing_state
+    set_DisplayColorReset = set_display_color_reset
+    get_DisplayTitle = get_display_title
+    get_TestSet = get_test_set
+    set_ClearAverage = set_clear_average
