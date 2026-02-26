@@ -18,7 +18,7 @@ class GPP4323(BaseInstrument):
     Driver for GW-Instek GPP-4323 Power Supply using BaseInstrument (PyVISA).
     """
 
-    def __init__(self, resource_str: str, **kwargs):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
         """
         Initialize the GW-Instek GPP-4323 Power Supply.
 
@@ -39,7 +39,7 @@ class GPP4323(BaseInstrument):
         kwargs.setdefault('write_termination', '\n')
         kwargs.setdefault('timeout', 2000) # 2s
 
-        super().__init__(resource_str, **kwargs)
+        super().__init__(resource_str, visa_library=visa_library, **kwargs)
 
         # Internal Variables
         self._ChannelLS = [1, 2, 3, 4]

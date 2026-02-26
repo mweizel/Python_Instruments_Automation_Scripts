@@ -8,7 +8,7 @@ Created on Fri Dec 10 08:39:48 2021
 """
 
 import re
-from typing import List, Dict, Any, Tuple
+from typing import Any
 from .BaseInstrument import BaseInstrument
 
 class KEITHLEY2612(BaseInstrument):
@@ -16,7 +16,7 @@ class KEITHLEY2612(BaseInstrument):
     Driver for Keithley 2612 SourceMeter using BaseInstrument.
     """
 
-    def __init__(self, resource_str: str, **kwargs):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
         """
         Initialize the Keithley 2612 SourceMeter.
 
@@ -27,7 +27,7 @@ class KEITHLEY2612(BaseInstrument):
         **kwargs : dict
             Additional keyword arguments passed to the BaseInstrument constructor.
         """
-        super().__init__(resource_str, **kwargs)
+        super().__init__(resource_str, visa_library=visa_library, **kwargs)
 
         idn = self.get_idn()
         if "2612" not in idn:
@@ -970,7 +970,7 @@ class KEITHLEY2612(BaseInstrument):
     # Send Lua Code
     # =============================================================================
 
-    def validate_lua_script(self, lua_script: str) -> Tuple[str, str]:
+    def validate_lua_script(self, lua_script: str) -> tuple[str, str]:
         """
         Validates a Keithley 2612 Lua script to ensure:
         - It starts with 'loadscript <name>'
@@ -984,7 +984,7 @@ class KEITHLEY2612(BaseInstrument):
 
         Returns
         -------
-        Tuple[str, str]
+        tuple[str, str]
             (script_name, cleaned_script_content).
 
         Raises
@@ -1079,7 +1079,7 @@ class KEITHLEY2612(BaseInstrument):
         else:
              self.logger.warning(f"Script {script_name} not found locally.")
 
-    def read_after_lua_script(self, print_output: bool = False) -> Tuple[List[str], str]:
+    def read_after_lua_script(self, print_output: bool = False) -> tuple[list[str], str]:
         """
         Read output from the instrument after script execution.
 
@@ -1090,7 +1090,7 @@ class KEITHLEY2612(BaseInstrument):
 
         Returns
         -------
-        Tuple[List[str], str]
+        tuple[list[str], str]
             (list_of_lines, full_output_string).
         """
         lines = []
@@ -1110,7 +1110,7 @@ class KEITHLEY2612(BaseInstrument):
 
         return lines, full_output
 
-    def read_lua_table(self, lua_table_name: str) -> List[float]:
+    def read_lua_table(self, lua_table_name: str) -> list[float]:
         """
         Read a Lua table from the instrument as a list of floats.
 
@@ -1121,7 +1121,7 @@ class KEITHLEY2612(BaseInstrument):
 
         Returns
         -------
-        List[float]
+        list[float]
             List of values in the table.
         """
         try:

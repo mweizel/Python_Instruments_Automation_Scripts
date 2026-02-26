@@ -19,9 +19,11 @@ class FSWP50(BaseInstrument):
     This class is using PyVISA to connect. Requires NI-VISA or Keysight VISA backend.
     """
 
-    def __init__(self, address: str):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
+        kwargs.setdefault('timeout', 5000) # 5s
+        
         # BaseInstrument handles connection and logging
-        super().__init__(resource_str=address)
+        super().__init__(resource_str=resource_str, visa_library=visa_library, **kwargs)
 
         # Internal Variables
         self._freq_Units_List = ["HZ", "KHZ", "MHZ", "GHZ"]

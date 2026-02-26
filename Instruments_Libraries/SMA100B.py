@@ -15,38 +15,34 @@ class SMA100B(BaseInstrument):
     A class thats uses pyvisa to connect to an SMA100B Signal Generator.
     '''
 
-    def __init__(
-        self,
-        resource_str="ip_adress",
-        visa_library="@ivi",
-    ):
+    def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
         # BaseInstrument handles parsing of IP addresses if "TCPIP" is missing
-        super().__init__(resource_str=resource_str, visa_library=visa_library)
+        super().__init__(resource_str=resource_str, visa_library=visa_library, **kwargs)
 
-# =============================================================================
-# Communication Wrappers (Inherited from BaseInstrument)
-# =============================================================================
+    # =============================================================================
+    # Communication Wrappers (Inherited from BaseInstrument)
+    # =============================================================================
     
     # write, query, close (Close), reset are inherited.
 
-# =============================================================================
-# Validate Variables
-# =============================================================================
+    # =============================================================================
+    # Validate Variables
+    # =============================================================================
 
     # Uses BaseInstrument._parse_state which returns 'ON'/'OFF'.
     
-# =============================================================================
-# Ask Commands
-# =============================================================================
+    # =============================================================================
+    # Ask Commands
+    # =============================================================================
 
     def get_output_impedance(self) -> float:
         """Queries the impedance of the RF output."""
         return float(self.query(":OUTPut1:IMP?"))
 
 
-# =============================================================================
-# Set Commands
-# =============================================================================
+    # =============================================================================
+    # Set Commands
+    # =============================================================================
 
     def set_rf_output_all(self, state: int | str) -> None:
         """Activates all Signal Genrator RF Outputs
@@ -160,9 +156,9 @@ class SMA100B(BaseInstrument):
             raise ValueError("Wrong value range! Allowed values between -36000 and 36000!")
         
         
-# =============================================================================
-# SOURce:FREQuency subsystem
-# =============================================================================
+    # =============================================================================
+    # SOURce:FREQuency subsystem
+    # =============================================================================
 
     def set_frequency_mode(self, MODE: str) -> None:
         '''
@@ -235,9 +231,9 @@ class SMA100B(BaseInstrument):
                 'Unknown input! Unit must be None or "MHz" or "GHz"!')
 
 
-# =============================================================================
-# Activate Commands
-# =============================================================================
+    # =============================================================================
+    # Activate Commands
+    # =============================================================================
 
     def activate_dc_offset(self, state) -> None:
         '''Activates a DC offset.
@@ -252,9 +248,9 @@ class SMA100B(BaseInstrument):
         
     
     
-# =============================================================================
-# SOURce:POWer subsystem
-# =============================================================================
+    # =============================================================================
+    # SOURce:POWer subsystem
+    # =============================================================================
 
     def set_rf_power(self, value: int | float) -> None:
         """Sets the Signal Generator Output Power in dBm.

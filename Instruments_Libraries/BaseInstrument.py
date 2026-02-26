@@ -17,7 +17,7 @@ class BaseInstrument:
     Handles VISA connection, communication, logging, and error handling.
     """
 
-    def __init__(self, resource_str: str, timeout: int = 5000, visa_library: str = "", **kwargs):
+    def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
         """
         Initialize the instrument connection.
 
@@ -25,10 +25,8 @@ class BaseInstrument:
         ----------
         resource_str : str
             The VISA resource string (e.g., 'TCPIP::192.168.1.1::INSTR') or just an IP address.
-        timeout : int, optional
-            Timeout in milliseconds. Default is 5000 ms.
         visa_library : str, optional
-            VISA library to use (e.g., '@ivi', '@py'). Default is empty (let pyvisa decide).
+            VISA library to use (e.g., '@ivi', '@py'). Default is '@py'.
         **kwargs : dict
             Additional arguments passed to `open_resource`.
         """
@@ -48,7 +46,6 @@ class BaseInstrument:
         try:
             self._rm = pyvisa.ResourceManager(visa_library)
             self._resource = cast(MessageBasedResource, self._rm.open_resource(resource_str, **kwargs))
-            self._resource.timeout = timeout
             self.logger.info(f"Connected to {resource_str}")
         except Exception as e:
             self.logger.error(f"Failed to connect to {resource_str}: {e}")

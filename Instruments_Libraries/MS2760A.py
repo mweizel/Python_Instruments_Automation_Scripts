@@ -18,22 +18,21 @@ class MS2760A(BaseInstrument):
     Driver for Anritsu MS2760A Spectrum Analyzer using BaseInstrument.
     """
 
-    def __init__(self, resource_str: str = "127.0.0.1", port: int = 59001, **kwargs) -> None:
+    def __init__(self, resource_str: str = "127.0.0.1::59001", visa_library='@py', **kwargs) -> None:
 
-        # Default socket connection parameters for MS2760A
+        # Default socket connection parameters for MS2760A  
         # PyVISA-compatible keyword arguments
         kwargs.setdefault('read_termination', '\n')
         kwargs.setdefault('write_termination', '\n')
         kwargs.setdefault('query_delay', 0.5)
         
         # Construct the VISA resource string for socket connection
-        socket_resource_str = f"TCPIP0::{resource_str}::{port}::SOCKET"
+        socket_resource_str = f"TCPIP0::{resource_str}::SOCKET"
         
-        super().__init__(socket_resource_str, **kwargs)
+        super().__init__(socket_resource_str, visa_library=visa_library, **kwargs)
 
         # Internal Variables
         self._freq_Units_List = ["HZ", "KHZ", "MHZ", "GHZ"]
-        self._state_List = ["OFF", "ON", 1, 0]
         self._trace_List = [1, 2, 3, 4, 5, 6]
         self._marker_List = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
         self._exeption_state = 0  # indicates that an exception occured
@@ -43,24 +42,6 @@ class MS2760A(BaseInstrument):
     # =============================================================================
     # General functions
     # =============================================================================
-    def get_idn(self) -> str:
-        """
-        Identify the Insturment.
-
-        Returns
-        -------
-        str
-            A string with the Instrument name.
-        """
-        return self.query("*IDN?")
-
-    def reset(self) -> None:
-        """
-        Resets the instrument.
-
-        """
-        self.write("*RST")
-
     def clear(self) -> None:
         """
         Clears input and output buffers
@@ -659,11 +640,8 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state = state.upper() if isinstance(state, str) else int(state)
-        if state in self._state_List:
-            self.write(f":SENSe:BANDwidth:RESolution:AUTO {state}")
-        else:
-            raise ValueError(f"Unknown input! Must be ON, OFF, 1 or 0 instead of {state}")
+        state = self._parse_state(state)
+        self.write(f":SENSe:BANDwidth:RESolution:AUTO {state}")
 
     def set_center_frequency(self, value: int | float, unit: str = "Hz") -> None:
         """
@@ -742,11 +720,8 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state = state.upper() if isinstance(state, str) else int(state)
-        if state in self._state_List:
-            self.write(f":INITiate:CONTinuous {state}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(f":INITiate:CONTinuous {state}")
 
     # Define an alias
     set_ContinuousMeas = set_continuous
@@ -790,11 +765,8 @@ class MS2760A(BaseInstrument):
             Error message
 
         """
-        state = state.upper() if isinstance(state, str) else int(state)
-        if state in self._state_List:
-            self.write(f":CALCulate:MARKer:PEAK:EXCursion:STATe {state}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(f":CALCulate:MARKer:PEAK:EXCursion:STATe {state}")
 
     def set_marker_excursion(self, value: int | float) -> None:
         """
@@ -874,11 +846,8 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state = state.upper() if isinstance(state, str) else int(state)
-        if state in self._state_List:
-            self.write(f":SENSe:CHPower:STATe {state}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(f":SENSe:CHPower:STATe {state}")
 
     def set_trace_type(self, trace_type: str = "NORM", traceNumber: int = 1) -> None:
         """
@@ -956,8 +925,8 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state = state.upper() if isinstance(state, str) else state
-        if traceNumber in self._trace_List and state in self._state_List:
+        state = self._parse_state(state)
+        if traceNumber in self._trace_List:
             self.write(f":TRACe{traceNumber}:DISPlay:STATe {state}")
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -999,11 +968,8 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state = state.upper() if isinstance(state, str) else int(state)
-        if state in self._state_List:
-            self.write(f":POWer:IF:GAIN:STATe {state}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(f":POWer:IF:GAIN:STATe {state}")
 
     def set_detector_type(
         self,
@@ -1286,7 +1252,6 @@ class MS2760A(BaseInstrument):
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
-    Idn = get_idn
     StatusOperation = get_operation_status
     Init = init
     ClearTrace = clear_trace

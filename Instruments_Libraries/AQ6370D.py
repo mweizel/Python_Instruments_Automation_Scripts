@@ -7,33 +7,25 @@ Created on Tue Dec 14 12:58:27 2021
 
 import numpy as np
 import pandas as pd
-import vxi11
+from .BaseInstrument import BaseInstrument
 
 
-class AQ6370D(vxi11.Instrument):
+class AQ6370D(BaseInstrument):
     '''
-    This class uses vxi11 library to connect to a Yokogawa AQ6370D.
-    Need to have python 'vxi11', 'pandas' and 'numpy' libraries installed!
+    This class uses BaseInstrument to connect to a Yokogawa AQ6370D.
+    Need to have python 'pyvisa', 'pandas' and 'numpy' libraries installed!
     
     
     '''
     
-    def __init__(self, hostname):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
         '''
         Get name and identification.
         Make a restart of the instrument in the beginning to get the instrument 
         to default settings.
         '''
-        super().__init__(hostname)
-        print(self.ask('*IDN?'))
-        self.write('*RST')
-        
-    def query(self, message):
-        return self.ask(message)
-    
-    def Close(self):
-        self.close()
-        print('Instrument Yokogawa AQ6370D is closed!')
+        super().__init__(resource_str, visa_library=visa_library, **kwargs)
+        print(self.get_idn())
     
 # =============================================================================
 # Start Sweep
@@ -60,7 +52,6 @@ class AQ6370D(vxi11.Instrument):
         Returns
         -------
         None
-            OSA.ask_SweepMode()
 
         '''
         
@@ -74,7 +65,7 @@ class AQ6370D(vxi11.Instrument):
 # ASK 
 # =============================================================================
 
-    def ask_DisplayAutoY(self):
+    def get_DisplayAutoY(self):
         '''
         
 
@@ -84,7 +75,7 @@ class AQ6370D(vxi11.Instrument):
             Queries the automatic setting function of
             the subscale of the level axis.
             Response 0 = OFF, 1 = ON
-
+        
         '''
         
         data = self.query(':DISPLAY:TRACE:Y2:AUTO?')
@@ -97,7 +88,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_DisplayYUnit(self):
+    def get_DisplayYUnit(self):
         '''
         Queries the units of the main scale of the level axis.
         DBM = dBm
@@ -130,7 +121,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_WavelengthStart(self):
+    def get_WavelengthStart(self):
         '''
         
 
@@ -148,7 +139,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_WavelengthStop(self):
+    def get_WavelengthStop(self):
         '''
         
 
@@ -166,7 +157,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_CenterWavelenght(self):
+    def get_CenterWavelenght(self):
         '''
         
         Returns
@@ -182,7 +173,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_DataFormat(self):
+    def get_DataFormat(self):
         '''
         
 
@@ -204,7 +195,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_UnitX(self):
+    def get_UnitX(self):
         '''
         
         Returns
@@ -231,7 +222,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_TraceState(self):
+    def get_TraceState(self):
         '''
         
 
@@ -248,12 +239,12 @@ class AQ6370D(vxi11.Instrument):
             return 'Trace is OFF'
         else:
             return 'Trace is ON'
-   
     
     
     
     
-    def ask_TraceActive(self):
+    
+    def get_TraceActive(self):
         '''
         
 
@@ -272,7 +263,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_CentralWavelenght(self):
+    def get_CentralWavelenght(self):
         '''
         
 
@@ -290,7 +281,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_Span(self):
+    def get_Span(self):
         '''
         
 
@@ -309,7 +300,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_TraceResolution(self,state):
+    def get_TraceResolution(self,state):
         '''
         
 
@@ -344,7 +335,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_BWResolution(self):
+    def get_BWResolution(self):
         '''
         
 
@@ -361,7 +352,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_Sensitivity(self):
+    def get_Sensitivity(self):
         '''
         
 
@@ -392,7 +383,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_AverageCount(self):
+    def get_AverageCount(self):
         '''
         
 
@@ -410,7 +401,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_SegmentPoints(self):
+    def get_SegmentPoints(self):
         '''
         
 
@@ -429,7 +420,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_SamplePoints(self):
+    def get_SamplePoints(self):
         '''
         
 
@@ -446,7 +437,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_SamplePointsAuto(self):
+    def get_SamplePointsAuto(self):
         '''
         
 
@@ -470,7 +461,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_SweepSpeed(self):
+    def get_SweepSpeed(self):
         '''
         
 
@@ -493,7 +484,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_TraceDataX(self,state):
+    def get_TraceDataX(self,state):
         '''
         
 
@@ -528,7 +519,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_TraceDataY(self,state):
+    def get_TraceDataY(self,state):
         '''
         
 
@@ -562,7 +553,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_SweepMode(self):
+    def get_SweepMode(self):
         '''
         
 
@@ -588,7 +579,7 @@ class AQ6370D(vxi11.Instrument):
     
     
     
-    def ask_TraceAttribute(self,state):
+    def get_TraceAttribute(self,state):
         '''
         
 
@@ -1066,7 +1057,7 @@ class AQ6370D(vxi11.Instrument):
 
         '''
         
-        sState = ['ON'|'OFF']
+        sState = ['ON','OFF']
         if state in sState:
             self.write(' :SENSE:SWEEP:POINTS:AUTO '+str(state))
         else:
@@ -1200,11 +1191,11 @@ class AQ6370D(vxi11.Instrument):
         sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
         if state in sState:
             #Get Headers
-            HeaderX = self.ask_UnitX()
-            HeaderY = self.ask_DisplayYUnit()
+            HeaderX = self.get_UnitX()
+            HeaderY = self.get_DisplayYUnit()
             #Get Data
-            dataX = self.ask_TraceDataX(state)
-            dataY = self.ask_TraceDataY(state)
+            dataX = self.get_TraceDataX(state)
+            dataY = self.get_TraceDataY(state)
             
             #create CSV
             data = {str(HeaderX):dataX,str(HeaderY):dataY}
@@ -1230,20 +1221,20 @@ class AQ6370D(vxi11.Instrument):
         '''
         
         print('################ OSA Parameters ################')
-        print('Y-Axis units = ',self.ask_DisplayYUnit())
-        print('X-Axis units = ',self.ask_UnitX())
-        print('Start Wavelength = ',self.ask_WavelengthStart())
-        print('Stop Wavelength = ',self.ask_WavelengthStop())
-        print('Bandwidth Resolution = ',self.ask_BWResolution())
-        print('Center Wavelength = ',self.ask_CenterWavelenght())
-        print('Span = ',self.ask_Span())
-        print('Output data format = ',self.ask_DataFormat())
-        print('Displayed trace = ',self.ask_TraceState())
-        print('Selected Trace = ',self.ask_TraceActive())
-        print('Averaging Points = ',self.ask_AverageCount())
-        print('Sample Points = ',self.ask_SamplePoints())
-        print('Sweep speed = ',self.ask_SweepSpeed())
-        print('Sweep Mode = ',self.ask_SweepMode())
+        print('Y-Axis units = ',self.get_DisplayYUnit())
+        print('X-Axis units = ',self.get_UnitX())
+        print('Start Wavelength = ',self.get_WavelengthStart())
+        print('Stop Wavelength = ',self.get_WavelengthStop())
+        print('Bandwidth Resolution = ',self.get_BWResolution())
+        print('Center Wavelength = ',self.get_CenterWavelenght())
+        print('Span = ',self.get_Span())
+        print('Output data format = ',self.get_DataFormat())
+        print('Displayed trace = ',self.get_TraceState())
+        print('Selected Trace = ',self.get_TraceActive())
+        print('Averaging Points = ',self.get_AverageCount())
+        print('Sample Points = ',self.get_SamplePoints())
+        print('Sweep speed = ',self.get_SweepSpeed())
+        print('Sweep Mode = ',self.get_SweepMode())
         print('################ OSA Parameters ################')
         
      
@@ -1264,23 +1255,48 @@ class AQ6370D(vxi11.Instrument):
                   'Sweep speed','Sweep Mode']
         Data = []
 
-        Data.append(self.ask_DisplayYUnit())
-        Data.append(self.ask_UnitX())
-        Data.append(self.ask_WavelengthStart())
-        Data.append(self.ask_WavelengthStop())
-        Data.append(self.ask_BWResolution())
-        Data.append(self.ask_CenterWavelenght())
-        Data.append(self.ask_Span())
-        Data.append(self.ask_DataFormat())
-        Data.append(self.ask_TraceState())
-        Data.append(self.ask_TraceActive())
-        Data.append(self.ask_AverageCount())
-        Data.append(self.ask_SamplePoints())
-        Data.append(self.ask_SweepSpeed())
-        Data.append(self.ask_SweepMode())
+        Data.append(self.get_DisplayYUnit())
+        Data.append(self.get_UnitX())
+        Data.append(self.get_WavelengthStart())
+        Data.append(self.get_WavelengthStop())
+        Data.append(self.get_BWResolution())
+        Data.append(self.get_CenterWavelenght())
+        Data.append(self.get_Span())
+        Data.append(self.get_DataFormat())
+        Data.append(self.get_TraceState())
+        Data.append(self.get_TraceActive())
+        Data.append(self.get_AverageCount())
+        Data.append(self.get_SamplePoints())
+        Data.append(self.get_SweepSpeed())
+        Data.append(self.get_SweepMode())
 
         
         return Header,Data
-        
-        
-        
+
+    # =============================================================================
+    # Aliases for backwards compatibility
+    # =============================================================================
+
+    ask_DisplayAutoY = get_DisplayAutoY
+    ask_DisplayYUnit = get_DisplayYUnit
+    ask_WavelengthStart = get_WavelengthStart
+    ask_WavelengthStop = get_WavelengthStop
+    ask_CenterWavelenght = get_CenterWavelenght
+    ask_DataFormat = get_DataFormat
+    ask_UnitX = get_UnitX
+    ask_TraceState = get_TraceState
+    ask_TraceActive = get_TraceActive
+    ask_CentralWavelenght = get_CentralWavelenght
+    ask_Span = get_Span
+    ask_TraceResolution = get_TraceResolution
+    ask_BWResolution = get_BWResolution
+    ask_Sensitivity = get_Sensitivity
+    ask_AverageCount = get_AverageCount
+    ask_SegmentPoints = get_SegmentPoints
+    ask_SamplePoints = get_SamplePoints
+    ask_SamplePointsAuto = get_SamplePointsAuto
+    ask_SweepSpeed = get_SweepSpeed
+    ask_TraceDataX = get_TraceDataX
+    ask_TraceDataY = get_TraceDataY
+    ask_SweepMode = get_SweepMode
+    ask_TraceAttribute = get_TraceAttribute

@@ -33,9 +33,11 @@ class M8070B(BaseInstrument):
     Copy the VISA resource string (usually localhost).
     """
 
-    def __init__(self, resource_str="TCPIP0::localhost::hislip0::INSTR"):
-        super().__init__(resource_str, query_delay=0.5)
-        self._channelLS = [1, 2]  #
+    def __init__(self, resource_str="TCPIP0::localhost::hislip0::INSTR", visa_library='@py', **kwargs):
+        kwargs.setdefault('write_termination', '\n')
+        kwargs.setdefault('timeout', 2000) # 2s
+
+        super().__init__(resource_str, visa_library=visa_library, **kwargs)
         self._channelLS = [1, 2]  #
         print(self.get_idn())
 

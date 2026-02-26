@@ -7,45 +7,22 @@ Created on Mon Dec 13 10:40:31 2021
 
 
 import numpy as np
-import pyvisa as visa
+from .BaseInstrument import BaseInstrument
 
 
-class MS4647B:
+class MS4647B(BaseInstrument):
     """
-    This function is using pyvisa to connect to Instruments. Please install PyVisa before using it.
+    This class uses BaseInstrument to connect to an Anritsu MS4647B VNA.
     """
 
-    def __init__(self, resource_str):
+    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
         """
         Connect to Device and print the Identification Number.
         """
-        self._resource = visa.ResourceManager("@py").open_resource(resource_str)
-        print(self._resource.query("*IDN?"))
-
-    def query(self, message):
-        return self._resource.query(message)
-
-    def write(self, message):
-        return self._resource.write(message)
-
-    def Close(self):
-        print("Instrument Anritsu MS4647B is closed!")
-        return self._resource.close()
-
-    # =============================================================================
-    # Get the instrument Serial Number and Model
-    # =============================================================================
-    def getIdn(self):
-        """
-
-        Returns
-        -------
-        TYPE str
-                Device Serial Number and Model
-
-        """
-
-        return self.query("*IDN?").split("\n")[0]
+        # Set default read_termination to '\n' to avoid manual splitting of responses
+        kwargs.setdefault('read_termination', '\n')
+        super().__init__(resource_str, visa_library=visa_library, **kwargs)
+        print(self.get_idn())
 
     # =============================================================================
     # Return to local
@@ -67,7 +44,7 @@ class MS4647B:
     # Ask
     # =============================================================================
 
-    def ask_SubSystem(self):
+    def get_SubSystem(self):
         """
 
 
@@ -79,9 +56,9 @@ class MS4647B:
 
         """
 
-        return self.query(":SENSe:HOLD:FUNCtion?").split("\n")[0]
+        return self.query(":SENSe:HOLD:FUNCtion?")
 
-    def ask_SweepCount(self, ChanNumber):
+    def get_SweepCount(self, ChanNumber):
         """
 
 
@@ -104,11 +81,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return float(self.query(":SENS" + str(ChanNumber) + ":AVER:SWE?").split("\n")[0])
+            return float(self.query(":SENS" + str(ChanNumber) + ":AVER:SWE?"))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_TestSet(self, ChanNumber):
+    def get_TestSet(self, ChanNumber):
         """
 
 
@@ -130,11 +107,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return self.query(":SENS" + str(ChanNumber) + ":TS3739:STATe?").split("\n")[0]
+            return self.query(":SENS" + str(ChanNumber) + ":TS3739:STATe?")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_SysErrors(self):
+    def get_SysErrors(self):
         """
 
 
@@ -145,9 +122,9 @@ class MS4647B:
 
         """
 
-        return self.query(":SYST:ERR:COUN?").split("\n")[0]
+        return self.query(":SYST:ERR:COUN?")
 
-    def ask_StatOperation(self):
+    def get_StatOperation(self):
         """
 
 
@@ -161,9 +138,9 @@ class MS4647B:
 
         """
 
-        return self.query(":STAT:OPER:COND?").split("\n")[0]
+        return self.query(":STAT:OPER:COND?")
 
-    def ask_StatOperationRegister(self):
+    def get_StatOperationRegister(self):
         """
 
 
@@ -175,9 +152,9 @@ class MS4647B:
 
         """
 
-        return self.query(":STATus:OPERation:ENABle?").split("\n")[0]
+        return self.query(":STATus:OPERation:ENABle?")
 
-    def ask_FreqSpan(self, ChanNumber):
+    def get_FreqSpan(self, ChanNumber):
         """
 
 
@@ -200,11 +177,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return float(self.query(":SENSe" + str(ChanNumber) + ":FREQuency:SPAN?").split("\n")[0])
+            return float(self.query(":SENSe" + str(ChanNumber) + ":FREQuency:SPAN?"))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_CenterFreq(self, ChanNumber):
+    def get_CenterFreq(self, ChanNumber):
         """
 
 
@@ -230,12 +207,12 @@ class MS4647B:
 
         if type(ChanNumber) == int:
             return float(
-                self.query(":SENSe" + str(ChanNumber) + ":FREQuency:CENTer?").split("\n")[0]
+                self.query(":SENSe" + str(ChanNumber) + ":FREQuency:CENTer?")
             )
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_CWFreq(self, ChanNumber):
+    def get_CWFreq(self, ChanNumber):
         """
 
 
@@ -260,11 +237,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return float(self.query(":SENS" + str(ChanNumber) + ":FREQ:CW?").split("\n")[0])
+            return float(self.query(":SENS" + str(ChanNumber) + ":FREQ:CW?"))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_DataFreq(self, ChanNumber):
+    def get_DataFreq(self, ChanNumber):
         """
 
 
@@ -286,11 +263,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return self.query(":SENSe" + str(ChanNumber) + ":FREQuency:DATA?").split("\n")[0]
+            return self.query(":SENSe" + str(ChanNumber) + ":FREQuency:DATA?")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_SweepChannelStatus(self):
+    def get_SweepChannelStatus(self):
         """
 
 
@@ -302,9 +279,9 @@ class MS4647B:
 
         """
 
-        return self.query(":DISP:ACT:CHAN:SWE:STAT?").split("\n")[0]
+        return self.query(":DISP:ACT:CHAN:SWE:STAT?")
 
-    def ask_AssignetDataPort(self, value):
+    def get_AssignetDataPort(self, value):
         """
 
 
@@ -328,17 +305,17 @@ class MS4647B:
 
         value = str(value)
         if value in ["1", "2", "3", "4"]:
-            return self.query("FORMat:S" + str(value) + "P:PORT?").split("\n")[0]
+            return self.query("FORMat:S" + str(value) + "P:PORT?")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_ParamFormInFile(self):
+    def get_ParamFormInFile(self):
         """
         Outputs the parameter format displayed in an SNP data file.
         """
-        return self.query(":FORMat:SNP:PARameter?").split("\n")[0]
+        return self.query(":FORMat:SNP:PARameter?")
 
-    def ask_RFState(self):
+    def get_RFState(self):
         """
 
 
@@ -349,9 +326,9 @@ class MS4647B:
 
         """
 
-        return self.query(":SYST:HOLD:RF?").split("\n")[0]
+        return self.query(":SYST:HOLD:RF?")
 
-    def ask_SetAverageState(self, ChanNumber):
+    def get_SetAverageState(self, ChanNumber):
         """
 
 
@@ -373,11 +350,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return self.query(":SENS" + str(ChanNumber) + ":AVER?").split("\n")[0]
+            return self.query(":SENS" + str(ChanNumber) + ":AVER?")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_AverageFunctionType(self, ChanNumber):
+    def get_AverageFunctionType(self, ChanNumber):
         """
 
 
@@ -399,11 +376,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return self.query(":SENS" + str(ChanNumber) + ":AVER:TYP?").split("\n")[0]
+            return self.query(":SENS" + str(ChanNumber) + ":AVER:TYP?")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_AverageCount(self, ChanNumber):
+    def get_AverageCount(self, ChanNumber):
         """
 
 
@@ -425,11 +402,11 @@ class MS4647B:
         """
 
         if type(ChanNumber) == int:
-            return float(self.query(":SENS" + str(ChanNumber) + ":AVER:COUN?").split("\n")[0])
+            return float(self.query(":SENS" + str(ChanNumber) + ":AVER:COUN?"))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_TransferData(self, name, portNumb):
+    def get_TransferData(self, name, portNumb):
         """
 
 
@@ -456,7 +433,7 @@ class MS4647B:
         path = str(path) + str(name) + "_.s" + str(portNumb) + "p"
         return self.query(":MMEM:TRAN? " + '"' + path + '"')
 
-    def ask_TransferDataCSV(self, name):
+    def get_TransferDataCSV(self, name):
         """
 
 
@@ -481,7 +458,7 @@ class MS4647B:
         path = str(path) + str(name) + "_.csv"
         return self.query(":MMEM:TRAN? " + '"' + path + '"')
 
-    def ask_ResolutionBW(self, ChanNumber):
+    def get_ResolutionBW(self, ChanNumber):
         """
 
 
@@ -498,9 +475,9 @@ class MS4647B:
 
         """
 
-        return float(self.query(":SENS" + str(ChanNumber) + ":BAND?").split("\n")[0])
+        return float(self.query(":SENS" + str(ChanNumber) + ":BAND?"))
 
-    def ask_PowerOnPort(self, segment, ChanNumber):
+    def get_PowerOnPort(self, segment, ChanNumber):
         """
 
 
@@ -522,14 +499,12 @@ class MS4647B:
         stChanNumber = np.arange(1, 5, 1)
         if segment in stSegment and ChanNumber in stChanNumber:
             return float(
-                self.query(":SOUR" + str(segment) + ":POW:PORT" + str(ChanNumber) + "?").split(
-                    "\n"
-                )[0]
+                self.query(":SOUR" + str(segment) + ":POW:PORT" + str(ChanNumber) + "?")
             )
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def ask_SmoothingState(self, ChanNumber):
+    def get_SmoothingState(self, ChanNumber):
         """
 
 
@@ -546,9 +521,9 @@ class MS4647B:
             2 = OFF
 
         """
-        return float(self.query(":CALC" + str(ChanNumber) + ":SMO?").split("\n")[0])
+        return float(self.query(":CALC" + str(ChanNumber) + ":SMO?"))
 
-    def ask_DisplayTrace(self):
+    def get_DisplayTrace(self):
         """
 
 
@@ -560,7 +535,7 @@ class MS4647B:
         """
         return self.query(":DISPlay:WINDow:ACTivate?")
 
-    def ask_DisplayCount(self):
+    def get_DisplayCount(self):
         """
 
 
@@ -570,9 +545,9 @@ class MS4647B:
             Query the number of displayed channels.
 
         """
-        return float(self.query(":DISP:COUN?").split("\n")[0])
+        return float(self.query(":DISP:COUN?"))
 
-    def ask_DisplayTitle(self):
+    def get_DisplayTitle(self):
         """
 
 
@@ -585,7 +560,7 @@ class MS4647B:
         """
         return self.query(":DISP:WIND1:TITL?")
 
-    def ask_SelectParameter(self):
+    def get_SelectParameter(self):
         """
 
 
@@ -595,9 +570,9 @@ class MS4647B:
 
         """
 
-        return self.query(":CALC1:PAR1:DEF?").split("\n")[0]
+        return self.query(":CALC1:PAR1:DEF?")
 
-    def ask_SweepDelay(self):
+    def get_SweepDelay(self):
         """
 
 
@@ -609,7 +584,7 @@ class MS4647B:
 
         return self.query(":SENS1:SWE:DEL?")
 
-    def ask_SweepTime(self):
+    def get_SweepTime(self):
         """
 
 
@@ -1576,3 +1551,38 @@ class MS4647B:
             for line in readinglines:
                 f.write(line)
                 f.write("\n")
+
+    # =============================================================================
+    # Aliases
+    # =============================================================================
+    
+    getIdn = BaseInstrument.get_idn
+    ask_SubSystem = get_SubSystem
+    ask_SweepCount = get_SweepCount
+    ask_TestSet = get_TestSet
+    ask_SysErrors = get_SysErrors
+    ask_StatOperation = get_StatOperation
+    ask_StatOperationRegister = get_StatOperationRegister
+    ask_FreqSpan = get_FreqSpan
+    ask_CenterFreq = get_CenterFreq
+    ask_CWFreq = get_CWFreq
+    ask_DataFreq = get_DataFreq
+    ask_SweepChannelStatus = get_SweepChannelStatus
+    ask_AssignetDataPort = get_AssignetDataPort
+    ask_ParamFormInFile = get_ParamFormInFile
+    ask_RFState = get_RFState
+    ask_SetAverageState = get_SetAverageState
+    ask_AverageFunctionType = get_AverageFunctionType
+    ask_AverageCount = get_AverageCount
+    ask_TransferData = get_TransferData
+    ask_TransferDataCSV = get_TransferDataCSV
+    ask_ResolutionBW = get_ResolutionBW
+    ask_PowerOnPort = get_PowerOnPort
+    ask_SmoothingState = get_SmoothingState
+    ask_DisplayTrace = get_DisplayTrace
+    ask_DisplayCount = get_DisplayCount
+    ask_DisplayTitle = get_DisplayTitle
+    ask_SelectParameter = get_SelectParameter
+    ask_SweepDelay = get_SweepDelay
+    ask_SweepTime = get_SweepTime
+    
