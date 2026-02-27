@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Dec 10 11:35:57 2021
 Refactored by unifying identical Korad Drivers.
@@ -8,6 +7,7 @@ Refactored by unifying identical Korad Drivers.
 """
 
 from .RD3005 import RD3005
+
 
 class KA3005(RD3005):
     """

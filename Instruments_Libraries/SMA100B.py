@@ -1,19 +1,16 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-""""
+""" "
 Created on Fir Feb 02 13:00:00 2024
 
 @author: mweizel
 """
 
-
-
 from .BaseInstrument import BaseInstrument
 
+
 class SMA100B(BaseInstrument):
-    '''
+    """
     A class thats uses pyvisa to connect to an SMA100B Signal Generator.
-    '''
+    """
 
     def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
         # BaseInstrument handles parsing of IP addresses if "TCPIP" is missing
@@ -22,7 +19,7 @@ class SMA100B(BaseInstrument):
     # =============================================================================
     # Communication Wrappers (Inherited from BaseInstrument)
     # =============================================================================
-    
+
     # write, query, close (Close), reset are inherited.
 
     # =============================================================================
@@ -30,7 +27,7 @@ class SMA100B(BaseInstrument):
     # =============================================================================
 
     # Uses BaseInstrument._parse_state which returns 'ON'/'OFF'.
-    
+
     # =============================================================================
     # Ask Commands
     # =============================================================================
@@ -38,7 +35,6 @@ class SMA100B(BaseInstrument):
     def get_output_impedance(self) -> float:
         """Queries the impedance of the RF output."""
         return float(self.query(":OUTPut1:IMP?"))
-
 
     # =============================================================================
     # Set Commands
@@ -58,8 +54,7 @@ class SMA100B(BaseInstrument):
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
         state = self._parse_state(state)
-        self.write(f':OUTPut:ALL:STATe {state}')
-
+        self.write(f":OUTPut:ALL:STATe {state}")
 
     def set_rf_output(self, state: int | str) -> None:
         """Activates the Signal Genrator RF Output.
@@ -75,8 +70,7 @@ class SMA100B(BaseInstrument):
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
         state = self._parse_state(state)
-        self.write(f':OUTPut {state}')
-
+        self.write(f":OUTPut {state}")
 
     def set_output(self, state: int | str) -> None:
         """Activates the Signal Genrator RF Output.
@@ -95,7 +89,7 @@ class SMA100B(BaseInstrument):
 
     def set_dc_offset(self, value: int | float) -> None:
         """
-        
+
 
         Parameters
         ----------
@@ -109,10 +103,9 @@ class SMA100B(BaseInstrument):
         else:
             raise ValueError("Allowed Offsets are numbers between -5 and 5!")
 
-
     def set_cmos_voltage(self, value: int | float) -> None:
         """
-        
+
 
         Parameters
         ----------
@@ -131,10 +124,10 @@ class SMA100B(BaseInstrument):
             self.write(f":CSYNthesis:VOLTage {value}")
         else:
             raise ValueError("Wrong Value. Allowed values are between o.8 and 2.7!")
-            
+
     def set_clock_sig_phase(self, value: int | float) -> None:
         """
-        
+
 
         Parameters
         ----------
@@ -154,17 +147,16 @@ class SMA100B(BaseInstrument):
             self.write(f":CSYNthesis:PHASe {value}")
         else:
             raise ValueError("Wrong value range! Allowed values between -36000 and 36000!")
-        
-        
+
     # =============================================================================
     # SOURce:FREQuency subsystem
     # =============================================================================
 
-    def set_frequency_mode(self, MODE: str) -> None:
-        '''
+    def set_frequency_mode(self, mode: str) -> None:
+        """
         Parameters
         ----------
-        MODE : str
+        mode : str
             <Mode> CW | FIXed | SWEep | LIST | COMBined
 
             CW|FIXed
@@ -185,18 +177,17 @@ class SMA100B(BaseInstrument):
                 Sets the combined RF frequency / level sweep mode.
                 The instrument processes frequency and level settings in
                 defined sweep steps.
-        '''
-        
-        sStates = ["CW", "FIXed", "FIX", "SWEep", "SWE", "LIST", "COMBined", "COMB"]
-        MODE = MODE.upper()
-        if MODE in sStates:
-            self.write(f':FREQuency:MODE {MODE}')
+        """
+
+        state_list = ["CW", "FIXed", "FIX", "SWEep", "SWE", "LIST", "COMBined", "COMB"]
+        mode = mode.upper()
+        if mode in state_list:
+            self.write(f":FREQuency:MODE {mode}")
         else:
             raise ValueError("Not a valid input. Valid: CW | FIXed | SWEep | LIST | COMBined !")
-            
 
     def set_freq_cw(self, value: int | float, unit: str | None = None) -> None:
-        '''
+        """
         Parameters
         ----------
         value : int/float
@@ -205,49 +196,45 @@ class SMA100B(BaseInstrument):
         unit : str (optional)
             Frequency Unit: 'GHz' or 'MHz' or 'Hz'
 
-        '''
+        """
 
-        minFreq = 8e3 # 8 kHz
-        maxFreq = 72e9  # 67 GHz calibrated, 72 GHz max
+        min_freq = 8e3  # 8 kHz
+        max_freq = 72e9  # 67 GHz calibrated, 72 GHz max
 
-        if unit == 'Hz' or unit is None:
-            unit = 'Hz'
-            if value <= maxFreq and value >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+        if unit == "Hz" or unit is None:
+            unit = "Hz"
+            if value <= max_freq and value >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
-        elif unit == 'MHz':
-            if value*1e6 <= maxFreq and value*1e6 >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+                raise ValueError("Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz")
+        elif unit == "MHz":
+            if value * 1e6 <= max_freq and value * 1e6 >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
-        elif unit == 'GHz':
-            if value*1e9 <= maxFreq and value*1e9 >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+                raise ValueError("Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz")
+        elif unit == "GHz":
+            if value * 1e9 <= max_freq and value * 1e9 >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
+                raise ValueError("Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz")
         else:
-            raise ValueError(
-                'Unknown input! Unit must be None or "MHz" or "GHz"!')
-
+            raise ValueError('Unknown input! Unit must be None or "MHz" or "GHz"!')
 
     # =============================================================================
     # Activate Commands
     # =============================================================================
 
     def activate_dc_offset(self, state) -> None:
-        '''Activates a DC offset.
-        
+        """Activates a DC offset.
+
         Parameters
         ----------
         state : str
             'ON' 1 or 'OFF' 0
-        '''
+        """
         state = self._parse_state(state)
         self.write(f":CSYNthesis:OFFSet:STATe {state}")
-        
-    
-    
+
     # =============================================================================
     # SOURce:POWer subsystem
     # =============================================================================
@@ -260,22 +247,23 @@ class SMA100B(BaseInstrument):
         value : int/float
             Output Power in dBm
         """
-        minVal = -20.0
-        maxVal = 30.0
-        if value > maxVal or value < minVal:
-            raise ValueError(f'Power out of range! You can set power between {minVal} and {maxVal} dBm!')
+        min_val = -20.0
+        max_val = 30.0
+        if value > max_val or value < min_val:
+            raise ValueError(
+                f"Power out of range! You can set power between {min_val} and {max_val} dBm!"
+            )
 
-        self.write(f'SOURce:POWer:LEVel:IMMediate:AMPlitude {value}')
-  
-    
+        self.write(f"SOURce:POWer:LEVel:IMMediate:AMPlitude {value}")
+
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
-    
-    ask_OutputImpedance = get_output_impedance
-    set_DCOffset = set_dc_offset
-    set_CMOS_Voltage = set_cmos_voltage
-    set_ClockSigPhase = set_clock_sig_phase
-    set_freq_CW = set_freq_cw
-    activate_DCOffset = activate_dc_offset
-    set_OutputPowerLevel = set_rf_power
+
+    ask_OutputImpedance = get_output_impedance  # noqa: N815
+    set_DCOffset = set_dc_offset  # noqa: N815
+    set_CMOS_Voltage = set_cmos_voltage  # noqa: N815
+    set_ClockSigPhase = set_clock_sig_phase  # noqa: N815
+    set_freq_CW = set_freq_cw  # noqa: N815
+    activate_DCOffset = activate_dc_offset  # noqa: N815
+    set_OutputPowerLevel = set_rf_power  # noqa: N815

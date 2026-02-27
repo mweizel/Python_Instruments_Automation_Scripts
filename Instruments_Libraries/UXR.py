@@ -1,15 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Mon Dec  1 20:17:32 2024
 
 @author: Maxim Weizel
 """
 
-import numpy as np
-from os.path import splitext
 from datetime import datetime
+from os.path import splitext
 from typing import Any
+
+import numpy as np
+
 from .BaseInstrument import BaseInstrument
 
 
@@ -23,10 +23,10 @@ class UXR(BaseInstrument):
         resource_str: str = "TCPIP0::KEYSIGH-Q75EBO9.local::hislip0::INSTR",
         visa_library: str = "@ivi",  # If you have problems try "@py"!
         num_channel: int = 2,
-        **kwargs
+        **kwargs,
     ):
-        kwargs.setdefault('read_termination', '\n')
-        kwargs.setdefault('query_delay', 0.5)
+        kwargs.setdefault("read_termination", "\n")
+        kwargs.setdefault("query_delay", 0.5)
         super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
         print(self.get_idn())
 
@@ -41,7 +41,12 @@ class UXR(BaseInstrument):
         self.waveform_streaming("off")
 
     def query_binary_values(
-        self, message: str, datatype: Any = "h", container: Any = np.array, data_points: int = 0, **kwargs
+        self,
+        message: str,
+        datatype: Any = "h",
+        container: Any = np.array,
+        data_points: int = 0,
+        **kwargs,
     ) -> Any:
         return self._resource.query_binary_values(
             message,
@@ -55,9 +60,9 @@ class UXR(BaseInstrument):
     # Checks and Validations
     # =============================================================================
 
-    def _validate_generic(self, value: Any, valid_List: list) -> Any:
-        if value not in valid_List:
-            raise ValueError(f"Invalid value given! Value can be one of {valid_List}.")
+    def _validate_generic(self, value: Any, valid_list: list) -> Any:
+        if value not in valid_list:
+            raise ValueError(f"Invalid value given! Value can be one of {valid_list}.")
         return value
 
     def _validate_channel(self, channel: int) -> int:
@@ -208,7 +213,7 @@ class UXR(BaseInstrument):
             "WMEM",
             "WMEMORY",
             "CLOC",
-            "CLOCK" "MTR",
+            "CLOCKMTR",
             "MTREND",
             "MSP",
             "MSPECTRUM",
@@ -221,7 +226,7 @@ class UXR(BaseInstrument):
             if value is not None and int(value) <= 16:  # For CHAN <=2, for FUNC <=16, ... etc.
                 return int(self.query(f":STATus? {key}{value}"))
         else:
-            return int(self.query(f":STATus? CHANnel1"))
+            return int(self.query(":STATus? CHANnel1"))
 
     def stop(self) -> None:
         """
@@ -341,8 +346,6 @@ class UXR(BaseInstrument):
         Adapted from:
         https://github.com/microsoft/Qcodes/blob/main/src/qcodes/instrument_drivers/Keysight/Infiniium.py
         """
-        # we lazy import PIL here to avoid importing pillow when unused
-        from PIL.Image import open as pil_open
 
         time_str = datetime.now().strftime(time_fmt) if with_time else ""
         img_name, img_type = splitext(path)
@@ -479,7 +482,8 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         start : int, optional
-            Starting point in the source memory for the first waveform point to transfer, by default None.
+            Starting point in the source memory for the first waveform point to transfer, 
+            by default None.
         size : int, optional
             Number of points in the source memory to transfer. If larger than available data,
             size is adjusted to the maximum available, by default None.

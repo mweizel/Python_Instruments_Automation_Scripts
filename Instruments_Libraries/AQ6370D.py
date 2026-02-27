@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Tue Dec 14 12:58:27 2021
 
@@ -7,302 +6,164 @@ Created on Tue Dec 14 12:58:27 2021
 
 import numpy as np
 import pandas as pd
+
 from .BaseInstrument import BaseInstrument
 
 
 class AQ6370D(BaseInstrument):
-    '''
+    """
     This class uses BaseInstrument to connect to a Yokogawa AQ6370D.
     Need to have python 'pyvisa', 'pandas' and 'numpy' libraries installed!
-    
-    
-    '''
-    
-    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
-        '''
+
+
+    """
+
+    def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
+        """
         Get name and identification.
-        Make a restart of the instrument in the beginning to get the instrument 
+        Make a restart of the instrument in the beginning to get the instrument
         to default settings.
-        '''
+        """
         super().__init__(resource_str, visa_library=visa_library, **kwargs)
         print(self.get_idn())
-    
-# =============================================================================
-# Start Sweep
-# =============================================================================
+
+    # =============================================================================
+    # Start Sweep
+    # =============================================================================
 
     def start_sweep(self):
-        '''
+        """
         Makes a sweep
-        '''
-        self.write(':INITIATE')
-        
-    
-    
-    
-    
-# =============================================================================
-# Stop Measurment
-# =============================================================================
+        """
+        self.write(":INITIATE")
 
-    def stop(self):
-        '''
-        
+    # =============================================================================
+    # Stop Measurment
+    # =============================================================================
 
-        Returns
-        -------
-        None
+    def stop(self) -> None:
+        """
+        """
+        self.write("ABORt")
 
-        '''
-        
-        self.write('ABORt')
-        
-    
-    
-    
-    
-# =============================================================================
-# ASK 
-# =============================================================================
+    # =============================================================================
+    # ASK
+    # =============================================================================
 
-    def get_display_auto_y(self):
-        '''
-        
-
-        Returns
-        -------
-        str
-            Queries the automatic setting function of
-            the subscale of the level axis.
-            Response 0 = OFF, 1 = ON
-        
-        '''
-        
-        data = self.query(':DISPLAY:TRACE:Y2:AUTO?')
-        if data == '0':
-            return 'OFF'
+    def get_display_auto_y(self) -> str:
+        """
+        Queries the automatic setting function of
+        the subscale of the level axis.
+        Response 0 = OFF, 1 = ON
+        """
+        data = self.query(":DISPLAY:TRACE:Y2:AUTO?")
+        if data == "0":
+            return "OFF"
         else:
-            return 'ON'
-    
-    
-    
-    
-    
-    def get_display_y_unit(self):
-        '''
+            return "ON"
+
+    def get_display_y_unit(self) -> str | None:
+        """
         Queries the units of the main scale of the level axis.
         DBM = dBm
         W = W
         DBM/NM = dBm/nm or dBm/THz
         W/NM = W/nm or W/THz
-        
+        """
+        data = self.query(":DISPLAY:TRACE:Y1:UNIT?")
+        if data == "0":
+            return "dBm"
+        elif data == "1":
+            return "W"
+        elif data == "2":
+            return "DBM/NM"
+        elif data == "3":
+            return "W/NM"
 
-        Returns
-        -------
-        str
-            0 = dBm
-            1 = W
-            2 = DBM/NM
-            3 = W/NM
+    def get_wavelength_start(self) -> float:
+        """
+        Queries the measurement condition
+        measurement start wavelength
+        """
+        return float(self.query(":SENSE:WAVELENGTH:START?"))
 
-        '''
-               
-        data  = self.query(':DISPLAY:TRACE:Y1:UNIT?')
-        if data == '0':
-            return 'dBm'
-        elif data == '1':
-            return 'W'
-        elif data == '2':
-            return 'DBM/NM'
-        elif data == '3':
-            return 'W/NM'
-       
-    
-    
-    
-    
-    def get_wavelength_start(self):
-        '''
-        
+    def get_wavelength_stop(self) -> float:
+        """
+        Queries the measurement condition
+        measurement start wavelength
+        """
+        return float(self.query(":SENSE:WAVELENGTH:STOP?"))
 
-        Returns
-        -------
-        float
-            Queries the measurement condition
-            measurement start wavelength
+    def get_center_wavelenght(self) -> float:
+        """
+        Queries the synchronous sweep function.
+        """
+        return float(self.query(":SENSe:WAVelength:CENTer?"))
 
-        '''
+    def get_data_format(self) -> str:
+        """
+        Queries the format used for data transfer
+        via GP-IB.
 
-        return float(self.query(':SENSE:WAVELENGTH:START?'))
-    
-    
-    
-    
-    
-    def get_wavelength_stop(self):
-        '''
-        
+        ASCii = ASCII format (default)
+        REAL[,64] = REAL format (64bits)
+        REAL,32 = REAL format (32bits)
+        """
+        return self.query(":FORMat:DATA?")
 
-        Returns
-        -------
-        float
-            Queries the measurement condition
-            measurement start wavelength
+    def get_unit_x(self) -> str | None:
+        """
+        Queries the units for the X axis.
 
-        '''
-        
-        return float(self.query(':SENSE:WAVELENGTH:STOP?'))
-    
-    
-    
-    
-    
-    def get_center_wavelenght(self):
-        '''
-        
-        Returns
-        -------
-        float
-            Queries the synchronous sweep function.
+        For AQ6370C, AQ6373 or AQ6373B
+        WAVelength = Wavelength
+        FREQuency = Frequency
+        """
+        data = self.query(":UNIT:X?")
+        if data == "0":
+            return "WAVelength"
+        elif data == "1":
+            return "FREQuency"
+        elif data == "2":
+            return "WNUMber"
 
-        '''
-        
-        return float(self.query(':SENSe:WAVelength:CENTer?'))
-    
-    
-    
-    
-    
-    def get_data_format(self):
-        '''
-        
-
-        Returns
-        -------
-        str
-            Queries the format used for data transfer
-            via GP-IB.
-            
-            ASCii = ASCII format (default)
-            REAL[,64] = REAL format (64bits)
-            REAL,32 = REAL format (32bits)
-
-        '''
-        
-        return self.query(':FORMat:DATA?')
-    
-    
-    
-    
-    
-    def get_unit_x(self):
-        '''
-        
-        Returns
-        -------
-        str
-            Queries the units for the X axis.
-            
-            
-            For AQ6370C, AQ6373 or AQ6373B
-            WAVelength = Wavelength
-            FREQuency = Frequency
-
-        '''
-        
-        data =  self.query(':UNIT:X?')
-        if data == '0':
-            return 'WAVelength'
-        elif data == '1':
-            return 'FREQuency'
-        elif data == '2':
-            return 'WNUMber'
-        
-    
-    
-    
-    
-    def get_trace_state(self):
-        '''
-        
-
-        Returns
-        -------
-        str
-            Queries the display status of the specified
-            trace.
-
-        '''
-        
-        data = self.query('TRACe:STATe?')
-        if data == '0':
-            return 'Trace is OFF'
+    def get_trace_state(self) -> str:
+        """
+        Queries the display status of the specified
+        trace.
+        """
+        data = self.query("TRACe:STATe?")
+        if data == "0":
+            return "Trace is OFF"
         else:
-            return 'Trace is ON'
-    
-    
-    
-    
-    
-    def get_trace_active(self):
-        '''
-        
+            return "Trace is ON"
 
-        Returns
-        -------
-        str
-            Queries the trace to be transferred.
-            
-            Outputs - (TRA|TRB|TRC|TRD|TRE|TRF|TRG)
+    def get_trace_active(self) -> str:
+        """
+        Queries the trace to be transferred.
 
-        '''
-        
-        return self.query(':TRACe:ACTive?')
-    
-    
-    
-    
-    
-    def get_central_wavelenght(self):
-        '''
-        
+        Outputs - (TRA|TRB|TRC|TRD|TRE|TRF|TRG)
+        """
+        return self.query(":TRACe:ACTive?")
 
-        Returns
-        -------
-        str
-            Queries the center wavelength of the
-            X-axis of the display scale
+    def get_central_wavelenght(self) -> float:
+        """
+        Queries the center wavelength of the
+        X-axis of the display scale
+        """
+        return float(self.query(":SENSE:WAVELENGTH:CENTER?"))
 
-        '''
-        
-        return float(self.query(':SENSE:WAVELENGTH:CENTER?'))
-    
-    
-    
-    
-    
-    def get_span(self):
-        '''
-        
+    def get_span(self) -> float:
+        """
+        Queries the measurement condition
+        measurement span.
+        """
+        return float(self.query(":SENSE:WAVELENGTH:SPAN?"))
 
-        Returns
-        -------
-        float
-            Queries the measurement condition
-            measurement span.
-
-        '''
-        
-        
-        return float(self.query(':SENSE:WAVELENGTH:SPAN?'))
-    
-    
-    
-    
-    
-    def get_trace_resolution(self,state):
-        '''
-        
+    def get_trace_resolution(self, state: str) -> list:
+        """
+        Queries the actual resolution data of the
+        specified trace.
 
         Parameters
         ----------
@@ -313,180 +174,100 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        list of floats
-            Queries the actual resolution data of the
-            specified trace.
-
-        '''
-    
-        sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        if state in sState:
-            data = self.query('CALCULATE:ARESOLUTION? '+str(state)).split(',')
-            data = list(np.array(data,dtype=np.float32))
+        state_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        if state in state_list:
+            data = self.query("CALCULATE:ARESOLUTION? " + str(state)).split(",")
+            data = list(np.array(data, dtype=np.float32))
             return data
-        
+
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def get_bw_resolution(self):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        float
-            Queries the measurement resolution.
+    def get_bw_resolution(self) -> float:
+        """
+        Queries the measurement resolution.
+        """
 
-        '''
-        
-        return float(self.query(':SENSE:BANDWIDTH?'))
-    
-    
-    
-    
-    
-    def get_sensitivity(self):
-        '''
-        
+        return float(self.query(":SENSE:BANDWIDTH?"))
 
-        Returns
-        -------
-        str
-            Queries the measurement sensitivity.
+    def get_sensitivity(self) -> str:
+        """
+        Queries the measurement sensitivity.
+        """
 
-        '''
-        
-        data  = self.query(':SENSE:SENSE?')
-        if data == '0':
-            return 'NHLD'
-        elif data == '1':
-            return 'NAUT'
-        elif data == '2':
-            return 'MID'
-        elif data == '3':
-            return 'HIGH1'
-        elif data == '4':
-            return 'HIGH2'
-        elif data == '5':
-            return 'HIGH3'
+        data = self.query(":SENSE:SENSE?")
+        if data == "0":
+            return "NHLD"
+        elif data == "1":
+            return "NAUT"
+        elif data == "2":
+            return "MID"
+        elif data == "3":
+            return "HIGH1"
+        elif data == "4":
+            return "HIGH2"
+        elif data == "5":
+            return "HIGH3"
         else:
-            return 'NORMAL'
-       
-    
-    
-    
-    
-    def get_average_count(self):
-        '''
-        
+            return "NORMAL"
 
-        Returns
-        -------
-        float
-            Queries the number of times averaging for
-            each measured point.
+    def get_average_count(self) -> float:
+        """
+        Queries the number of times averaging for
+        each measured point.
+        """
 
-        '''
-        
-        return float(self.query(':SENSE:AVERAGE:COUNT?'))
-    
-    
-    
-    
-    
-    def get_segment_points(self):
-        '''
-        
+        return float(self.query(":SENSE:AVERAGE:COUNT?"))
 
-        Returns
-        -------
-        float
-            Queries the number of sampling points
-            to be measured at one time when performing
-            SEGMENT MEASURE.
+    def get_segment_points(self) -> float:
+        """
+        Queries the number of sampling points
+        to be measured at one time when performing
+        SEGMENT MEASURE.
+        """
 
-        '''
-        
-        return float(self.query(':SENSE:SWEEP:SEGMENT:POINTS?'))
-    
-    
-    
-    
-    
-    def get_sample_points(self):
-        '''
-        
+        return float(self.query(":SENSE:SWEEP:SEGMENT:POINTS?"))
 
-        Returns
-        -------
-        float
-            Queries the number of samples measured
+    def get_sample_points(self) -> float:
+        """
+        Queries the number of samples measured
+        """
 
-        '''
-        
-        return float(self.query(':SENSE:SWEEP:POINTS?'))
-    
-    
-    
-    
-    
-    def get_sample_points_auto(self):
-        '''
-        
+        return float(self.query(":SENSE:SWEEP:POINTS?"))
 
-        Returns
-        -------
-        str
-            Queries the function of automatically
-            setting the sampling number to be measured
-            
-            Response 0 = OFF, 1 = ON
+    def get_sample_points_auto(self) -> str:
+        """
+        Queries the function of automatically
+        setting the sampling number to be measured
 
-        '''
-        
-        data = self.query(':SENSE:SWEEP:POINTS:AUTO?')
-        if data == '0':
-            return 'OFF'
+        Response 0 = OFF, 1 = ON
+        """
+
+        data = self.query(":SENSE:SWEEP:POINTS:AUTO?")
+        if data == "0":
+            return "OFF"
         else:
-            return 'ON'
-    
-    
-    
-    
-    
-    def get_sweep_speed(self):
-        '''
-        
+            return "ON"
 
-        Returns
-        -------
-        str
-            Queries the sweep speed
-            1x|0: Standard
-            2x|1: Twice as fast as standard
+    def get_sweep_speed(self) -> str:
+        """
+        Queries the sweep speed
+        1x|0: Standard
+        2x|1: Twice as fast as standard
+        """
 
-        '''
-        
-        data = self.query(':SENSE:SWEEP:SPEED?')
-        if data == '0':
-            return 'Standard'
+        data = self.query(":SENSE:SWEEP:SPEED?")
+        if data == "0":
+            return "Standard"
         else:
-            return 'Twice as fast as standard'
-    
-    
-    
-    
-    
-    def get_trace_data_x(self,state):
-        '''
-        
+            return "Twice as fast as standard"
+
+    def get_trace_data_x(self, state: str) -> list:
+        """
+        Queries the wavelength axis data of the
+        specified trace.
 
         Parameters
         ----------
@@ -498,30 +279,19 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        list of floats
-            Queries the wavelength axis data of the
-            specified trace.
-
-        '''
-        
-        sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        if state in sState:   
-            data = self.query(':TRACE:X? '+str(state)).split(',')
-            data = list(np.array(data,dtype=np.float32))
+        state_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        if state in state_list:
+            data = self.query(":TRACE:X? " + str(state)).split(",")
+            data = list(np.array(data, dtype=np.float32))
             return data
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-            
-    
-    
-    
-    
-    def get_trace_data_y(self,state):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
+
+    def get_trace_data_y(self, state: str) -> list:
+        """
+        Queries the level axis data of specified trace.
 
         Parameters
         ----------
@@ -533,113 +303,80 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        data : list of floats
-            Queries the level axis data of specified trace.
-
-        '''
-        
-        sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        if state in sState:   
-            data = self.query(':TRACE:Y? '+str(state)).split(',')
-            data = list(np.array(data,dtype=np.float32))
+        state_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        if state in state_list:
+            data = self.query(":TRACE:Y? " + str(state)).split(",")
+            data = list(np.array(data, dtype=np.float32))
             return data
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def get_sweep_mode(self):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        str
-            Queries the sweep mode
-            ['SINGle','REPeat','AUTO','SEGMent']
+    def get_sweep_mode(self) -> str | None:
+        """
+        Queries the sweep mode
+        ['SINGle','REPeat','AUTO','SEGMent']
+        """
 
-        '''
-        
-        data  = self.query(':INITiate:SMODe?')
-        if data == '1':
-            return 'SINGle'
-        elif data == '2':
-            return 'REPeat'
-        elif data == '3':
-            return 'AUTO'
-        elif data == '4':
-            return 'SEGMent'
-        
-    
-    
-    
-    
-    def get_trace_attribute(self,state):
-        '''
-        
+        data = self.query(":INITiate:SMODe?")
+        if data == "1":
+            return "SINGle"
+        elif data == "2":
+            return "REPeat"
+        elif data == "3":
+            return "AUTO"
+        elif data == "4":
+            return "SEGMent"
+
+    def get_trace_attribute(self, state: str) -> str:
+        """
+        Queries the attributes of the specified
+        trace
+        ['WRITe','FIX','MAX','MIN','RAVG','CALC']
+        WRITe = WRITE
+        FIX = FIX
+        MAX = MAX HOLD
+        MIN = MIN HOLD
+        RAVG = ROLL AVG
+        CALC = CALC
 
         Parameters
         ----------
         state : str
             Name of the trace that should be extract/selected.
-            sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+            state_list = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
 
         Raises
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        str
-            Queries the attributes of the specified
-            trace
-            ['WRITe','FIX','MAX','MIN','RAVG','CALC']
-            WRITe = WRITE
-            FIX = FIX
-            MAX = MAX HOLD
-            MIN = MIN HOLD
-            RAVG = ROLL AVG
-            CALC = CALC
-
-
-        '''
-        
-        sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        if state in sState:
-            data  = self.query(':TRACE:ATTRIBUTE:'+str(state)+'?')
+        state_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        if state in state_list:
+            data = self.query(":TRACE:ATTRIBUTE:" + str(state) + "?")
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        if data == '0':
-            return 'WRITE'
-        elif data == '1':
-            return 'FIX'
-        elif data == '2':
-            return 'MAX HOLD'
-        elif data == '3':
-            return 'MIN HOLD'
-        elif data == '4':
-            return 'ROLL AVG'
+            raise ValueError("Unknown input! See function description for more info.")
+        if data == "0":
+            return "WRITE"
+        elif data == "1":
+            return "FIX"
+        elif data == "2":
+            return "MAX HOLD"
+        elif data == "3":
+            return "MIN HOLD"
+        elif data == "4":
+            return "ROLL AVG"
         else:
-            return 'CALC'
+            return "CALC"
 
-    
-    
-    
-    
-# =============================================================================
-# SET
-# =============================================================================
+    # =============================================================================
+    # SET
+    # =============================================================================
 
-    def set_display_y_unit(self,state):
-        '''
-        
-
+    def set_display_y_unit(self, state: str) -> None:
+        """
         Parameters
         ----------
         state : str
@@ -651,27 +388,16 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sState = ['dBm','W','DBM/NM','W/NM']
-        if state in sState:
-            self.write(':DISPLAY:TRACE:Y1:UNIT '+str(state))
+        state_list = ["dBm", "W", "DBM/NM", "W/NM"]
+        if state in state_list:
+            self.write(":DISPLAY:TRACE:Y1:UNIT " + str(state))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_wavelength_start(self,value,unit):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_wavelength_start(self, value: float, unit: str) -> None:
+        """
         Parameters
         ----------
         value : int/float
@@ -683,48 +409,33 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['M','HZ']
-        if unit in sUnit:    
-            self.write(':SENSE:WAVELENGTH:START '+str(value)+str(unit))
+        unit_list = ["M", "HZ"]
+        if unit in unit_list:
+            self.write(":SENSE:WAVELENGTH:START " + str(value) + str(unit))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-            
-    
-    
-    
-    
-    def set_wavelength_stop(self,value,unit):
-        '''
+            raise ValueError("Unknown input! See function description for more info.")
+
+    def set_wavelength_stop(self, value: float, unit: str) -> None:
+        """
         Set the measurement condition
         measurement stop wavelength
-        
-        [M|HZ]
-        '''
-        sUnit = ['M','HZ']
-        if unit in sUnit:    
-            self.write(':SENSE:WAVELENGTH:STOP '+str(value)+str(unit))
-        else:
-            raise ValueError('Unknown input! See function description for more info.')
-            
-    
-    
-    
-    
-    def set_data_format(self,unit):
-        '''
-        
 
+        [M|HZ]
+        """
+        unit_list = ["M", "HZ"]
+        if unit in unit_list:
+            self.write(":SENSE:WAVELENGTH:STOP " + str(value) + str(unit))
+        else:
+            raise ValueError("Unknown input! See function description for more info.")
+
+    def set_data_format(self, unit: str) -> None:
+        """
         Parameters
         ----------
         unit : str
-            sUnit = ['ASCii', 'REAL[,64]', 'REAL,32']  
+            unit_list = ['ASCii', 'REAL[,64]', 'REAL,32']
             Sets the parameter format displayed in an SNP data file.
 
         Notes
@@ -741,7 +452,7 @@ class AQ6370D(BaseInstrument):
             :CALCulate:DATA:CWAVelengths?
             :TRACe[:DATA]:X?
             :TRACe[:DATA]:Y?
-        
+
         - The default is ASCII mode.
         - When the ``*RST`` command is executed, the format is reset to ASCII.
         - The ASCII format outputs a comma-delimited list of numerics (e.g., ``12345,12345,...``).
@@ -757,63 +468,40 @@ class AQ6370D(BaseInstrument):
             #280<80-byte data>
             #48008<8008-byte data>
 
-
         Raises
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['ASCii', 'REAL[,64]', 'REAL,32']
-        if unit in sUnit:    
-            self.write('FORMAT:DATA '+ str(unit))
+        unit_list = ["ASCii", "REAL[,64]", "REAL,32"]
+        if unit in unit_list:
+            self.write("FORMAT:DATA " + str(unit))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_unit_x(self,unit):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_unit_x(self, unit: str) -> None:
+        """
         Parameters
         ----------
         unit : str
             Set the units for the X axis.
-            sUnit = ['WAV','FREQ','WNUM']
+            unit_list = ['WAV','FREQ','WNUM']
 
         Raises
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['WAV','FREQ','WNUM']
-        if unit in sUnit:
-            self.write(':UNIT:X '+ unit)
+        unit_list = ["WAV", "FREQ", "WNUM"]
+        if unit in unit_list:
+            self.write(":UNIT:X " + unit)
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-            
-    
-    
-    
-    
-    def set_center_wavelenght(self,value,unit):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_center_wavelenght(self, value: float, unit: str) -> None:
+        """
         Parameters
         ----------
         value : int/float
@@ -826,86 +514,53 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['M','HZ']
-        if unit in sUnit:
-            self.write(':SENSE:WAVELENGTH:CENTER ' + str(value)+str(unit))
+        unit_list = ["M", "HZ"]
+        if unit in unit_list:
+            self.write(":SENSE:WAVELENGTH:CENTER " + str(value) + str(unit))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_span(self,value, unit):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_span(self, value: float, unit: str) -> None:
+        """
         Parameters
         ----------
         value : int/float
             Set the measurement span.
         unit : str
-            sUnits = ['M','HZ']
+            unit_lists = ['M','HZ']
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['M','HZ']
-        if unit in sUnit:
-            self.write(':SENSE:WAVELENGTH:SPAN '+str(value)+ str(unit))
+        unit_list = ["M", "HZ"]
+        if unit in unit_list:
+            self.write(":SENSE:WAVELENGTH:SPAN " + str(value) + str(unit))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_bw_resolution(self,value,unit):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_bw_resolution(self, value: float, unit: str) -> None:
+        """
         Parameters
         ----------
         value : int/float
             Set the measurement resolution.
         unit : str
-            sUnit = ['M','HZ']
+            unit_list = ['M','HZ']
 
         Raises
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['M','HZ']
-        if unit in sUnit:
-            self.write(':SENSE:BANDWIDTH:RESOLUTION '+str(value)+str(unit))
+        unit_list = ["M", "HZ"]
+        if unit in unit_list:
+            self.write(":SENSE:BANDWIDTH:RESOLUTION " + str(value) + str(unit))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-    
-    
-    
-    
-    
-    def set_sensitivity(self,unit):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_sensitivity(self, unit: str) -> None:
+        """
         Parameters
         ----------
         unit : str
@@ -922,123 +577,68 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sUnit = ['NHLD','NAUT','MID','HIGH1','HIGH2','HIGH3','NORMAL']
-        if unit in sUnit:
-            self.write(':SENSE:SENSE '+str(unit))
+        unit_list = ["NHLD", "NAUT", "MID", "HIGH1", "HIGH2", "HIGH3", "NORMAL"]
+        if unit in unit_list:
+            self.write(":SENSE:SENSE " + str(unit))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-            
-    
-    
-    
-    
-    def set_average_count(self,value):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_average_count(self, value: int) -> None:
+        """
         Parameters
         ----------
         value : int
             Set the number of times averaging for
             each measured point.
-
-        Returns
-        -------
-        None
-
-        '''
+        """
         value = int(value)
-        self.write(':SENSE:AVERAGE:COUNT '+str(value))
-           
-    
-    
-    
-    
-    def set_segment_points(self,value):
-        '''
-        
+        self.write(":SENSE:AVERAGE:COUNT " + str(value))
 
+    def set_segment_points(self, value: int) -> None:
+        """
         Parameters
         ----------
         value :int
             Set the number of sampling points
             to be measured at one time when performing
             SEGMENT MEASURE.
-
-        Returns
-        -------
-        None
-
-        '''
+        """
         value = int(value)
-        self.write(':SENSE:SWEEP:SEGMENT:POINTS '+str(value))
-        
-    
-    
-    
-    
-    def set_sample_points(self,value):
-        '''
-        
+        self.write(":SENSE:SWEEP:SEGMENT:POINTS " + str(value))
 
+    def set_sample_points(self, value: int) -> None:
+        """
         Parameters
         ----------
         value : int
             Set the number of samples measured
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
         value = int(value)
-        self.write(':SENSE:SWEEP:POINTS '+str(value))
-        
-    
-    
-    
-    
-    def set_sweep_speed(self,value):
-        '''
-        
+        self.write(":SENSE:SWEEP:POINTS " + str(value))
 
+    def set_sweep_speed(self, value: int) -> None:
+        """
         Parameters
         ----------
         value : int
             Set the sweep speed.
             1 - Standard
             2 - Twice as fast as standard
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
         value = int(value)
-        if value == 1: 
-            self.write(':SENSE:SWEEP:SPEED 1x')
+        if value == 1:
+            self.write(":SENSE:SWEEP:SPEED 1x")
         elif value == 2:
-            self.write(':SENSE:SWEEP:SPEED 2x')
+            self.write(":SENSE:SWEEP:SPEED 2x")
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-            
-    
-    
-    
-    
-    def set_sample_points_auto(self,state):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_sample_points_auto(self, state: str) -> None:
+        """
         Parameters
         ----------
         state : str
@@ -1050,58 +650,36 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sState = ['ON','OFF']
-        if state in sState:
-            self.write(' :SENSE:SWEEP:POINTS:AUTO '+str(state))
+        state_list = ["ON", "OFF"]
+        if state in state_list:
+            self.write(" :SENSE:SWEEP:POINTS:AUTO " + str(state))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_trace_active(self,state):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_trace_active(self, state: str) -> None:
+        """
         Parameters
         ----------
         state : str
             Sets the active trace.
-            sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+            state_list = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
 
         Raises
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        if state in sState:    
-            self.write(':TRACE:ACTIVE '+str(state))
+        state_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        if state in state_list:
+            self.write(":TRACE:ACTIVE " + str(state))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_sweep_mode(self,state):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_sweep_mode(self, state: str) -> None:
+        """
         Parameters
         ----------
         state : str
@@ -1112,38 +690,27 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
-
-        '''
-        
-        sState = ['SINGle','REPeat','AUTO','SEGMent']
-        if state in sState:
-            self.write('INITIATE:SMODE ' +str(state))
+        state_list = ["SINGle", "REPeat", "AUTO", "SEGMent"]
+        if state in state_list:
+            self.write("INITIATE:SMODE " + str(state))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-    def set_trace_attribute(self,trace,state):
-        '''
-        
+            raise ValueError("Unknown input! See function description for more info.")
 
+    def set_trace_attribute(self, trace: str, state: str) -> None:
+        """
         Parameters
         ----------
         trace : str
             Sets the active trace.
-            sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-            
+            state_list = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+
         state : str
             Set the attributes of the specified
             trace
             ['WRITe','FIX','MAX','MIN','RAVG','CALC']
-            
+
             WRITe = WRITE
             FIX = FIX
             MAX = MAX HOLD
@@ -1156,196 +723,148 @@ class AQ6370D(BaseInstrument):
         ------
         ValueError
             Error message
+        """
 
-        Returns
-        -------
-        None
+        state_list = ["WRITe", "FIX", "MAX", "MIN", "RAVG", "CALC"]
+        trace_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
 
-        '''
-        
-        sState = ['WRITe','FIX','MAX','MIN','RAVG','CALC']
-        sTrace = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        
-        if state in sState and trace in sTrace:
-            self.write(':TRACE:ATTRIBUTE:'+str(trace)+' '+str(state))
+        if state in state_list and trace in trace_list:
+            self.write(":TRACE:ATTRIBUTE:" + str(trace) + " " + str(state))
         else:
-            raise ValueError('Unknown input! See function description for more info.')
-        
-    
-    
-    
-    
-# =============================================================================
-# get Data
-# =============================================================================
+            raise ValueError("Unknown input! See function description for more info.")
 
-    def get_data(self,state):
+    # =============================================================================
+    # get Data
+    # =============================================================================
 
-        
-        '''
+    def get_data(self, state: str) -> pd.DataFrame:
+        """
         Get data on X and Y Traces from OSA.
         Data Output is CST File.
-        Data is Saved in X Column and Y Column 
+        Data is Saved in X Column and Y Column
         state = 'TRA','TRB','TRC','TRD','TRE','TRF','TRG'
-        '''
-        sState = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
-        if state in sState:
-            #Get Headers
-            HeaderX = self.get_unit_x()
-            HeaderY = self.get_display_y_unit()
-            #Get Data
-            dataX = self.get_trace_data_x(state)
-            dataY = self.get_trace_data_y(state)
-            
-            #create CSV
-            data = {str(HeaderX):dataX,str(HeaderY):dataY}
-            Data = pd.DataFrame(data, columns=[str(HeaderX), str(HeaderY)])
-            
-            return Data
+        """
+        state_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        if state in state_list:
+            # Get Headers
+            header_x = self.get_unit_x()
+            header_y = self.get_display_y_unit()
+            # Get Data
+            data_x = self.get_trace_data_x(state)
+            data_y = self.get_trace_data_y(state)
+
+            # create CSV
+            data = {str(header_x): data_x, str(header_y): data_y}
+            data = pd.DataFrame(data, columns=[str(header_x), str(header_y)])
+
+            return data
         else:
-            raise ValueError('Unknown input! See function description for more info.')
+            raise ValueError("Unknown input! See function description for more info.")
 
-    
-    
-    
-    
-    def print_params_osa(self):
-        '''
-        
+    def print_params_osa(self) -> None:
+        """
+        Parameters set on the Yokogawa AQ6370D
+        """
 
-        Returns
-        -------
-        srt 
-            Parameters set on the Yokogawa AQ6370D
+        print("################ OSA Parameters ################")
+        print("Y-Axis units = ", self.get_display_y_unit())
+        print("X-Axis units = ", self.get_unit_x())
+        print("Start Wavelength = ", self.get_wavelength_start())
+        print("Stop Wavelength = ", self.get_wavelength_stop())
+        print("Bandwidth Resolution = ", self.get_bw_resolution())
+        print("Center Wavelength = ", self.get_center_wavelenght())
+        print("Span = ", self.get_span())
+        print("Output data format = ", self.get_data_format())
+        print("Displayed trace = ", self.get_trace_state())
+        print("Selected Trace = ", self.get_trace_active())
+        print("Averaging Points = ", self.get_average_count())
+        print("Sample Points = ", self.get_sample_points())
+        print("Sweep speed = ", self.get_sweep_speed())
+        print("Sweep Mode = ", self.get_sweep_mode())
+        print("################ OSA Parameters ################")
 
-        '''
-        
-        print('################ OSA Parameters ################')
-        print('Y-Axis units = ',self.get_display_y_unit())
-        print('X-Axis units = ',self.get_unit_x())
-        print('Start Wavelength = ',self.get_wavelength_start())
-        print('Stop Wavelength = ',self.get_wavelength_stop())
-        print('Bandwidth Resolution = ',self.get_bw_resolution())
-        print('Center Wavelength = ',self.get_center_wavelenght())
-        print('Span = ',self.get_span())
-        print('Output data format = ',self.get_data_format())
-        print('Displayed trace = ',self.get_trace_state())
-        print('Selected Trace = ',self.get_trace_active())
-        print('Averaging Points = ',self.get_average_count())
-        print('Sample Points = ',self.get_sample_points())
-        print('Sweep speed = ',self.get_sweep_speed())
-        print('Sweep Mode = ',self.get_sweep_mode())
-        print('################ OSA Parameters ################')
-        
-     
-    
-    def get_params_osa(self):
-        '''
-        
+    def get_params_osa(self) -> tuple[list[str], list]:
+        """
+        Parameters set on the Yokogawa AQ6370D
+        """
+        header = [
+            "Y-Axis units",
+            "X-Axis units",
+            "Start Wavelength",
+            "Stop Wavelength",
+            "Bandwidth Resolution",
+            "Center Wavelength",
+            "Span",
+            "Output data format",
+            "Displayed trace",
+            "Selected Trace",
+            "Averaging Points",
+            "Sample Points",
+            "Sweep speed",
+            "Sweep Mode",
+        ]
+        data: list = []
 
-        Returns
-        -------
-        srt 
-            Parameters set on the Yokogawa AQ6370D
+        data.append(self.get_display_y_unit())
+        data.append(self.get_unit_x())
+        data.append(self.get_wavelength_start())
+        data.append(self.get_wavelength_stop())
+        data.append(self.get_bw_resolution())
+        data.append(self.get_center_wavelenght())
+        data.append(self.get_span())
+        data.append(self.get_data_format())
+        data.append(self.get_trace_state())
+        data.append(self.get_trace_active())
+        data.append(self.get_average_count())
+        data.append(self.get_sample_points())
+        data.append(self.get_sweep_speed())
+        data.append(self.get_sweep_mode())
 
-        '''
-        Header = ['Y-Axis units','X-Axis units','Start Wavelength','Stop Wavelength',
-                  'Bandwidth Resolution','Center Wavelength','Span','Output data format',
-                  'Displayed trace','Selected Trace','Averaging Points','Sample Points',
-                  'Sweep speed','Sweep Mode']
-        Data: list = []
-
-        Data.append(self.get_display_y_unit())
-        Data.append(self.get_unit_x())
-        Data.append(self.get_wavelength_start())
-        Data.append(self.get_wavelength_stop())
-        Data.append(self.get_bw_resolution())
-        Data.append(self.get_center_wavelenght())
-        Data.append(self.get_span())
-        Data.append(self.get_data_format())
-        Data.append(self.get_trace_state())
-        Data.append(self.get_trace_active())
-        Data.append(self.get_average_count())
-        Data.append(self.get_sample_points())
-        Data.append(self.get_sweep_speed())
-        Data.append(self.get_sweep_mode())
-
-        
-        return Header,Data
+        return header, data
 
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
 
-    ask_DisplayAutoY = get_display_auto_y
-    ask_DisplayYUnit = get_display_y_unit
-    ask_WavelengthStart = get_wavelength_start
-    ask_WavelengthStop = get_wavelength_stop
-    ask_CenterWavelenght = get_center_wavelenght
-    ask_DataFormat = get_data_format
-    ask_UnitX = get_unit_x
-    ask_TraceState = get_trace_state
-    ask_TraceActive = get_trace_active
-    ask_CentralWavelenght = get_central_wavelenght
-    ask_Span = get_span
-    ask_TraceResolution = get_trace_resolution
-    ask_BWResolution = get_bw_resolution
-    ask_Sensitivity = get_sensitivity
-    ask_AverageCount = get_average_count
-    ask_SegmentPoints = get_segment_points
-    ask_SamplePoints = get_sample_points
-    ask_SamplePointsAuto = get_sample_points_auto
-    ask_SweepSpeed = get_sweep_speed
-    ask_TraceDataX = get_trace_data_x
-    ask_TraceDataY = get_trace_data_y
-    ask_SweepMode = get_sweep_mode
-    ask_TraceAttribute = get_trace_attribute
-    # =============================================================================
-    # Aliases for backward compatibility
-    # =============================================================================
-    Close = BaseInstrument.close
-    get_Data = get_data
-    set_DisplayYUnit = set_display_y_unit
-    set_BWResolution = set_bw_resolution
-    set_SamplePoints = set_sample_points
-    get_TraceActive = get_trace_active
-    get_DisplayYUnit = get_display_y_unit
-    set_DataFormat = set_data_format
-    get_AverageCount = get_average_count
-    get_DataFormat = get_data_format
-    get_WavelengthStop = get_wavelength_stop
-    set_TraceActive = set_trace_active
-    get_DisplayAutoY = get_display_auto_y
-    get_SamplePoints = get_sample_points
-    get_WavelengthStart = get_wavelength_start
-    get_UnitX = get_unit_x
-    get_TraceAttribute = get_trace_attribute
-    set_TraceAttribute = set_trace_attribute
-    set_AverageCount = set_average_count
-    get_SegmentPoints = get_segment_points
-    set_Sensitivity = set_sensitivity
-    get_CenterWavelenght = get_center_wavelenght
-    get_TraceDataY = get_trace_data_y
-    set_Span = set_span
-    set_CenterWavelenght = set_center_wavelenght
-    get_TraceResolution = get_trace_resolution
-    get_TraceDataX = get_trace_data_x
-    set_WavelengthStart = set_wavelength_start
-    print_ParamsOSA = print_params_osa
-    StartSweep = start_sweep
-    get_SamplePointsAuto = get_sample_points_auto
-    Stop = stop
-    get_CentralWavelenght = get_central_wavelenght
-    get_SweepSpeed = get_sweep_speed
-    get_BWResolution = get_bw_resolution
-    set_SegmentPoints = set_segment_points
-    get_TraceState = get_trace_state
-    get_SweepMode = get_sweep_mode
-    set_UnitX = set_unit_x
-    set_WavelengthStop = set_wavelength_stop
-    set_SamplePointsAuto = set_sample_points_auto
-    get_ParamsOSA = get_params_osa
-    get_Sensitivity = get_sensitivity
-    get_Span = get_span
-    set_SweepMode = set_sweep_mode
-    set_SweepSpeed = set_sweep_speed
+    ask_DisplayAutoY = get_display_auto_y  # noqa: N815
+    ask_DisplayYUnit = get_display_y_unit  # noqa: N815
+    ask_WavelengthStart = get_wavelength_start  # noqa: N815
+    ask_WavelengthStop = get_wavelength_stop  # noqa: N815
+    ask_CenterWavelenght = get_center_wavelenght  # noqa: N815
+    ask_DataFormat = get_data_format  # noqa: N815
+    ask_UnitX = get_unit_x  # noqa: N815
+    ask_TraceState = get_trace_state  # noqa: N815
+    ask_TraceActive = get_trace_active  # noqa: N815
+    ask_CentralWavelenght = get_central_wavelenght  # noqa: N815
+    ask_Span = get_span  # noqa: N815
+    ask_TraceResolution = get_trace_resolution  # noqa: N815
+    ask_BWResolution = get_bw_resolution  # noqa: N815
+    ask_Sensitivity = get_sensitivity  # noqa: N815
+    ask_AverageCount = get_average_count  # noqa: N815
+    ask_SegmentPoints = get_segment_points  # noqa: N815
+    ask_SamplePoints = get_sample_points  # noqa: N815
+    ask_SamplePointsAuto = get_sample_points_auto  # noqa: N815
+    ask_SweepSpeed = get_sweep_speed  # noqa: N815
+    ask_TraceDataX = get_trace_data_x  # noqa: N815
+    ask_TraceDataY = get_trace_data_y  # noqa: N815
+    ask_SweepMode = get_sweep_mode  # noqa: N815
+    ask_TraceAttribute = get_trace_attribute  # noqa: N815
+    set_DisplayYUnit = set_display_y_unit  # noqa: N815
+    set_BWResolution = set_bw_resolution  # noqa: N815
+    set_SamplePoints = set_sample_points  # noqa: N815
+    set_DataFormat = set_data_format  # noqa: N815
+    set_TraceAttribute = set_trace_attribute  # noqa: N815
+    set_AverageCount = set_average_count  # noqa: N815
+    get_SegmentPoints = get_segment_points  # noqa: N815
+    set_Sensitivity = set_sensitivity  # noqa: N815
+    set_Span = set_span  # noqa: N815
+    set_CenterWavelenght = set_center_wavelenght  # noqa: N815
+    set_WavelengthStart = set_wavelength_start  # noqa: N815
+    set_UnitX = set_unit_x  # noqa: N815
+    set_WavelengthStop = set_wavelength_stop  # noqa: N815
+    set_SamplePointsAuto = set_sample_points_auto  # noqa: N815
+    set_SweepMode = set_sweep_mode  # noqa: N815
+    set_SweepSpeed = set_sweep_speed  # noqa: N815
+    get_ParamsOSA = get_params_osa  # noqa: N815
+    print_ParamsOSA = print_params_osa  # noqa: N815
+    StartSweep = start_sweep  # noqa: N815

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Wed Feb  1 15:55:01 2023
 
@@ -10,8 +9,8 @@ Install Driver:
     Python Library needed: ``pip install pyserial``
 """
 
-import time
 from .BaseInstrument import BaseInstrument
+
 
 class GPP4323(BaseInstrument):
     """
@@ -60,9 +59,9 @@ class GPP4323(BaseInstrument):
     # Checks and Validations
     # =============================================================================
 
-    def _validate_channel(self, channel: int, mainChannel: bool = False) -> int:
+    def _validate_channel(self, channel: int, main_channel: bool = False) -> int:
         channel = int(channel)
-        if mainChannel and channel not in self._mainChannelLS:
+        if main_channel and channel not in self._mainChannelLS:
             raise ValueError("Invalid channel number given! Channel Number can be [1,2].")
         if channel not in self._ChannelLS:
             raise ValueError("Invalid channel number given! Channel Number can be [1,2,3,4].")
@@ -104,18 +103,12 @@ class GPP4323(BaseInstrument):
     def set_voltage(self, channel: int, voltage: int | float) -> None:
         """Set Voltage on the specified channel.
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
         voltage : int/float.
             Set Voltage on Channel.
-
-        Returns
-        -------
-        None.
-
         """
         channel = self._validate_channel(channel)
         voltage_str = self._validate_voltage(channel, voltage)
@@ -123,19 +116,12 @@ class GPP4323(BaseInstrument):
 
     def set_current(self, channel: int, amp: int | float) -> None:
         """
-
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
         amp : int/float
             Set Current on Channel.
-
-        Returns
-        -------
-        None.
-
         """
         channel = self._validate_channel(channel)
         amp_str = self._validate_amp(channel, amp)
@@ -144,16 +130,10 @@ class GPP4323(BaseInstrument):
     def set_channel_tracking_series(self, state: str | int) -> None:
         """Sets CH1/CH2 as Tracking series mode.
 
-
         Parameters
         ----------
         state : str
             Possible state ["ON", "OFF"].
-
-        Returns
-        -------
-        None.
-
         """
         state_normalized = self._parse_state(state)
         self.write(f":OUTPut:SERies {state_normalized}")
@@ -161,16 +141,10 @@ class GPP4323(BaseInstrument):
     def set_channel_tracking_parallel(self, state: str | int) -> None:
         """Sets CH1/CH2 as Tracking parallel mode.
 
-
         Parameters
         ----------
         state : str
             Possible state ["ON", "OFF"].
-
-        Returns
-        -------
-        None.
-
         """
         state_normalized = self._parse_state(state)
         self.write(f":OUTPut:PARallel {state_normalized}")
@@ -179,16 +153,10 @@ class GPP4323(BaseInstrument):
         """Selects the operation mode: independent, tracking series, or tracking parallel.
         GPP-1326 does not have this function. Series-parallel mode is not supported under LOAD.
 
-
         Parameters
         ----------
         mode : int
             Select 0 - Independent, 1 - Series or 2 - Parallel
-
-        Returns
-        -------
-        None.
-
         """
         if mode not in [0, 1, 2]:
             raise ValueError("Invalid Mode. Select 0 - Independent, 1 - Series, 2 - Parallel")
@@ -196,7 +164,6 @@ class GPP4323(BaseInstrument):
 
     def set_channel_load_mode(self, channel: int, mode: str, state: str | int) -> None:
         """Sets CH1 or CH2 as Load CV, CC or CR mode.
-
 
         Parameters
         ----------
@@ -206,22 +173,16 @@ class GPP4323(BaseInstrument):
             Select Load CV, CC or CR mode.
         state : str
             Possible state ["ON", "OFF"].
-
-        Returns
-        -------
-        None.
-
         """
-        modeLS = ["CC", "CV", "CR"]
-        channel = self._validate_channel(channel, mainChannel=True)
+        mode_list = ["CC", "CV", "CR"]
+        channel = self._validate_channel(channel, main_channel=True)
         state_normalized = self._parse_state(state)
-        if mode not in modeLS:
-            raise ValueError(f"Invalid Mode. Select from {modeLS}.")
+        if mode not in mode_list:
+            raise ValueError(f"Invalid Mode. Select from {mode_list}.")
         self.write(f":LOAD{channel}:{mode} {state_normalized}")
 
     def set_load_resistor(self, channel: int, res: float) -> None:
         """Sets the Load CR level.
-
 
         Parameters
         ----------
@@ -229,19 +190,13 @@ class GPP4323(BaseInstrument):
             Select channel from List of Channel Numbers [1,2].
         res : float
             Set resistance values from range 1-1000.
-
-        Returns
-        -------
-        None.
-
         """
-        channel = self._validate_channel(channel, mainChannel=True)
+        channel = self._validate_channel(channel, main_channel=True)
         res_str = self._validate_resistor(res)
         self.write(f":LOAD{channel}:RESistor {res_str}")
 
     def set_output(self, channel: int, state: str | int) -> None:
         """Enable/Disable Output
-
 
         Parameters
         ----------
@@ -249,11 +204,6 @@ class GPP4323(BaseInstrument):
             Select channel from List of Channel Numbers [1,2,3,4].
         state : str
             state of power Supple output. Could be ["ON", "OFF"]
-
-        Returns
-        -------
-        None.
-
         """
         channel = self._validate_channel(channel)
         state_normalized = self._parse_state(state)
@@ -262,16 +212,10 @@ class GPP4323(BaseInstrument):
     def set_all_output(self, state: str | int) -> None:
         """Enable/Disable All Outputs
 
-
         Parameters
         ----------
         state : str
             state of power Supple output. Could be ["ON", "OFF"]
-
-        Returns
-        -------
-        None.
-
         """
         state_normalized = self._parse_state(state)
         if state_normalized == "ON":
@@ -286,17 +230,10 @@ class GPP4323(BaseInstrument):
     def get_voltage_setting(self, channel: int) -> float:
         """Returns the voltage setting, NOT the measured voltage!!!
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
-
-        Returns
-        -------
-        float
-            Voltage Setting.
-
         """
         channel = self._validate_channel(channel)
         return float(self.query(f"VSET{channel}?"))
@@ -304,24 +241,16 @@ class GPP4323(BaseInstrument):
     def get_current_setting(self, channel: int) -> float:
         """Returns the current setting, NOT the measured current!!!
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
-
-        Returns
-        -------
-        float
-            Current Setting.
-
         """
         channel = self._validate_channel(channel)
         return float(self.query(f"ISET{channel}?"))
 
     def measure(self, channel: int, measurement_type: str) -> float:
         """Performs a measurement and returns the measured value.
-
 
         Parameters
         ----------
@@ -330,12 +259,6 @@ class GPP4323(BaseInstrument):
         Type : str
             Select measurement type:
             'volt', 'amp' or 'watt'.
-
-        Returns
-        -------
-        float
-            Return float with the measured value on the channel.
-
         """
         channel = self._validate_channel(channel)
         type_norm = self._validate_measurement_type(measurement_type)
@@ -344,51 +267,30 @@ class GPP4323(BaseInstrument):
     def measure_current(self, channel: int) -> float:
         """Performs one current measurements and returns the value.
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
-
-        Returns
-        -------
-        float
-            Measured Current.
-
         """
         return self.measure(channel, "amp")
 
     def measure_voltage(self, channel: int) -> float:
         """Performs one voltage measurements and returns the value.
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
-
-        Returns
-        -------
-        float
-            Measured Voltage.
-
         """
         return self.measure(channel, "volt")
 
     def measure_power(self, channel: int) -> float:
         """Performs one power measurements and returns the value.
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
-
-        Returns
-        -------
-        float
-            Measured Power.
-
         """
         return self.measure(channel, "watt")
 
@@ -396,37 +298,22 @@ class GPP4323(BaseInstrument):
         """Queries CH1 or CH2 work mode.
         6 modes: SERies/PARallel/INDE pendent, CV Load/CC Load/CR Load
 
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2].
-
-        Returns
-        -------
-        str
-            SERies/PARallel/INDependent, CV Load/CC Load/CR Load
-
         """
-        channel = self._validate_channel(channel, mainChannel=True)
+        channel = self._validate_channel(channel, main_channel=True)
         return self.query(f":MODE{channel}?")
 
     def get_load_resistor(self, channel: int) -> float:
         """
-
-
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2].
-
-        Returns
-        -------
-        float
-            Set load Resistance Value for given channel.
-
         """
-        channel = self._validate_channel(channel, mainChannel=True)
+        channel = self._validate_channel(channel, main_channel=True)
         return float(self.query(f":LOAD{channel}:RESistor?"))
 
     # =============================================================================
@@ -435,17 +322,12 @@ class GPP4323(BaseInstrument):
 
     def get_data(self, channel: int) -> dict:
         """
+        Return a dictionary with the measured voltage and current.
 
         Parameters
         ----------
         channel : int
             Select channel from List of Channel Numbers [1,2,3,4].
-
-        Returns
-        -------
-        OutPut : dict
-            Return a dictionary with the measured voltage and current.
-
         """
         channel = self._validate_channel(channel)
         result = {}
@@ -458,23 +340,23 @@ class GPP4323(BaseInstrument):
     # Aliases for backwards compatibility
     # =============================================================================
     
-    set_Volt = set_voltage
-    set_Voltage = set_voltage
-    set_Amp = set_current
-    set_Current = set_current
-    set_CurrentLimit = set_current
-    set_ChannelToSerial = set_channel_tracking_series
-    set_ChannelToParallel = set_channel_tracking_parallel
-    set_ChannelTracking = set_channel_tracking
-    set_ChannelLoadMode = set_channel_load_mode
-    set_LoadResistor = set_load_resistor
-    set_Out = set_output
-    set_AllOut = set_all_output
-    ask_VoltageSetting = get_voltage_setting
-    ask_CurrentSetting = get_current_setting
-    read_Measurement = measure
-    ask_Current = measure_current
-    ask_Voltage = measure_voltage
-    ask_Power = measure_power
-    ask_ChannelLoadMode = get_channel_load_mode
-    ask_LoadResistor = get_load_resistor
+    set_Volt = set_voltage  # noqa: N815
+    set_Voltage = set_voltage  # noqa: N815
+    set_Amp = set_current  # noqa: N815
+    set_Current = set_current  # noqa: N815
+    set_CurrentLimit = set_current  # noqa: N815
+    set_ChannelToSerial = set_channel_tracking_series  # noqa: N815
+    set_ChannelToParallel = set_channel_tracking_parallel  # noqa: N815
+    set_ChannelTracking = set_channel_tracking  # noqa: N815
+    set_ChannelLoadMode = set_channel_load_mode  # noqa: N815
+    set_LoadResistor = set_load_resistor  # noqa: N815
+    set_Out = set_output  # noqa: N815
+    set_AllOut = set_all_output  # noqa: N815
+    ask_VoltageSetting = get_voltage_setting  # noqa: N815
+    ask_CurrentSetting = get_current_setting  # noqa: N815
+    read_Measurement = measure  # noqa: N815
+    ask_Current = measure_current  # noqa: N815
+    ask_Voltage = measure_voltage  # noqa: N815
+    ask_Power = measure_power  # noqa: N815
+    ask_ChannelLoadMode = get_channel_load_mode  # noqa: N815
+    ask_LoadResistor = get_load_resistor  # noqa: N815

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed Dec  1 07:00:19 2021
 
@@ -20,18 +18,23 @@ Legacy instructions (not applicable as of 13.01.2026):
     7) After your measurement dont forget to change the IP back to 'automatic'!
 """
 
+import functools
+import time
+from collections.abc import Callable
+from typing import Any, cast
+
 import numpy as np
 import pyvisa as visa
 import pyvisa.constants as vi_const
-import functools
-import time
 
-from typing import Callable, Any
+from .BaseInstrument import BaseInstrument
+
 
 def auto_reconnect(func: Callable) -> Callable:
     """
     Decorator that catches VISA errors, reconnects, and retries the command.
     """
+
     @functools.wraps(func)
     def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         attempts = 3
@@ -44,48 +47,45 @@ def auto_reconnect(func: Callable) -> Callable:
                 if i == attempts - 1:
                     print(f"Failed after {attempts} attempts. Error: {e}")
                     raise e
-                
-                print(f"Connection lost during {getattr(func, '__name__', 'function')}. Reconnecting (Attempt {i+1}/{attempts})...")
+
+                print(
+                    f"""Connection lost during {getattr(func, '__name__', 'function')}. 
+                    Reconnecting (Attempt {i + 1}/{attempts})..."""
+                )
                 try:
                     self.reconnect()
                 except Exception as reconnect_err:
                     print(f"Reconnect failed: {reconnect_err}")
-                    time.sleep(1) # Wait a bit before next loop
+                    time.sleep(1)  # Wait a bit before next loop
+
     return wrapper
 
-from typing import Union, Dict, cast
-from .BaseInstrument import BaseInstrument
 
 class MG3694C(BaseInstrument):
     """
     This class uses pyvisa to connect to an Anritsu MG3694C Signal Generator.
     """
 
-    def __init__(
-        self,
-        resource_str: str = "192.168.0.254",
-        visa_library: str = "@ivi",
-        **kwargs
-    ):
-        kwargs.setdefault('read_termination', '\n')
-        kwargs.setdefault('query_delay', 0.5)
+    def __init__(self, resource_str: str = "192.168.0.254", visa_library: str = "@ivi", **kwargs):
+        kwargs.setdefault("read_termination", "\n")
+        kwargs.setdefault("query_delay", 0.5)
         self._pyvisa_kwargs = kwargs
         super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
         self.visa_library = visa_library
-        
+
         try:
             self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)  # type: ignore
         except visa.errors.VisaIOError:
             pass
-            
+
         print(f"Connected to: {self.get_idn()}")
-    
+
     def connect(self):
         self._rm = visa.ResourceManager(self.visa_library)
-        self._resource = cast(visa.resources.MessageBasedResource, self._rm.open_resource(
-            str(self.resource_str), 
-            **self._pyvisa_kwargs
-        ))
+        self._resource = cast(
+            visa.resources.MessageBasedResource,
+            self._rm.open_resource(str(self.resource_str), **self._pyvisa_kwargs),
+        )
         try:
             self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)  # type: ignore
         except visa.errors.VisaIOError:
@@ -94,7 +94,7 @@ class MG3694C(BaseInstrument):
     def reconnect(self):
         try:
             self._resource.close()
-        except:
+        except Exception:
             pass
         time.sleep(1)
         self.connect()
@@ -106,7 +106,7 @@ class MG3694C(BaseInstrument):
     @auto_reconnect
     def query(self, command: str) -> str:
         return super().query(command)
-    
+
     @auto_reconnect
     def read(self) -> str:
         return self._resource.read()
@@ -126,153 +126,84 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     # Ask Instrument about Stats and Parameters
     # =============================================================================
-    def get_output_protection(self):
+    def get_output_protection(self) -> str:
         """
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed state of the MG369xC RF output during
-            frequency changes in CW or step sweep mode.
-
+        Requests the currently programmed state of the MG369xC RF output during
+        frequency changes in CW or step sweep mode.
         """
         return self.query(":OUTPut:PROTection?")
 
-    def get_output_retrace(self):
+    def get_output_retrace(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed state of the MG369xC RF output during
-            sweep retrace
-
-
+        Requests the currently programmed state of the MG369xC RF output during
+        sweep retrace.
         """
 
         return self.query(":OUTPut:PROTection:RETRace?")
 
-    def get_output_impedance(self):
+    def get_output_impedance(self) -> float:
+        """
+        Queries the MG369xC RF output impedance. The impedance is
+        nominally 50 ohms and is not settable.
         """
 
+        return float(self.query(":OUTPut:IMPedance?"))
 
-        Returns
-        -------
-        TYPE Query str
-            Description: Queries the MG369xC RF output impedance. The impedance is
-            nominally 50 ohms and is not settable.
-
+    def get_output_power_level(self) -> float:
         """
-
-        return self.query(":OUTPut:IMPedance?")
-
-    def get_output_power_level(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the value currently programmed for the RF output power level
-
+        Requests the value currently programmed for the RF output power level.
         """
 
         return float(self.query(":SOURce:POWer:LEVel:IMMediate:AMPLitude?") or 0.0)
 
-    def get_maximal_power_level(self):
+    def get_maximal_power_level(self) -> float:
+        """
+        Requests the maximum RF output power level value that can be programmed for the
+        particular MG369xC model.
         """
 
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the maximum RF output power level value that can be programmed for the
-            particular MG369xC model
-
-        """
-
-        return self.query(":SOURce:POWer? MAX")
+        return float(self.query(":SOURce:POWer? MAX"))
 
     # =============================================================================
     # Ask Source Amplitude Modulation
     # =============================================================================
-    def get_am_logsens(self):
+    def get_am_logsens(self) -> float:
+        """
+        Requests the currently programmed AM sensitivity value for the external AM Log mode.
         """
 
+        return float(self.query(":SOURce:AM:LOGSens?"))
 
-        Returns
-        -------
-        TYPE Query
-            Requests the currently programmed AM sensitivity value for the external AM Log mode.
-
+    def get_am_logdepth(self) -> float:
+        """
+        Requests the currently programmed modulation depth value for the internal
+        AM Log mode.
         """
 
-        return self.query(":SOURce:AM:LOGSens?")
+        return float(self.query(":SOURce:AM:LOGDepth?"))
 
-    def get_am_logdepth(self):
+    def get_am_internal_wave(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed modulation depth value for the internal
-            AM Log mode.
-
-        """
-
-        return self.query(":SOURce:AM:LOGDepth?")
-
-    def get_am_internal_wave(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected modulating waveform for the internal AM function.
-
+        Requests the currently selected modulating waveform for the internal AM function.
         """
 
         return self.query(":SOURce:AM:INTernal:WAVE?")
 
-    def get_am_internal_freq(self):
+    def get_am_internal_freq(self) -> float:
+        """        Requests the currently programmed modulating waveform frequency value for the
+        internal AM function.
         """
 
+        return float(self.query(":SOURce:AM:INTernal:FREQuency?"))
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed modulating waveform frequency value for the
-            internal AM function.
-
-        """
-
-        return self.query(":SOURce:AM:INTernal:FREQuency?")
-
-    def get_am_state(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-           Requests currently programmed amplitude modulation state (on/off)
-
+    def get_am_state(self) -> str:
+        """        Requests currently programmed amplitude modulation state (on/off)
         """
 
         return self.query(":SOURce:AM:STATe?")
 
-    def get_am_type(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed AM operating mode.
-
+    def get_am_type(self) -> str:
+        """        Requests the currently programmed AM operating mode.
         """
 
         return self.query(":SOURce:AM:TYPE?")
@@ -280,68 +211,38 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     # Frequency Modulation
     # =============================================================================
-    def get_fm_internal_wave(self):
+    def get_fm_internal_wave(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected modulating waveform for the internal FM function.
-
+        Requests the currently selected modulating waveform for the internal FM function.
         """
 
         return self.query(":SOURce:FM:INTernal:WAVE?")
 
-    def get_fm_internal_freq(self):
+    def get_fm_internal_freq(self) -> float:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed modulating waveform frequency value for the
-            internal FM function.
-
+        Requests the currently programmed modulating waveform frequency value for the
+        internal FM function.
         """
-        return self.query(":SOURce:FM:INTernal:FREQuency?")
+        return float(self.query(":SOURce:FM:INTernal:FREQuency?"))
 
-    def get_fm_mode(self):
+    def get_fm_mode(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-             Requests the currently programmed synthesis mode used to generate the FM signal.
-
+        Requests the currently programmed synthesis mode used to generate the FM signal.
         """
 
         return self.query(":SOURce:FM:MODE?")
 
-    def get_fm_bwidth(self):
+    def get_fm_bwidth(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed Unlocked FM synthesis mode of operation
-            (narrow or wide)
-
+        Requests the currently programmed Unlocked FM synthesis mode of operation
+        (narrow or wide).
         """
 
         return self.query(":SOURce:FM:BWIDth?")
 
-    def get_fm_state(self):
+    def get_fm_state(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed frequency modulation state (on/off).
-
+        Requests the currently programmed frequency modulation state (on/off).
         """
 
         return self.query(":SOURce:FM:STATe?")
@@ -349,162 +250,90 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     # Frequency Commands
     # =============================================================================
-    def get_freq_cw(self):
+    def get_freq_cw(self) -> float:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value of the frequency parameter.
-
+        Requests the current value of the frequency parameter.
         """
 
         return float(self.query(":SOURce:FREQuency:CW?") or 0.0)
 
-    def get_freq_step(self):
+    def get_freq_step(self) -> float:
+        """
+        Requests the current step increment value of the frequency parameter.
         """
 
+        return float(self.query(":SOURce:FREQuency:CW:STEP:INCRement?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current step increment value of the frequency parameter.
-
+    def get_freq_center_freq(self) -> float:
+        """
+        Requests the current value of the RF output center frequency.
         """
 
-        return self.query(":SOURce:FREQuency:CW:STEP:INCRement?")
+        return float(self.query(":SOURce:FREQuency:CENTer?") or 0.0)
 
-    def get_freq_center_freq(self):
+    def get_freq_mode(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value of the RF output center frequency.
-
-        """
-
-        return self.query(":SOURce:FREQuency:CENTer?")
-
-    def get_freq_mode(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected programming mode for frequency control.
-
+        Requests the currently selected programming mode for frequency control.
         """
 
         return self.query(":SOURce:FREQuency:MODE?")
 
-    def get_freq_span(self):
+    def get_freq_span(self) -> float:
+        """
+        Requests the current value for SWEep[1] sweep span.
         """
 
+        return float(self.query(":SOURce:FREQuencySPAN:?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value for SWEep[1] sweep span
-
+    def get_freq_start(self) -> float:
+        """
+        Requests the current value for SWEep[1] start frequency.
         """
 
-        return self.query(":SOURce:FREQuencySPAN:?")
+        return float(self.query(":SOURce:FREQuency:STARt?") or 0.0)
 
-    def get_freq_start(self):
+    def get_freq_stop(self) -> float:
+        """
+        Requests the current value for SWEep[1] stop frequency.
         """
 
+        return float(self.query(":SOURce:FREQuency:STOP?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value for SWEep[1] start frequency.
-
+    def get_freq_unit(self) -> str:
         """
-
-        return self.query(":SOURce:FREQuency:STARt?")
-
-    def get_freq_stop(self):
-        """
-
-
-        Returns
-        -------
-         Query str
-            Requests the current value for SWEep[1] stop frequency.
-
-        """
-
-        return self.query(":SOURce:FREQuency:STOP?")
-
-    def get_freq_unit(self):
-        """
-
-
-        Returns
-        -------
-        Query str
-            Requests the currently selected frequency unit.
-
+        Requests the currently selected frequency unit.
         """
         return self.query("UNIT:FREQuency?")
 
     # =============================================================================
     # Pulse Modulation
     # =============================================================================
-    def get_pm_bwidth(self):
+    def get_pm_bwidth(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed phase modulation operating mode.
-
+        Requests the currently programmed phase modulation operating mode.
         """
 
         return self.query(":SOURce:PM:BWIDth?")
 
-    def get_pm_internal_wave(self):
+    def get_pm_internal_wave(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected modulating waveform for the internal phase modulation
-            function.
-
+        Requests the currently selected modulating waveform for the internal phase
+        modulation function.
         """
 
         return self.query(":SOURce:PM:INTernal:WAVE?")
 
-    def get_pm_internal_freq(self):
+    def get_pm_internal_freq(self) -> float:
+        """
+        Requests the currently programmed modulating waveform frequency value for the
+        internal phase modulation function.
         """
 
+        return float(self.query(":SOURce:PM:INTernal:FREQuency?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-             Requests the currently programmed modulating waveform frequency value for the
-             internal phase modulation function.
-
+    def get_pm_state(self) -> str:
         """
-
-        return self.query(":SOURce:PM:INTernal:FREQuency?")
-
-    def get_pm_state(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed phase modulation state (on/off).
-
+        Requests the currently programmed phase modulation state (on/off).
         """
 
         return self.query(":SOURce:PM:STATe?")
@@ -529,7 +358,6 @@ class MG3694C(BaseInstrument):
         state = self._parse_state(state)
         self.write(f":OUTPut:STATe {state}")
 
-
     def set_output(self, state: int | str) -> None:
         """Activates the Signal Genrator RF Output.
 
@@ -544,7 +372,6 @@ class MG3694C(BaseInstrument):
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
         self.set_rf_output(state)
-
 
     def set_output_protection(self, state):
         """
@@ -563,11 +390,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -592,11 +414,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -604,9 +421,9 @@ class MG3694C(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-# =============================================================================
-# SOURce:POWer subsystem
-# =============================================================================
+    # =============================================================================
+    # SOURce:POWer subsystem
+    # =============================================================================
 
     def set_rf_power(self, value):
         """Sets the Signal Generator Output Power in dBm.
@@ -616,10 +433,12 @@ class MG3694C(BaseInstrument):
         value : float/int
             Output Power in dBm
         """
-        minVal = -20.0
-        maxVal = 30.0
-        if value > maxVal or value < minVal:
-            raise ValueError(f'Power out of range! You can set power between {minVal} and {maxVal} dBm!')
+        min_val = -20.0
+        max_val = 30.0
+        if value > max_val or value < min_val:
+            raise ValueError(
+                f"Power out of range! You can set power between {min_val} and {max_val} dBm!"
+            )
 
         self.write(f":SOURce:POWer:LEVel:IMMediate:AMPLitude {str(value)} dBm")
 
@@ -632,7 +451,7 @@ class MG3694C(BaseInstrument):
             Output Power in dBm
         """
         self.set_rf_power(value)
-    
+
     # =============================================================================
     # Set Control system commands:
     #            Amplitude Modulation
@@ -661,11 +480,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if int(value) in np.arange(0, 26, 1):
@@ -689,11 +503,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
              Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if int(value) in np.arange(0, 26, 1):
@@ -708,31 +517,24 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal AM generator) for the internal AM
-                function, as follows:
+                Description: Selects the modulating waveform (from the internal AM generator) 
+                for the internal AM function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
                 RDOWn = Negative ramp
                 RUP = Positive ramp
                 SQUare = Square wave
                 TRIangle = Triangle wave
-                UNIForm = Uniform noiseParameters:
-                Parameters: SINE | GAUSsian | RDOWn | RUP | SQUare | TRIangle | UNIForm
-                Default: SINE
+                UNIForm = Uniform noiseParameters
 
         Raises
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in stList:
+        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        if state in state_list:
             self.write(":SOURce:AM:INTernal:WAVE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -756,23 +558,18 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         state = self.get_am_internal_freq()
-        sinUnit = ["Hz", "kHz", "MHz"]
+        unit_list = ["Hz", "kHz", "MHz"]
         if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in sinUnit:
+            if value >= 0.1 or value <= 1 and unit in unit_list:
                 self.write(":SOURce:AM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
 
         else:
-            if value >= 0.1 or value <= 100 and unit in sinUnit[:-1]:
+            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
                 self.write(":SOURce:AM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
@@ -792,11 +589,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -819,11 +611,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["LINear", "LOGarithmic"]:
@@ -836,12 +623,11 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     def set_correction_commands(self, state):
         """
-
+        Description: Turns the selected user level flatness correction power-offset table on/off.
 
         Parameters
         ----------
-        state : str/int
-                Description: Turns the selected user level flatness correction power-offset table on/off.
+        state : str/int                
                 Parameters: ON | OFF | 1 | 0
                 Default: OFF
 
@@ -849,11 +635,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -867,12 +648,11 @@ class MG3694C(BaseInstrument):
     def set_fm_internal_wave(self, state):
         """
 
-
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal FM generator) for the internal
-                FM function, as follows:
+                Description: Selects the modulating waveform (from the internal FM generator) 
+                for the internal FM function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
                 RDOWn = Negative ramp
@@ -887,15 +667,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in stList:
+        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        if state in state_list:
             self.write(":SOURce:FM:INTernal:WAVE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -918,23 +693,18 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         state = self.get_fm_internal_freq()
-        sinUnit = ["Hz", "kHz", "MHz"]
+        unit_list = ["Hz", "kHz", "MHz"]
         if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in sinUnit:
+            if value >= 0.1 or value <= 1 and unit in unit_list:
                 self.write(":SOURce:FM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
 
         else:
-            if value >= 0.1 or value <= 100 and unit in sinUnit[:-1]:
+            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
                 self.write(":SOURce:FM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
@@ -946,14 +716,14 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Description: Sets the synthesis mode employed in generating the FM signal, as follows:
+                Sets the synthesis mode employed in generating the FM signal, as follows:
                 LOCKed[1] = Locked Narrow FM
                 LOCKed2 = Locked Narrow Low-Noise FM
                 UNLocked = Unlocked FM
-                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing the
-                FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM signal is
-                obtained by applying the modulating signal to the tuning coils of the YIG-tuned
-                oscillator.
+                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing 
+                the FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM 
+                signal is obtained by applying the modulating signal to the tuning coils of the 
+                YIG-tuned oscillator.
                 Parameters: LOCKed[1] | LOCKed2 | UNLocked
                 Default: UNLocked
 
@@ -961,15 +731,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        modList = ["LOCKed[1]", "LOCKed2", "UNLocked"]
-        if state in modList:
+        mod_list = ["LOCKed[1]", "LOCKed2", "UNLocked"]
+        if state in mod_list:
             self.write(":SOURce:FM:MODE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -994,11 +759,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["MIN", "MAX"]:
@@ -1021,11 +781,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -1045,35 +800,29 @@ class MG3694C(BaseInstrument):
 
         unit : str (optional)
             Frequency Unit: 'GHz' or 'MHz' or 'Hz'
-
-        Returns
-        -------
-        None.
-
         """
 
-        minFreq = 10e6  # 10 MHz
-        maxFreq = 40e9  # 40 GHz
+        min_freq = 10e6  # 10 MHz
+        max_freq = 40e9  # 40 GHz
 
-        if unit == 'Hz' or unit is None:
-            unit = 'Hz'
-            if value <= maxFreq and value >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+        if unit == "Hz" or unit is None:
+            unit = "Hz"
+            if value <= max_freq and value >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
-        elif unit == 'MHz':
-            if value*1e6 <= maxFreq and value*1e6 >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+                raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
+        elif unit == "MHz":
+            if value * 1e6 <= max_freq and value * 1e6 >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
-        elif unit == 'GHz':
-            if value*1e9 <= maxFreq and value*1e9 >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+                raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
+        elif unit == "GHz":
+            if value * 1e9 <= max_freq and value * 1e9 >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
+                raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
         else:
-            raise ValueError(
-                'Unknown input! Unit must be None or "MHz" or "GHz"!')
+            raise ValueError('Unknown input! Unit must be None or "MHz" or "GHz"!')
 
     def set_freq_step(self, value, unit):
         """
@@ -1092,15 +841,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit and value > 0.01:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list and value > 0.01:
             self.write(":SOURce:FREQuency:CW:STEP:INCRement " + str(value) + " " + unit)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1112,9 +856,9 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         value :  int/float
-                   Description: Sets the MG369xC RF output center frequency to the value entered. :CENTER and :SPAN
-                   frequencies are coupled values. Entering the value for one will cause the other to be
-                   recalculated. (See notes under :FREQuency:SPAN)
+                   Description: Sets the MG369xC RF output center frequency to the value entered. 
+                   :CENTER and :SPAN frequencies are coupled values. Entering the value for one 
+                   will cause the other to be recalculated. (See notes under :FREQuency:SPAN)
         unit : str
             Parameters: Frequency (in Hz)
 
@@ -1122,15 +866,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit and value > 0.01:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list and value > 0.01:
             self.write(":SOURce:FREQuency:CENTer " + str(value) + " " + unit)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1142,7 +881,7 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Description: Specifies which command subsystem controls the MG369xC frequency, as follows:
+                Specifies which command subsystem controls the MG369xC frequency, as follows:
                 CW|FIXed = [:SOURce]:FREQuency:CW|FIXed
                 SWEep[1] = [:SOURce]:SWEep[1] (see Datasheet)
                 SWCW = (see notes)
@@ -1157,15 +896,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stState = ["CW", "FIXed", "SWEep[1]", "SWCW", "ALSW", "LIST[1]", "LIST2", "LIST3", "LIST4"]
-        if state in stState:
+        s_list = ["CW", "FIXed", "SWEep[1]", "SWCW", "ALSW", "LIST[1]", "LIST2", "LIST3", "LIST4"]
+        if state in s_list:
             self.write(":SOURce:FREQuency:MODE " + str(state))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1177,7 +911,7 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         value : int/float
-            Description: Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
+            Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
             Range: 1 kHz to (MAX  MIN)
             Default: MAX  MIN
         unit : str
@@ -1187,21 +921,16 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
         """
-        Description: Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
+        Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
         Parameters: Frequency (in Hz)
         Range: 1 kHz to (MAX  MIN)
         Default: MAX  MIN
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list:
             self.write(":SOURce:FREQuency:SPAN " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1213,9 +942,9 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         value : int/float
-            Description: Sets start frequency for SWEep[1] to the value entered. (MIN is defined in the notes
-             Range: MIN to MAX
-             Default: MIN
+            Sets start frequency for SWEep[1] to the value entered. (MIN is defined in the notes)
+            Range: MIN to MAX
+            Default: MIN
         unit : str
             Parameters: Frequency (in Hz) | MIN
 
@@ -1223,15 +952,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list:
             self.write(":SOURce:FREQuency:STARt " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1243,10 +967,10 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         value : int/float
-                Description: Sets stop frequency for SWEep[1] to the value entered. (MAX is defined in the notes
-                under [:SOURce]:FREQuency:CW|FIXed).
-                Range: MIN to MAX
-                Default: MAX
+            Sets stop frequency for SWEep[1] to the value entered. (MAX is defined in the notes
+            under [:SOURce]:FREQuency:CW|FIXed).
+            Range: MIN to MAX
+            Default: MAX
         unit : str
             Parameters: Frequency (in Hz) | MAX
 
@@ -1254,16 +978,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list:
             self.write(":SOURce:FREQuency:STOP " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1278,7 +996,7 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-            Description: Selects the phase modulation (ΦM) operating mode.
+            Selects the phase modulation (ΦM) operating mode.
             The Narrow ΦM mode allows maximum deviations of ±3 radians for DC to 8 MHz rates.
             The Wide ΦM mode allows maximum deviations of ±400 radians for DC to 1 MHz rates.
             Parameters: MIN | MAX
@@ -1290,16 +1008,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             Error message
-
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["MIN", "MAX"]
-        if state in stList:
+        state_list = ["MIN", "MAX"]
+        if state in state_list:
             self.write(":SOURce:PM:BWIDth " + str(state))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1311,8 +1023,8 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal ΦM generator) for the internal phase
-                modulation function, as follows:
+                Selects the modulating waveform (from the internal ΦM generator) for the internal 
+                phase modulation function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
                 RDOWn = Negative ramp
@@ -1327,15 +1039,10 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
              Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in stList:
+        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        if state in state_list:
             self.write(":SOURce:PM:INTernal:WAVE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1349,8 +1056,8 @@ class MG3694C(BaseInstrument):
         value : str
             Parameter: Frequency (in Hz)
         unit : int/float
-            Description: Sets the frequency of the modulating waveform for the internal phase modulation
-            (see :PM:INTernal:WAVE)
+            Description: Sets the frequency of the modulating waveform for the internal 
+            phase modulation (see :PM:INTernal:WAVE)
             Range: 0.1 Hz to 1 MHz for sine wave;
             0.1 Hz to 100 kHz for square, triangle, and ramp waveforms.
             Default: 1 kHz
@@ -1359,23 +1066,18 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
              Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         state = self.get_pm_internal_freq()
-        sinUnit = ["Hz", "kHz", "MHz"]
+        unit_list = ["Hz", "kHz", "MHz"]
         if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in sinUnit:
+            if value >= 0.1 or value <= 1 and unit in unit_list:
                 self.write(":SOURce:PM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
 
         else:
-            if value >= 0.1 or value <= 100 and unit in sinUnit[:-1]:
+            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
                 self.write(":SOURce:PM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
@@ -1395,11 +1097,6 @@ class MG3694C(BaseInstrument):
         ------
         ValueError
             v
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -1407,71 +1104,65 @@ class MG3694C(BaseInstrument):
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-# =============================================================================
+    # =============================================================================
     # Get/Save Data
     # =============================================================================
     def get_data(self):
         """
-
-
-        Returns
-        -------
-        OutPut : dict
-            Return a dictionary with the measured Power and CW Frequency.
-
+        Return a dictionary with the measured Power and CW Frequency.
         """
-        OutPut = {}
-        Freq = self.get_freq_cw()
-        Power = self.get_output_power_level()
-        OutPut["Power/dBm"] = Power
-        OutPut["CW Frequency/" + str(self.get_freq_unit())] = Freq
-        return OutPut
+        output = {}
+        freq = self.get_freq_cw()
+        power = self.get_output_power_level()
+        output["Power/dBm"] = power
+        output["CW Frequency/" + str(self.get_freq_unit())] = freq
+        return output
 
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================
-    getIdn = BaseInstrument.get_idn
+    getIdn = BaseInstrument.get_idn  # noqa: N815
     Close = BaseInstrument.close
     reset = BaseInstrument.reset
     ask_output_protection = get_output_protection
     ask_output_retrace = get_output_retrace
     ask_output_impedance = get_output_impedance
-    ask_OutputPowerLevel = get_output_power_level
-    ask_MaximalPowerLevel = get_maximal_power_level
+    ask_OutputPowerLevel = get_output_power_level  # noqa: N815
+    ask_MaximalPowerLevel = get_maximal_power_level  # noqa: N815
     ask_am_logsens = get_am_logsens
-    ask_am_logDepth = get_am_logdepth
-    ask_am_internalWave = get_am_internal_wave
-    ask_am_internalFreq = get_am_internal_freq
+    ask_am_logDepth = get_am_logdepth  # noqa: N815
+    ask_am_internalWave = get_am_internal_wave  # noqa: N815
+    ask_am_internalFreq = get_am_internal_freq  # noqa: N815
     ask_am_state = get_am_state
     ask_am_type = get_am_type
-    ask_fm_internalWave = get_fm_internal_wave
-    ask_fm_internalFreq = get_fm_internal_freq
+    ask_fm_internalWave = get_fm_internal_wave  # noqa: N815
+    ask_fm_internalFreq = get_fm_internal_freq  # noqa: N815
     ask_fm_mode = get_fm_mode
-    ask_fm_Bwidth = get_fm_bwidth
+    ask_fm_Bwidth = get_fm_bwidth  # noqa: N815
     ask_fm_state = get_fm_state
-    ask_freq_CW = get_freq_cw
+    ask_freq_CW = get_freq_cw  # noqa: N815
     ask_freq_step = get_freq_step
-    ask_freq_centerFreq = get_freq_center_freq
+    ask_freq_centerFreq = get_freq_center_freq  # noqa: N815
     ask_freq_mode = get_freq_mode
     ask_freq_span = get_freq_span
     ask_freq_start = get_freq_start
     ask_freq_stop = get_freq_stop
     ask_freq_unit = get_freq_unit
-    ask_pm_Bwidth = get_pm_bwidth
-    ask_pm_internalWave = get_pm_internal_wave
-    ask_pm_internalFreq = get_pm_internal_freq
+    ask_pm_Bwidth = get_pm_bwidth  # noqa: N815
+    ask_pm_internalWave = get_pm_internal_wave  # noqa: N815
+    ask_pm_internalFreq = get_pm_internal_freq  # noqa: N815
     ask_pm_state = get_pm_state
-    set_OutputPowerLevel = set_output_power_level
-    set_am_logDepth = set_am_logdepth
-    set_am_internalWave = set_am_internal_wave
-    set_am_internalFreq = set_am_internal_freq
-    set_correctionCommands = set_correction_commands
-    set_fm_internalWave = set_fm_internal_wave
-    set_fm_internalFreq = set_fm_internal_freq
-    set_fm_Bwidth = set_fm_bwidth
+    set_OutputPowerLevel = set_output_power_level  # noqa: N815
+    set_am_logDepth = set_am_logdepth  # noqa: N815
+    set_am_internalWave = set_am_internal_wave  # noqa: N815
+    set_am_internalFreq = set_am_internal_freq  # noqa: N815
+    set_correctionCommands = set_correction_commands  # noqa: N815
+    set_fm_internalWave = set_fm_internal_wave  # noqa: N815
+    set_fm_internalFreq = set_fm_internal_freq  # noqa: N815
+    set_fm_Bwidth = set_fm_bwidth  # noqa: N815
     set_fm_steta = set_fm_state
-    set_freq_CW = set_freq_cw
-    set_pm_Bwidth = set_pm_bwidth
-    set_pm_internalWave = set_pm_internal_wave
-    set_pm_internalFreq = set_pm_internal_freq
-    get_Data = get_data
+    set_freq_CW = set_freq_cw  # noqa: N815
+    set_pm_Bwidth = set_pm_bwidth  # noqa: N815
+    set_pm_internalWave = set_pm_internal_wave  # noqa: N815
+    set_pm_internalFreq = set_pm_internal_freq  # noqa: N815
+    get_Data = get_data  # noqa: N815

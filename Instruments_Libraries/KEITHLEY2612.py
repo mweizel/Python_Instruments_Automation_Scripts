@@ -1,5 +1,3 @@
-
-# -*- coding: utf-8 -*-
 """
 Created on Fri Dec 10 08:39:48 2021
 
@@ -9,14 +7,16 @@ Created on Fri Dec 10 08:39:48 2021
 
 import re
 from typing import Any
+
 from .BaseInstrument import BaseInstrument
+
 
 class KEITHLEY2612(BaseInstrument):
     """
     Driver for Keithley 2612 SourceMeter using BaseInstrument.
     """
 
-    def __init__(self, resource_str: str, visa_library: str = '@py', **kwargs):
+    def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
         """
         Initialize the Keithley 2612 SourceMeter.
 
@@ -35,16 +35,24 @@ class KEITHLEY2612(BaseInstrument):
         else:
             self.logger.info(f"Connected to: {idn}")
 
-        kwargs.setdefault('read_termination', '\n')
-        self._resource.read_termination = kwargs['read_termination']
+        kwargs.setdefault("read_termination", "\n")
+        self._resource.read_termination = kwargs["read_termination"]
 
         # Internal Variables
         self._ChannelLS = ["a", "b"]
         self._Measurement_Types = {
-            "voltage": "v", "volt": "v", "v": "v",
-            "current": "i", "amp": "i", "i": "i",
-            "power": "p", "watt": "p", "p": "p",
-            "resistance": "r", "ohm": "r", "r": "r",
+            "voltage": "v",
+            "volt": "v",
+            "v": "v",
+            "current": "i",
+            "amp": "i",
+            "i": "i",
+            "power": "p",
+            "watt": "p",
+            "p": "p",
+            "resistance": "r",
+            "ohm": "r",
+            "r": "r",
         }
         self.dict_of_lua_scripts = {}
 
@@ -60,6 +68,7 @@ class KEITHLEY2612(BaseInstrument):
     def validate_channel(self, channel: str) -> str:
         """
         Validate and normalize channel input.
+        Returns the normalized channel string ('a' or 'b').
 
         Parameters
         ----------
@@ -104,17 +113,24 @@ class KEITHLEY2612(BaseInstrument):
         """
         if output:
             state_mapping = {
-                "on": "ON", "off": "OFF", "high_z": "HIGH_Z",
-                1: "ON", 0: "OFF", 2: "HIGH_Z",
-                "1": "ON", "0": "OFF", "2": "HIGH_Z",
-                True: "ON", False: "OFF",
+                "on": "ON",
+                "off": "OFF",
+                "high_z": "HIGH_Z",
+                1: "ON",
+                0: "OFF",
+                2: "HIGH_Z",
+                "1": "ON",
+                "0": "OFF",
+                "2": "HIGH_Z",
             }
         else:
             state_mapping = {
-                "on": "ON", "off": "OFF",
-                1: "ON", 0: "OFF",
-                "1": "ON", "0": "OFF",
-                True: "ON", False: "OFF",
+                "on": "ON",
+                "off": "OFF",
+                1: "ON",
+                0: "OFF",
+                "1": "ON",
+                "0": "OFF",
             }
 
         normalized = state_mapping.get(
@@ -134,11 +150,6 @@ class KEITHLEY2612(BaseInstrument):
             The value to format.
         precision : int, optional
             Number of decimal places. Default is 4.
-
-        Returns
-        -------
-        str
-            Formatted string.
         """
         return f"{float(value):.{precision}e}"
 
@@ -174,7 +185,7 @@ class KEITHLEY2612(BaseInstrument):
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-            
+
         """
         channel = self.validate_channel(channel)
         return float(self.query(f"print(smu{channel}.measure.i())"))
@@ -229,11 +240,6 @@ class KEITHLEY2612(BaseInstrument):
         type_ : str
             Type of measurement (e.g., 'voltage', 'current', 'power', 'resistance').
 
-        Returns
-        -------
-        float
-            Measured value.
-
         Raises
         ------
         ValueError
@@ -249,10 +255,11 @@ class KEITHLEY2612(BaseInstrument):
         """
         Get measurement voltage range.
 
-        If the source function is the same as the measurement function (for example, sourcing voltage and measuring
-        voltage), the measurement range is locked to be the same as the source range. However, the setting for the
-        measure range is retained. If the source function is changed (for example, from sourcing voltage to sourcing
-        current), the retained measurement range will be used.
+        If the source function is the same as the measurement function (for example,
+        sourcing voltage and measuring voltage), the measurement range is locked to
+        be the same as the source range. However, the setting for the measure range
+        is retained. If the source function is changed (for example, from sourcing
+        voltage to sourcing current), the retained measurement range will be used.
 
         Parameters
         ----------
@@ -266,10 +273,11 @@ class KEITHLEY2612(BaseInstrument):
     def get_current_range_measure(self, channel: str) -> float:
         """This attribute contains the smuX.measure.rangeY current setting. Look up the datasheet!
 
-        If the source function is the same as the measurement function (for example, sourcing voltage and measuring
-        voltage), the measurement range is locked to be the same as the source range. However, the setting for the
-        measure range is retained. If the source function is changed (for example, from sourcing voltage to sourcing
-        current), the retained measurement range will be used.
+        If the source function is the same as the measurement function (for example,
+        sourcing voltage and measuring voltage), the measurement range is locked to
+        be the same as the source range. However, the setting for the measure range
+        is retained. If the source function is changed (for example, from sourcing
+        voltage to sourcing current), the retained measurement range will be used.
 
         Parameters
         ----------
@@ -282,36 +290,26 @@ class KEITHLEY2612(BaseInstrument):
 
     def get_auto_voltage_range_measure(self, channel: str) -> int:
         """
-        Get measurement auto voltage range status.
+        Get measurement auto voltage range status (1 if enabled, 0 if disabled).
         You might want to keep it on auto i.e. 1 or "ON"!
 
         Parameters
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-
-        Returns
-        -------
-        int
-            1 if enabled, 0 if disabled.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.measure.autorangev)")))
 
     def get_auto_current_range_measure(self, channel: str) -> int:
         """
-        Get measurement auto current range status.
+        Get measurement auto current range status (1 if enabled, 0 if disabled).
         You might want to keep it on auto i.e. 1 or "ON"!
 
         Parameters
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-
-        Returns
-        -------
-        int
-            1 if enabled, 0 if disabled.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.measure.autorangei)")))
@@ -328,11 +326,6 @@ class KEITHLEY2612(BaseInstrument):
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-
-        Returns
-        -------
-        bool
-            True if limit reached, False otherwise.
         """
         channel = self.validate_channel(channel)
         response = self.query(f"print(smu{channel}.source.compliance)").lower()
@@ -340,36 +333,26 @@ class KEITHLEY2612(BaseInstrument):
 
     def get_auto_voltage_range(self, channel: str) -> int:
         """
-        Get source auto voltage range status.
+        Get source auto voltage range status (1 if enabled, 0 if disabled).
         You might want to keep it on auto i.e. 1 or "ON"!
 
         Parameters
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-
-        Returns
-        -------
-        int
-            1 if enabled, 0 if disabled.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.autorangev)")))
 
     def get_auto_current_range(self, channel: str) -> int:
         """
-        Get source auto current range status.
+        Get source auto current range status (1 if enabled, 0 if disabled).
         You might want to keep it on auto i.e. 1 or "ON"!
 
         Parameters
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-
-        Returns
-        -------
-        int
-            1 if enabled, 0 if disabled.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.autorangei)")))
@@ -454,17 +437,12 @@ class KEITHLEY2612(BaseInstrument):
 
     def get_output_source_function(self, channel: str) -> int:
         """
-        Get source output function.
+        Get source output function (1 if voltage, 0 if current).
 
         Parameters
         ----------
         channel : str
             Channel identifier ('a' or 'b').
-
-        Returns
-        -------
-        int
-            1 if voltage, 0 if current.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.func)")))
@@ -472,7 +450,7 @@ class KEITHLEY2612(BaseInstrument):
     # =============================================================================
     # Further GET Methods
     # =============================================================================
-    
+
     def get_read_buffer(self, channel: str, start: int, stop: int) -> None:
         """
         TODO: This function should be checked. Also is doesn't return anything at the moment.
@@ -502,7 +480,7 @@ class KEITHLEY2612(BaseInstrument):
     def set_out(self, channel: str, state: int | str | bool) -> None:
         """Alias for set_source_output()."""
         self.set_source_output(channel, state)
-        
+
     def set_meas_output(self, channel: str, state: int | str | bool) -> None:
         """Alias for set_source_output()."""
         self.set_source_output(channel, state)
@@ -567,7 +545,9 @@ class KEITHLEY2612(BaseInstrument):
         value_formatted = self.format_scientific(value=value, precision=0)
         self.write(f"smu{channel}.source.rangei = {value_formatted}")
 
-    def set_voltage_limit(self, channel: str, limit: int | float, high_voltage: bool = False) -> None:
+    def set_voltage_limit(
+        self, channel: str, limit: int | float, high_voltage: bool = False
+    ) -> None:
         """
         Set voltage source compliance.
 
@@ -587,15 +567,21 @@ class KEITHLEY2612(BaseInstrument):
         """
         channel = self.validate_channel(channel)
         if high_voltage:
-            if not (self._absolute_Voltage_Limits["min"] <= limit <= self._absolute_Voltage_Limits["max"]):
+            if not (
+                self._absolute_Voltage_Limits["min"]
+                <= limit
+                <= self._absolute_Voltage_Limits["max"]
+            ):
                 raise ValueError(
-                    f"Voltage limit must be between {self._absolute_Voltage_Limits['min']} and {self._absolute_Voltage_Limits['max']} V"
+                    f"""Voltage limit must be between {self._absolute_Voltage_Limits["min"]} 
+                    and {self._absolute_Voltage_Limits["max"]} V"""
                 )
         else:
             if not (self._Voltage_Limits["min"] <= limit <= self._Voltage_Limits["max"]):
                 raise ValueError(
-                    f"Voltage limit must be between {self._Voltage_Limits['min']} and {self._Voltage_Limits['max']} V. "
-                    "If you want more than 10V, use high_voltage = True."
+                    f"""Voltage limit must be between {self._Voltage_Limits["min"]} 
+                    and {self._Voltage_Limits["max"]} V.
+                    If you want more than 10V, use high_voltage = True."""
                 )
 
         limit_str = self.format_scientific(value=limit, precision=4)
@@ -621,7 +607,8 @@ class KEITHLEY2612(BaseInstrument):
         channel = self.validate_channel(channel)
         if not (self._Current_Limits["min"] < limit < self._Current_Limits["max"]):
             raise ValueError(
-                f"Current limit must be between {self._Current_Limits['min']} and {self._Current_Limits['max']} A"
+                f"""Current limit must be between {self._Current_Limits["min"]} 
+                and {self._Current_Limits["max"]} A"""
             )
 
         limit_str = self.format_scientific(value=limit, precision=4)
@@ -647,15 +634,21 @@ class KEITHLEY2612(BaseInstrument):
         """
         channel = self.validate_channel(channel)
         if high_voltage:
-            if not (self._absolute_Voltage_Limits["min"] <= voltage <= self._absolute_Voltage_Limits["max"]):
+            if not (
+                self._absolute_Voltage_Limits["min"]
+                <= voltage
+                <= self._absolute_Voltage_Limits["max"]
+            ):
                 raise ValueError(
-                    f"Voltage must be between {self._absolute_Voltage_Limits['min']} and {self._absolute_Voltage_Limits['max']} V"
+                    f"""Voltage must be between {self._absolute_Voltage_Limits["min"]} 
+                    and {self._absolute_Voltage_Limits["max"]} V"""
                 )
         else:
             if not (self._Voltage_Limits["min"] <= voltage <= self._Voltage_Limits["max"]):
                 raise ValueError(
-                    f"Voltage must be between {self._Voltage_Limits['min']} and {self._Voltage_Limits['max']} V. "
-                    "If you want more than 10V, use high_voltage = True."
+                    f"""Voltage must be between {self._Voltage_Limits["min"]} 
+                      and {self._Voltage_Limits["max"]} V. 
+                    If you want more than 10V, use high_voltage = True."""
                 )
 
         voltage_str = self.format_scientific(value=voltage, precision=4)
@@ -680,7 +673,8 @@ class KEITHLEY2612(BaseInstrument):
         channel = self.validate_channel(channel)
         if not (self._Current_Limits["min"] < current < self._Current_Limits["max"]):
             raise ValueError(
-                f"Current must be between {self._Current_Limits['min']} and {self._Current_Limits['max']} A"
+                f"""Current must be between {self._Current_Limits["min"]} 
+                and {self._Current_Limits["max"]} A"""
             )
         current_str = self.format_scientific(value=current, precision=4)
         self.write(f"smu{channel}.source.leveli = {current_str}")
@@ -711,7 +705,9 @@ class KEITHLEY2612(BaseInstrument):
         else:
             raise ValueError("Function must be 'volt'/'voltage' or 'amp'/'current'")
 
-    def set_pulse_measured(self, channel: str, value: Any, ton: int | float, toff: int | float) -> None:
+    def set_pulse_measured(
+        self, channel: str, value: Any, ton: int | float, toff: int | float
+    ) -> None:
         """
         Configure pulse measurement (TODO: Verify function).
 
@@ -748,8 +744,12 @@ class KEITHLEY2612(BaseInstrument):
         channel = self.validate_channel(channel)
 
         mode_mapping = {
-            0: "NORMAL", 1: "ZERO", 2: "HIGH_Z",
-            "normal": "NORMAL", "zero": "ZERO", "high_z": "HIGH_Z",
+            0: "NORMAL",
+            1: "ZERO",
+            2: "HIGH_Z",
+            "normal": "NORMAL",
+            "zero": "ZERO",
+            "high_z": "HIGH_Z",
         }
         mode_normalized = mode_mapping.get(mode if isinstance(mode, int) else str(mode).lower())
         if mode_normalized is None:
@@ -765,9 +765,10 @@ class KEITHLEY2612(BaseInstrument):
         """This attribute contains the positive full-scale value of the measure range for voltage.
         Look up the datasheet! -> smuX.measure.rangeY.  You might want to keep it on auto!
 
-        If the source function is the same as the measurement function (for example, sourcing voltage and measuring
-        voltage), the measurement range is locked to be the same as the source range. However, the setting for the
-        measure range is retained. If the source function is changed (for example, from sourcing voltage to sourcing
+        If the source function is the same as the measurement function (for example,
+        sourcing voltage and measuring voltage), the measurement range is locked to be
+        the same as the source range. However, the setting for the measure range is retained.
+        If the source function is changed (for example, from sourcing voltage to sourcing
         current), the retained measurement range will be used.
 
         Parameters
@@ -785,9 +786,10 @@ class KEITHLEY2612(BaseInstrument):
         """
         Set measure current range.
 
-        If the source function is the same as the measurement function (for example, sourcing voltage and measuring
-        voltage), the measurement range is locked to be the same as the source range. However, the setting for the
-        measure range is retained. If the source function is changed (for example, from sourcing voltage to sourcing
+        If the source function is the same as the measurement function (for example,
+        sourcing voltage and measuring voltage), the measurement range is locked to be
+        the same as the source range. However, the setting for the measure range is retained.
+        If the source function is changed (for example, from sourcing voltage to sourcing
         current), the retained measurement range will be used.
 
         Parameters
@@ -801,13 +803,16 @@ class KEITHLEY2612(BaseInstrument):
         value_formatted = self.format_scientific(value=value, precision=0)
         self.write(f"smu{channel}.measure.rangei = {value_formatted}")
 
-    def set_measurement_range(self, channel: str, measurement_type: str, range_value: int | float) -> None:
+    def set_measurement_range(
+        self, channel: str, measurement_type: str, range_value: int | float
+    ) -> None:
         """
         Set measurement range for voltage or current.
 
-        If the source function is the same as the measurement function (for example, sourcing voltage and measuring
-        voltage), the measurement range is locked to be the same as the source range. However, the setting for the
-        measure range is retained. If the source function is changed (for example, from sourcing voltage to sourcing
+        If the source function is the same as the measurement function (for example,
+        sourcing voltage and measuring voltage), the measurement range is locked to be
+        the same as the source range. However, the setting for the measure range is retained.
+        If the source function is changed (for example, from sourcing voltage to sourcing
         current), the retained measurement range will be used.
 
         Parameters
@@ -874,15 +879,23 @@ class KEITHLEY2612(BaseInstrument):
         meas_code = self._Measurement_Types.get(measurement_type.lower())
 
         display_mapping = {
-            "v": "_DCVOLTS", "i": "_DCAMPS", "r": "_OHMS", "p": "_WATTS",
+            "v": "_DCVOLTS",
+            "i": "_DCAMPS",
+            "r": "_OHMS",
+            "p": "_WATTS",
         }
 
         if meas_code is None:
-             raise ValueError(f"Invalid measurement type '{measurement_type}'. Valid options: {list(display_mapping.keys())}")
+            raise ValueError(
+                f"""Invalid measurement type '{measurement_type}'. 
+                Valid options: {list(display_mapping.keys())}"""
+            )
 
         display_func = display_mapping.get(meas_code)
         if display_func is None:
-            raise ValueError(f"Invalid measurement type. Valid options: {list(display_mapping.keys())}")
+            raise ValueError(
+                f"Invalid measurement type. Valid options: {list(display_mapping.keys())}"
+            )
 
         self.write(f"display.smu{channel}.measure.func = display.MEASURE{display_func}")
 
@@ -893,16 +906,12 @@ class KEITHLEY2612(BaseInstrument):
     def get_data(self, channel: str | None = None) -> dict:
         """
         Get voltage and current measurements.
+        Returns dictionary containing 'voltage_V', 'current_A', and 'channel(s)'.
 
         Parameters
         ----------
         channel : str, optional
             Channel to measure ('a' or 'b'). If None, measures both.
-
-        Returns
-        -------
-        dict
-            Dictionary containing 'voltage_V', 'current_A', and 'channel(s)'.
         """
         if channel is None:
             voltages = []
@@ -994,24 +1003,25 @@ class KEITHLEY2612(BaseInstrument):
             If script format is invalid (missing loadscript/endscript).
         """
         from textwrap import dedent
+
         lua_script = dedent(lua_script)
         lines = [line.strip() for line in lua_script.strip().splitlines() if line.strip()]
 
         if not lines:
             raise ValueError("Lua script is empty.")
 
-        match = re.search(r"loadscript\s+([a-zA-Z_]\w*)", lines[0]) 
+        match = re.search(r"loadscript\s+([a-zA-Z_]\w*)", lines[0])
         if not match:
-             # Try second line just in case user put newline first
-             if len(lines) > 1:
+            # Try second line just in case user put newline first
+            if len(lines) > 1:
                 match = re.search(r"loadscript\s+([a-zA-Z_]\w*)", lines[1])
 
         if not match:
             raise ValueError("Script must include 'loadscript <name>'.")
-        
+
         script_name = match.group(1)
         if "endscript" not in lines[-1]:
-             raise ValueError("Script must end with 'endscript'.")
+            raise ValueError("Script must end with 'endscript'.")
 
         return script_name, lua_script
 
@@ -1043,8 +1053,8 @@ class KEITHLEY2612(BaseInstrument):
         self.dict_of_lua_scripts[script_name] = lua_script
         self.write(lua_script)
         if script_name == "my_script":
-           self.write("my_script.run()")
-           self.read_after_lua_script(print_output=True)
+            self.write("my_script.run()")
+            self.read_after_lua_script(print_output=True)
 
     def execute_lua_script(self, script_name: str) -> None:
         """
@@ -1075,10 +1085,11 @@ class KEITHLEY2612(BaseInstrument):
         """
         if script_name in self.dict_of_lua_scripts:
             self.write(f"{script_name} = nil")
-            # script.delete not always available depending on firmware, using None assignment usually works
+            # script.delete not always available depending on firmware
+            # using None assignment usually works
             del self.dict_of_lua_scripts[script_name]
         else:
-             self.logger.warning(f"Script {script_name} not found locally.")
+            self.logger.warning(f"Script {script_name} not found locally.")
 
     def read_after_lua_script(self, print_output: bool = False) -> tuple[list[str], str]:
         """
@@ -1101,10 +1112,10 @@ class KEITHLEY2612(BaseInstrument):
                 if line == "__END__":
                     break
                 lines.append(line)
-        except Exception: 
+        except Exception:
             # Timeout is expected if no more data
             pass
-            
+
         full_output = "\n".join(lines)
         if print_output:
             self.logger.info("Lua Output:\n" + full_output)
@@ -1129,54 +1140,54 @@ class KEITHLEY2612(BaseInstrument):
             raw_response = self.query(f"print(table.concat({lua_table_name}, ','))")
             if not raw_response:
                 return []
-            return [float(x) for x in raw_response.strip().split(',')]
+            return [float(x) for x in raw_response.strip().split(",")]
         except Exception as e:
-             self.logger.error(f"Failed to read table {lua_table_name}: {e}")
-             return []
+            self.logger.error(f"Failed to read table {lua_table_name}: {e}")
+            return []
 
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
-    ask_Current = get_current
-    ask_Voltage = get_voltage
-    ask_Power = get_power
-    ask_Resistance = get_resistance
-    read_Measurement = read_measurement
-    ask_VoltageRangeMeasure = get_voltage_range_measure
-    ask_CurrentRangeMeasure = get_current_range_measure
-    ask_AutoVoltageRangeMeasure = get_auto_voltage_range_measure
-    ask_AutoCurrentRangeMeasure = get_auto_current_range_measure
-    ask_LimitReached = get_limit_reached
-    ask_AutoVoltageRange = get_auto_voltage_range
-    ask_AutoCurrentRange = get_auto_current_range
-    ask_VoltageRange = get_voltage_range
-    ask_CurrentRange = get_current_range
-    ask_VoltageLimit = get_voltage_limit
-    ask_CurrentLimit = get_current_limit
-    ask_VoltageSetting = get_voltage_setting
-    ask_CurrentSetting = get_current_setting
-    ask_OutputSourceFunction = get_output_source_function
-    ask_readBuffer = get_read_buffer
-    set_SourceOutput = set_source_output
-    set_Out = set_source_output # Was alias in original
-    set_MeasOutput = set_source_output # Was alias in original
-    set_AutoVoltageRange = set_auto_voltage_range
-    set_AutoCurrentRange = set_auto_current_range
-    set_VoltageRange = set_voltage_range
-    set_CurrentRange = set_current_range
-    set_VoltageLimit = set_voltage_limit
-    set_CurrentLimit = set_current_limit
-    set_Voltage = set_voltage
-    set_Current = set_current
-    set_OutputSourceFunction = set_output_source_function
-    set_PulseMeasured = set_pulse_measured
-    set_offmode = set_offmode
-    set_VoltageRangeMeasure = set_voltage_range_measure
-    set_CurrentRangeMeasure = set_current_range_measure
-    set_MeasurementRange = set_measurement_range
-    set_ChannelDisplay = set_channel_display
-    set_DisplayMeasurementFunction = set_display_measurement_function
-    get_Data = get_data
+    ask_Current = get_current  # noqa: N815
+    ask_Voltage = get_voltage  # noqa: N815
+    ask_Power = get_power  # noqa: N815
+    ask_Resistance = get_resistance  # noqa: N815
+    read_Measurement = read_measurement  # noqa: N815
+    ask_VoltageRangeMeasure = get_voltage_range_measure  # noqa: N815
+    ask_CurrentRangeMeasure = get_current_range_measure  # noqa: N815
+    ask_AutoVoltageRangeMeasure = get_auto_voltage_range_measure  # noqa: N815
+    ask_AutoCurrentRangeMeasure = get_auto_current_range_measure  # noqa: N815
+    ask_LimitReached = get_limit_reached  # noqa: N815
+    ask_AutoVoltageRange = get_auto_voltage_range  # noqa: N815
+    ask_AutoCurrentRange = get_auto_current_range  # noqa: N815
+    ask_VoltageRange = get_voltage_range  # noqa: N815
+    ask_CurrentRange = get_current_range  # noqa: N815
+    ask_VoltageLimit = get_voltage_limit  # noqa: N815
+    ask_CurrentLimit = get_current_limit  # noqa: N815
+    ask_VoltageSetting = get_voltage_setting  # noqa: N815
+    ask_CurrentSetting = get_current_setting  # noqa: N815
+    ask_OutputSourceFunction = get_output_source_function  # noqa: N815
+    ask_readBuffer = get_read_buffer  # noqa: N815
+    set_SourceOutput = set_source_output  # noqa: N815
+    set_Out = set_source_output  # noqa: N815
+    set_MeasOutput = set_source_output  # noqa: N815
+    set_AutoVoltageRange = set_auto_voltage_range  # noqa: N815
+    set_AutoCurrentRange = set_auto_current_range  # noqa: N815
+    set_VoltageRange = set_voltage_range  # noqa: N815
+    set_CurrentRange = set_current_range  # noqa: N815
+    set_VoltageLimit = set_voltage_limit  # noqa: N815
+    set_CurrentLimit = set_current_limit  # noqa: N815
+    set_Voltage = set_voltage  # noqa: N815
+    set_Current = set_current  # noqa: N815
+    set_OutputSourceFunction = set_output_source_function  # noqa: N815
+    set_PulseMeasured = set_pulse_measured  # noqa: N815
+    set_offmode = set_offmode  # noqa: N815
+    set_VoltageRangeMeasure = set_voltage_range_measure  # noqa: N815
+    set_CurrentRangeMeasure = set_current_range_measure  # noqa: N815
+    set_MeasurementRange = set_measurement_range  # noqa: N815
+    set_ChannelDisplay = set_channel_display  # noqa: N815
+    set_DisplayMeasurementFunction = set_display_measurement_function  # noqa: N815
+    get_Data = get_data  # noqa: N815
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================

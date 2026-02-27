@@ -1,13 +1,15 @@
 # Downloaded from https://www.novoptel.de/Home/Downloads_de.php on 07.02.2025
 # Copyright Novoptel GmbH
 
-import socket
 import math
-from struct import unpack
-import numpy as np
+import socket
 import time
+from struct import unpack
 
-class NovoptelTCP():
+import numpy as np
+
+
+class NovoptelTCP:
 
     #Parameters
     ip = '127.0.0.1'
@@ -22,15 +24,15 @@ class NovoptelTCP():
         self.connect()
         
     def connect(self):
-        if (self.s!=None):
+        if (self.s is not None):
             self.close()
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.settimeout(2)
         try:
             self.s.connect((self.ip, self.port))
             #print("connected: ", self.s)
-        except socket.error as e:
-            print("Error during socket connect: %s" % e)
+        except OSError as e:
+            print(f"Error during socket connect: {e}")
         
 
     def close(self):
@@ -46,12 +48,12 @@ class NovoptelTCP():
     def socket_write(self, data: bytes):
         rxok = False
         tries = 0
-        while (rxok==False) and (tries<10):
+        while (not rxok) and (tries<10):
             try:
                 self.s.send(data)
                 time.sleep(0.001) # sleep 1 ms
                 rxok = True
-            except:
+            except Exception:
                 tries = tries + 1
                 if tries>5:
                     self.reconnect()
@@ -60,13 +62,13 @@ class NovoptelTCP():
     def socket_read(self, data: bytes):
         rxok = False
         tries = 0
-        while (rxok==False) and (tries<10):
+        while (not rxok) and (tries<10):
             self.socket_write(data)
             try:
                 ans = self.s.recv(2)
                 res = int.from_bytes(ans, byteorder='big')
                 rxok = True
-            except:
+            except Exception:
                 res = 0
                 tries = tries + 1
                 if tries>5:
@@ -121,7 +123,7 @@ class NovoptelTCP():
         
         try:
             self.readsdram_sendrequest(startaddrseq, packetsinthissequence, cycles)
-        except:
+        except Exception:
             return b''
         
         #print("packetsinthissequence %d" % (packetsinthissequence))
@@ -135,10 +137,10 @@ class NovoptelTCP():
                 newbytes = self.s.recv(2**14)
                 rxbytes += newbytes
                 if debug:
-                    print("newbytes length: %d" % len(newbytes)) 
+                    print(f"newbytes length: {len(newbytes)}") 
                 if newbytes==0:
                     return b''
-            except:
+            except Exception:
                 #print("newbytes length: %d" % len(newbytes))  
                 #print("rxbytes length: %d" % len(rxbytes)) 
                 #input("Exception in self.s.recv!")
@@ -170,15 +172,15 @@ class NovoptelTCP():
                 if packetsreceived==0:
                     #input("readsdram_getpackets_raw returned 0 bytes!")
                     self.reconnect()  
-            except:
+            except Exception:
                 print("Exception in readsdram_getpackets_raw!")
                 self.reconnect()  
             
         
         try:
             data = unpack('>'+'H'*(len(rxbytes)//2),rxbytes)  # bytes to uint16
-        except:
-            print("data length: %d" % len(rxbytes))   
+        except Exception:
+            print(f"data length: {len(rxbytes)}")   
             print("Exception in readsdram_getpackets_raw!")
             
         arr = np.array(list(data))
@@ -194,7 +196,7 @@ class NovoptelTCP():
         
         
     def readsdram_raw(self, startaddr: int, numaddr: int):
-        buffersize_bytes = 2**14;
+        buffersize_bytes = 2**14
         cycles = max(1, min(32, math.ceil(numaddr*8/buffersize_bytes)))
         cycles = 2**math.ceil(math.log2(cycles))
         numaddr = math.ceil(numaddr/cycles)*cycles
@@ -208,7 +210,7 @@ class NovoptelTCP():
             packetsinthissequence = min(buffersize_addr, numaddr-packets_transferred)
             startaddrseq = startaddr + packets_transferred
             rx = self.readsdram_getpackets(startaddrseq, packetsinthissequence, cycles)
-            packets_transferred = packets_transferred+packetsinthissequence;
+            packets_transferred = packets_transferred+packetsinthissequence
             res = np.concatenate((res, rx), axis=0)
             
         return res

@@ -1,5 +1,4 @@
 
-# -*- coding: utf-8 -*-
 """
 Created on Tue Feb 27 2025
 
@@ -7,9 +6,11 @@ Created on Tue Feb 27 2025
 """
 
 import logging
-from typing import List, cast, Any
+from typing import Any, cast
+
 import pyvisa
 from pyvisa.resources import MessageBasedResource
+
 
 class BaseInstrument:
     """
@@ -53,7 +54,8 @@ class BaseInstrument:
 
         try:
             self._rm = pyvisa.ResourceManager(visa_library)
-            self._resource = cast(MessageBasedResource, self._rm.open_resource(resource_str, **kwargs))
+            self._resource = cast(
+                MessageBasedResource, self._rm.open_resource(resource_str, **kwargs))
             self.logger.info(f"Connected to {resource_str}")
         except Exception as e:
             self.logger.error(f"Failed to connect to {resource_str}: {e}")
@@ -88,16 +90,12 @@ class BaseInstrument:
     def query(self, command: str) -> str:
         """
         Send a query and return the response string.
+        The instrument's response is stripped of whitespace.
 
         Parameters
         ----------
         command : str
             SCPI query string.
-
-        Returns
-        -------
-        str
-            The instrument's response, stripped of whitespace.
         """
         try:
             self.logger.debug(f"Query: {command}")
@@ -110,12 +108,7 @@ class BaseInstrument:
 
     def read(self) -> str:
         """
-        Read raw string from the instrument.
-
-        Returns
-        -------
-        str
-            Raw response from the instrument.
+        Read raw response string from the instrument.
         """
         try:
             self.logger.debug("Reading from instrument...")
@@ -126,7 +119,7 @@ class BaseInstrument:
             self.logger.error(f"Read failed: {e}")
             raise
 
-    def query_ascii_values(self, command: str, **kwargs) -> List[Any]:
+    def query_ascii_values(self, command: str, **kwargs) -> list[Any]:
         """
         Query for a list of ASCII values (e.g., trace data).
 
@@ -136,20 +129,15 @@ class BaseInstrument:
             SCPI query command.
         **kwargs : dict
             Additional arguments passed to `query_ascii_values`.
-
-        Returns
-        -------
-        list
-            List of values.
         """
         try:
             self.logger.debug(f"Query ASCII: {command}")
-            return cast(List[Any], self._resource.query_ascii_values(command, **kwargs))
+            return cast(list[Any], self._resource.query_ascii_values(command, **kwargs))
         except Exception as e:
             self.logger.error(f"Query ASCII failed: '{command}', Error: {e}")
             raise
 
-    def query_str_list(self, command: str) -> List[str]:
+    def query_str_list(self, command: str) -> list[str]:
         """
         Query the instrument and return a list of strings.
         Automatically removes SCPI quotes (' or ") and strips whitespace.
@@ -161,33 +149,23 @@ class BaseInstrument:
 
     def query_float(self, command: str) -> float:
         """
-        Convenience method to query a single float value.
+        Convenience method to query and parse a single float value.
 
         Parameters
         ----------
         command : str
             SCPI query string.
-
-        Returns
-        -------
-        float
-            Parsed float value.
         """
         return float(self.query(command))
 
     def query_int(self, command: str) -> int:
         """
-        Convenience method to query a single integer value.
+        Convenience method to query and parse a single integer value.
 
         Parameters
         ----------
         command : str
             SCPI query string.
-
-        Returns
-        -------
-        int
-            Parsed integer value.
         """
         return int(float(self.query(command)))
 
@@ -198,11 +176,6 @@ class BaseInstrument:
     def get_idn(self) -> str:
         """
         Get the instrument identification string (*IDN?).
-
-        Returns
-        -------
-        str
-            Identification string.
         """
         return self.query("*IDN?")
 

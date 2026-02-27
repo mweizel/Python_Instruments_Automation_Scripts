@@ -1,18 +1,19 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Jul  21 18:56:32 2025
 
 @author: Maxim Weizel
 """
 
-
 from typing import Any
+
 import numpy as np
-import logging
+
 from .BaseInstrument import BaseInstrument
+
 # Try to import matlab engine
 try:
     import matlab
+
     MATLAB_AVAILABLE = True
 except (ImportError, ModuleNotFoundError) as e:
     MATLAB_AVAILABLE = False
@@ -27,15 +28,18 @@ except (ImportError, ModuleNotFoundError) as e:
     print(f"Detailed Error: {e}")
     print("!" * 80)
 
+
 class M8070B(BaseInstrument):
     """
     Start the M8070B Software. Go to Utilities-> SCPI Server Information.
     Copy the VISA resource string (usually localhost).
     """
 
-    def __init__(self, resource_str="TCPIP0::localhost::hislip0::INSTR", visa_library='@py', **kwargs):
-        kwargs.setdefault('write_termination', '\n')
-        kwargs.setdefault('timeout', 2000) # 2s
+    def __init__(
+        self, resource_str="TCPIP0::localhost::hislip0::INSTR", visa_library="@py", **kwargs
+    ):
+        kwargs.setdefault("write_termination", "\n")
+        kwargs.setdefault("timeout", 2000)  # 2s
 
         super().__init__(resource_str, visa_library=visa_library, **kwargs)
         self._channelLS = [1, 2]  #
@@ -56,33 +60,23 @@ class M8070B(BaseInstrument):
     # =============================================================================
 
     def get_amplitude(self, channel: int = 1) -> float:
-        """Returns the differential amplitude setting for the selected channel.
+        """Returns the differential amplitude setting for the selected channel in Volts.
 
         Parameters
         ----------
         channel : int, optional
             1 or 2, by default 1
-
-        Returns
-        -------
-        float
-            Differential amplitude setting.
         """
         channel = self.validate_channel(channel)
         return float(self.query(f":SOURce:VOLTage:AMPLitude? 'M2.DataOut{channel}'"))
 
     def get_output_state(self, channel: int) -> int:
-        """Returns the output state for the selected channel.
+        """Returns the output state (0 or 1) for the selected channel.
 
         Parameters
         ----------
         channel : int
             Channel 1 or 2
-
-        Returns
-        -------
-        int
-            Output state. 0 or 1.
         """
         channel = self.validate_channel(channel)
         return int(self.query(f":OUTPut:STATe? 'M2.DataOut{channel}'"))
@@ -94,11 +88,6 @@ class M8070B(BaseInstrument):
         ----------
         channel : int
             Channel 1 or 2
-
-        Returns
-        -------
-        float
-            Delay in seconds.
         """
         channel = self.validate_channel(channel)
         return float(self.query(f":ARM:DELay? 'M2.DataOut{channel}'"))
@@ -123,24 +112,24 @@ class M8070B(BaseInstrument):
         else:
             raise ValueError(f"Value must be between 0.1 and 2.7 V. You entered: {amplitude} V")
 
-    def set_rf_power(self, channel: int, powerdBm: int | float) -> None:
-        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and 
+    def set_rf_power(self, channel: int, power_dBm: int | float) -> None:  # noqa: N803
+        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and
         uses ``set_amplitude()`` internally.
 
         Parameters
         ----------
         channel : int
             Channel 1 or 2
-        power : int/float
+        power_dBm : int/float
             Output Power in dBm
         """
-        power_watt = 10 ** (powerdBm / 10) * 1e-3
-        V_rms = (50 * power_watt) ** 0.5  # 50 Ohm System
-        amplitude = V_rms * np.sqrt(2)
+        power_watt = 10 ** (power_dBm / 10) * 1e-3
+        v_rms = (50 * power_watt) ** 0.5  # 50 Ohm System
+        amplitude = v_rms * np.sqrt(2)
         self.set_amplitude(channel, amplitude)
 
-    def set_output_power_level(self, channel: int, powerdBm: int | float) -> None:
-        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and 
+    def set_output_power_level(self, channel: int, power_dBm: int | float) -> None:  # noqa: N803
+        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and
         uses ``set_amplitude()`` internally. Alias for set_rf_power().
 
         Parameters
@@ -150,7 +139,7 @@ class M8070B(BaseInstrument):
         value : int/float
             Output Power in dBm
         """
-        self.set_rf_power(channel, powerdBm)
+        self.set_rf_power(channel, power_dBm)
 
     def set_output(self, channel: int, state: int | str) -> None:
         """Activate or deactivate the selected channel output.
@@ -199,42 +188,27 @@ class M8070B(BaseInstrument):
 
     def get_sample_clk_out_frequency(self, channel: int = 1) -> float:
         """Returns the sample clock OUT1 or OUT2 frequency from the M8008A CLK module.
-        Both frequencies are the same.
+        Both frequencies are the same (in Hz).
 
         Parameters
         ----------
         channel : int, optional
             1 or 2, by default 1
-
-        Returns
-        -------
-        float
-            Sample clock output frequency in Hz.
         """
         channel = self.validate_channel(channel)
         return float(self.query(f":OUTPut:FREQuency? 'M1.SampleClkOut{channel}'"))
 
     def get_sample_clk_out2_state(self) -> int:
-        """Returns the sample clock OUT2 state from the M8008A CLK module.
+        """Returns the sample clock OUT2 state (0 or 1) from the M8008A CLK module.
         Sample clock OUT1 cannot be turned off.
-
-        Returns
-        -------
-        int
-            Sample clock output state. 0 or 1.
         """
-        return int(self.query(f":OUTPut:STATe? 'M1.SampleClkOut2'"))
+        return int(self.query(":OUTPut:STATe? 'M1.SampleClkOut2'"))
 
     def get_sample_clk_out2_power(self) -> float:
         """Returns the sample clock OUT2 Power in dBm from the M8008A CLK module.
         Sample clock OUT1 cannot be influenced.
-
-        Returns
-        -------
-        float
-            Sample Clock OUT2 Power in dBm.
         """
-        return float(self.query(f":OUTPut:POWer? 'M1.SampleClkOut2'"))
+        return float(self.query(":OUTPut:POWer? 'M1.SampleClkOut2'"))
 
     # =============================================================================
     # M8008A Clock Module - Set Values and Modes
@@ -298,7 +272,7 @@ class M8070B(BaseInstrument):
         """
         # 1) Validate channel
         channel = self.validate_channel(channel)
-        
+
         if not MATLAB_AVAILABLE:
             self.logger.warning("MATLAB not available. Skipping set_freq_CW.")
             return
@@ -320,7 +294,7 @@ class M8070B(BaseInstrument):
 
         # 4) Call iqtone to generate the IQ vector
         #    We ask for 5 outputs so that the last one is chMap.
-        iqdata, _, _, _, chMap = matlab_engine.iqtone(
+        iqdata, _, _, _, chMap = matlab_engine.iqtone(  # noqa: N806
             'sampleRate',       fs,
             'numSamples',       0,
             'tone',             frequency,
@@ -372,7 +346,8 @@ class M8070B(BaseInstrument):
         matlab_engine : matlab.engine
             Active MATLAB engine session.
         iqdata : array-like
-            Real or complex samples (each column = one waveform).  Can be empty for a connection check.
+            Real or complex samples (each column = one waveform).
+            Can be empty for a connection check.
         fs : float
             Sample rate in Hz.
         segment_number : int, optional
@@ -443,8 +418,8 @@ class M8070B(BaseInstrument):
         *,
         channel: int,
         tones: np.ndarray,
-        magnitudes_dB: np.ndarray | None = None,
-        phases: np.ndarray | str = 'Random',
+        magnitudes_dBm: np.ndarray | None = None,  # noqa: N803
+        phases: np.ndarray | str = "Random",
         correction: int = 0,
         run: int = 1,
         fs: float = 256e9,
@@ -459,7 +434,7 @@ class M8070B(BaseInstrument):
             AWG channel (1 or 2).
         tones : ndarray
             Tone frequency in Hz.
-        magnitude : ndarray, optional
+        magnitudes_dBm : ndarray, optional
             Tone magnitude in dBm (default None).
         correction : int, optional
             Enable correction (default 0).
@@ -476,11 +451,11 @@ class M8070B(BaseInstrument):
             return
 
         # 2) Prepare arrays
-        frequency = np.asarray(tones, dtype=np.float64)      # 1-D
-        if magnitudes_dB is None:
-            magnitudes_dB = np.zeros_like(frequency, dtype=np.float64)   # dBm
+        frequency = np.asarray(tones, dtype=np.float64)  # 1-D
+        if magnitudes_dBm is None:
+            magnitudes_dBm = np.zeros_like(frequency, dtype=np.float64)  # dBm  # noqa: N806
         else:
-            magnitudes_dB = np.asarray(magnitudes_dB, dtype=np.float64)
+            magnitudes_dBm = np.asarray(magnitudes_dBm, dtype=np.float64)  # noqa: N806
 
         # phase: either the literal 'Random' or a numeric vector
         if isinstance(phases, str):
@@ -496,37 +471,40 @@ class M8070B(BaseInstrument):
 
         # If iqtone wants row vectors for tone/magnitude too:
         tone_arg = frequency
-        magnitude_arg = magnitudes_dB
+        magnitude_arg = magnitudes_dBm
 
         # channelMapping already fine
         channel_mapping = matlab.double([[1, 0], [0, 0]] if channel == 1 else [[0, 0], [1, 0]])
 
-        iqdata, _, _, _, chMap = matlab_engine.iqtone(
-            'sampleRate',       fs,
-            'numSamples',       0,
-            'tone',             tone_arg,         # explicit column vector
-            'phase',            phase_arg,        # string or column vector
-            'normalize',        1,
-            'magnitude',        magnitude_arg,    # explicit column vector
-            'correction',       correction,
-            'channelMapping',   channel_mapping,
-            nargout=5
+        iqdata, _, _, _, chMap = matlab_engine.iqtone(  # noqa: N806
+            "sampleRate",
+            fs,
+            "numSamples",
+            0,
+            "tone",
+            tone_arg,  # explicit column vector
+            "phase",
+            phase_arg,  # string or column vector
+            "normalize",
+            1,
+            "magnitude",
+            magnitude_arg,  # explicit column vector
+            "correction",
+            correction,
+            "channelMapping",
+            channel_mapping,
+            nargout=5,
         )
 
         # 6) Push the generated IQ out to the AWG
         matlab_engine.iqdownload(
-            iqdata,
-            fs,
-            'channelMapping', chMap,
-            'segmentNumber',  1,
-            'run',            run,
-            nargout=0
+            iqdata, fs, "channelMapping", chMap, "segmentNumber", 1, "run", run, nargout=0
         )
 
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================
     Close = BaseInstrument.close
-    set_freq_CW = set_freq_cw
-    _validate_channel = validate_channel
-    set_OutputPowerLevel = set_output_power_level
+    set_freq_CW = set_freq_cw  # noqa: N815
+    _validate_channel = validate_channel  # noqa: N815
+    set_OutputPowerLevel = set_output_power_level  # noqa: N815

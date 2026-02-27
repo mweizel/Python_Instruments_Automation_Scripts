@@ -1,13 +1,14 @@
 # Downloaded from https://www.novoptel.de/Home/Downloads_de.php on 07.02.2025
 # Copyright Novoptel GmbH
 
-from time import sleep
-import sys, ftd2xx as ftd
-from ctypes import *
 import re
+from ctypes import create_string_buffer
+from time import sleep
+
+import ftd2xx as ftd
 
 
-class NovoptelUSB():
+class NovoptelUSB:
 
    
     # Parameters
@@ -23,7 +24,7 @@ class NovoptelUSB():
             pattern = rf'^{instrument_str}.*' 
             # list all connected ftdi devices
             dlist=ftd.listDevices(2)
-            if len(dlist) > 0:
+            if dlist is not None and len(dlist) > 0:
                 for idx, dev in enumerate(dlist[:]):
                     if re.match(pattern, dev.decode('UTF-8')): #if instrument_str is found
                         self.DEVNO = idx
@@ -31,7 +32,7 @@ class NovoptelUSB():
                     try:
                         print(f"Try connecting to {dlist[self.DEVNO].decode('UTF-8')}")
                         self.connect()
-                    except:
+                    except Exception:
                         self.DEVNO = -1
                         print("Not Connected.")
             else:
@@ -40,7 +41,7 @@ class NovoptelUSB():
         else: #Code form Novoptel
             # list all connected ftdi devices
             dlist=ftd.listDevices(2)
-            if len(dlist) > 0:
+            if dlist is not None and len(dlist) > 0:
                 counter=0
                 for dev in dlist[:]:
                     print("    " + str(counter) + ": " + dev.decode('UTF-8'))
@@ -73,7 +74,7 @@ class NovoptelUSB():
         
     def write(self, addr, data):
         sleep(0.01)
-        txstring = 'W' + '{:03X}'.format(addr) + '{:04X}'.format(data) + chr(13)
+        txstring = f'W{addr:03X}{data:04X}{chr(13)}'
         tx = create_string_buffer(txstring.encode('utf-8'), 9)
         self.d.write(tx)
         return
@@ -84,7 +85,7 @@ class NovoptelUSB():
         #sleep(0.01)
 
         # send request command
-        txstring = 'R' + '{:03X}'.format(addr) + '0000' + chr(13)
+        txstring = f'R{addr:03X}0000{chr(13)}'
         #print(txstring)
         tx = create_string_buffer(txstring.encode('utf-8'), 9)
         self.d.write(tx)
