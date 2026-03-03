@@ -1,27 +1,25 @@
 # %% ==========================================================================
 # Import and Definitions
 # =============================================================================
-import time
 import datetime
-import pandas as pd
-import numpy as np
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
-
-
 
 # Instrument Libraries Github: https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts
 # Install with:
 # pip install git+https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts.git
-
 # from Instruments_Libraries.MS2760A import MS2760A  # SpectrumAnalyzer
 from Instruments_Libraries.InstrumentSelect import SpecAnalyser
 
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
-# mySpecAnalyser = MS2760A('127.0.0.1') # using class directly
-mySpecAnalyser = SpecAnalyser() # using InstrumentSelect
+# mySpecAnalyser = MS2760A('127.0.0.1') # using class directly  # noqa: N816
+mySpecAnalyser = SpecAnalyser() # using InstrumentSelect  # noqa: N816
 mySpecAnalyser.reset()
 
 # %% ==========================================================================
@@ -59,7 +57,7 @@ mySpecAnalyser.set_detector_type('POS', SA_TraceNum)
 # =============================================================================
 
 records = [] # Empty list to store data and meta data
-for i in tqdm(range(num_of_points)):
+for idx in tqdm(range(num_of_points)):
     rec = {} # single record
 
     # Do some changes, like change input frequency
@@ -74,11 +72,12 @@ for i in tqdm(range(num_of_points)):
     # Take the Measurement
     time.sleep(sleep_time)
     rec["data_peak"] = mySpecAnalyser.measure_and_get_trace(
-        traceNumber=SA_TraceNum, clearTrace=True)
+        trace_number=SA_TraceNum, clear_trace=True)
 
     # append the record
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
+    temp = idx*np.pi # do something with idx
     
 
 # %% ==========================================================================
@@ -90,7 +89,7 @@ meas_df = pd.DataFrame.from_records(records)
 # Plot the Measurement
 # =============================================================================
 freq_hz = np.linspace(SA_f_min, SA_f_max, datapoints)
-power_dBm = np.vstack(meas_df["data_peak"])
+power_dBm = np.vstack(meas_df["data_peak"])  # noqa: N816
 
 plt.plot(freq_hz, meas_df["data_peak"][0])
 plt.xlabel('Frequency (Hz)')

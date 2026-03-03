@@ -1,26 +1,25 @@
 # %% ==========================================================================
 # Import and Definitions
 # =============================================================================
-import time
 import datetime
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from tqdm import tqdm
+import time
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
 
 # Instrument Libraries Github: https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts
 # Install with:
 # pip install git+https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts.git
-
 # from Instruments_Libraries.PM100D import PM100D
 from Instruments_Libraries.InstrumentSelect import PowerMeter
 
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
-# myPowermeter = PM100D('Seriennummer') # replace with your serial number
-myPowermeter = PowerMeter()
+# myPowermeter = PM100D('Seriennummer') # replace with your serial number   # noqa: N816
+myPowermeter = PowerMeter()  # noqa: N816
 
 # %% ==========================================================================
 # Setup the Measurement
@@ -32,22 +31,23 @@ wavelength = 1550 # nm
 # %% ==========================================================================
 # Configure the Instrument
 # =============================================================================
-myPowermeter.ConfigPower()
-myPowermeter.set_AutoPowerRange('ON')
-myPowermeter.set_PowerUnits('dBm')
-myPowermeter.set_WaveLength(wavelength) # nm
+myPowermeter.config_power()
+myPowermeter.set_auto_power_range('ON')
+myPowermeter.set_power_units('dBm')
+myPowermeter.set_wavelength(wavelength) # nm
 
 # %% ==========================================================================
 # Measurement
 # =============================================================================
 records = [] # Empty list to store data and meta data
-for i in tqdm(range(num_of_points)):
+for idx in tqdm(range(num_of_points)):
     rec = {} # single record
-    rec["Power_dBm"] = myPowermeter.get_Power()
-    rec["WaveLength"] = myPowermeter.ask_Wavelength()
+    rec["Power_dBm"] = myPowermeter.get_power()
+    rec["WaveLength"] = myPowermeter.get_wavelength()
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
     time.sleep(sleep_time)
+    temp = idx*np.pi # do something with idx
 
 # %% ==========================================================================
 # Create Dataframe

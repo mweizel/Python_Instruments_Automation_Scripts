@@ -1,27 +1,26 @@
 # %% ==========================================================================
 # Import and Definitions
 # =============================================================================
-import time
 import datetime
-import pandas as pd
-import numpy as np
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
-
-
 
 # Instrument Libraries Github: https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts
 # Install with:
 # pip install git+https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts.git
-
 from Instruments_Libraries.FSWP50 import FSWP50  # SpectrumAnalyzer
+
 # from Instruments_Libraries.InstrumentSelect import FSWP50
 
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
-mySpecAnalyser = FSWP50("169.254.253.126") # using class directly
-# mySpecAnalyser = FSWP50() # using InstrumentSelect
+mySpecAnalyser = FSWP50("169.254.253.126") # using class directly  # noqa: N816
+# mySpecAnalyser = FSWP50() # using InstrumentSelect # noqa: N816
 mySpecAnalyser.reset()
 
 # %% ==========================================================================
@@ -65,11 +64,12 @@ mySpecAnalyser.set_trace_mode("WRITE", trace_number=SA_POS_TraceNum) # turn it o
 # =============================================================================
 
 records = [] # Empty list to store data and meta data
-for i in tqdm(range(num_of_points)):
+for idx in tqdm(range(num_of_points)):
     rec = {} # single record
 
     # Do some changes, like change input frequency
-    # SignalGenerator.set_freq_CW(freq[i])
+    # SignalGenerator.set_freq_CW(freq[idx])
+    temp = idx*np.pi # do something with idx
 
     # Write Meta Data
     rec["SA f_min"] = SA_f_min
@@ -80,9 +80,9 @@ for i in tqdm(range(num_of_points)):
     # Take the Measurement
     time.sleep(sleep_time)
     rec["data_rms"] = mySpecAnalyser.measure_and_get_trace(
-        traceNumber=SA_RMS_TraceNum, window_number=1)
+        trace_number=SA_RMS_TraceNum, window_number=1)
     rec["data_pos"] = mySpecAnalyser.measure_and_get_trace(
-        traceNumber=SA_POS_TraceNum, window_number=1)
+        trace_number=SA_POS_TraceNum, window_number=1)
 
     # append the record
     rec["Timestamps"] = datetime.datetime.now()
@@ -98,8 +98,8 @@ meas_df = pd.DataFrame.from_records(records)
 # Plot the Measurement
 # =============================================================================
 freq_hz = np.linspace(SA_f_min, SA_f_max, datapoints)
-power_pos_dBm = np.vstack(meas_df["data_pos"])
-power_rms_dBm = np.vstack(meas_df["data_rms"])
+power_pos_dBm = np.vstack(meas_df["data_pos"])  # noqa: N816
+power_rms_dBm = np.vstack(meas_df["data_rms"])  # noqa: N816
 
 fig, ax = plt.subplots(figsize=(5, 4), layout='constrained')
 ax.plot(freq_hz/1e9, power_pos_dBm[0], label="Positive")
