@@ -12,6 +12,11 @@ import numpy as np
 
 from .BaseInstrument import BaseInstrument
 
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
+
 
 class MS2760A(BaseInstrument):
     """
@@ -939,7 +944,7 @@ class MS2760A(BaseInstrument):
         return x_array, y_array
 
     def measure_and_get_trace(
-        self, trace_num: int = 1, clear_trace: bool = True, timeout: float = 20
+        self, trace_number: int = 1, clear_trace: bool = True, timeout: float = 20
     ) -> np.ndarray:
         """
         Initiate a new measurement and return the trace Y-data (Blocking).
@@ -947,7 +952,7 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace Number: Can be set to [1,2,3,4,5,6].
         clear_trace : bool, optional
             Clears the trace before taking the data measurement. The default is True.
@@ -965,8 +970,10 @@ class MS2760A(BaseInstrument):
 
         """
 
-        if trace_num not in self._trace_List:
-            raise ValueError(f"Invalid trace number: {trace_num}. Must be in {self._trace_List}.")
+        if trace_number not in self._trace_List:
+            raise ValueError(
+                f"Invalid trace number: {trace_number}. Must be in {self._trace_List}."
+            )
 
         self.set_continuous("OFF")
 
@@ -976,7 +983,7 @@ class MS2760A(BaseInstrument):
 
         if clear_trace:
             self.abort()
-            # self.clear_trace(trace_num)
+            # self.clear_trace(trace_number)
             self.init()
             start_time = time()
             complete = 0
@@ -986,7 +993,7 @@ class MS2760A(BaseInstrument):
                 if time() - start_time > timeout:
                     raise TimeoutError(f"Operation did not complete within {timeout:.2f} seconds.")
 
-        self.write(f":TRACe:DATA? {trace_num}")
+        self.write(f":TRACe:DATA? {trace_number}")
         data = self.get_data_format()
         num_header = int(data[1]) + 2  # get the header size
         new_str = data[num_header:-5]  # truncate the header block and end block
@@ -1006,7 +1013,7 @@ class MS2760A(BaseInstrument):
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Advanced extraction: Gets X and Y data, with optional downsampling and CSV export.
-        Matches FSWP50 interface. Does NOT trigger a new measurement 
+        Matches FSWP50 interface. Does NOT trigger a new measurement
         (use measure_and_get_trace for that).
 
         Parameters
@@ -1047,55 +1054,426 @@ class MS2760A(BaseInstrument):
     # =============================================================================
     # Aliases for backwards compatibility
     # =============================================================================
-    StatusOperation = get_operation_status
-    Init = init
-    ClearTrace = clear_trace
-    ask_freq_Start = get_start_frequency  # noqa: N815
-    ask_freq_Stop = get_stop_frequency  # noqa: N815
-    ask_ResBwidth = get_resolution_bandwidth  # noqa: N815
-    ask_SingleOrContinuesMeas = get_continuous  # noqa: N815
-    ask_Configuration = get_configuration  # noqa: N815
-    ask_sweepTime = get_sweep_time  # noqa: N815
-    ask_ResBwidthAuto = get_resolution_bandwidth_auto  # noqa: N815
-    ask_DataPointCount = get_sweep_points  # noqa: N815
-    ask_MarkerExcursionState = get_marker_excursion_state  # noqa: N815
-    ask_MarkerExcursion = get_marker_excursion  # noqa: N815
-    ask_MarkerValues = get_marker_values  # noqa: N815
-    ask_CHPowerState = get_ch_power_state  # noqa: N815
-    ask_DataFormat = get_data_format  # noqa: N815
-    ask_CenterFreq = get_center_frequency  # noqa: N815
-    ask_FreqSpan = get_span  # noqa: N815
-    ask_TraceType = get_trace_type  # noqa: N815
-    ask_TraceSelected = get_trace_selected  # noqa: N815
-    ask_TraceState = get_trace_state  # noqa: N815
-    ask_RefLevel = get_reference_level  # noqa: N815
-    ask_IFGainState = get_if_gain_state  # noqa: N815
-    ask_DetectorType = get_detector_type  # noqa: N815
-    ask_CaptureTime = get_capture_time  # noqa: N815
-    set_trace_mode = set_trace_type  # noqa: N815
-    set_detection_function = set_detector_type  # noqa: N815
-    set_DataPointCount = set_sweep_points  # noqa: N815
-    set_freq_Start = set_start_frequency  # noqa: N815
-    set_freq_Stop = set_stop_frequency  # noqa: N815
-    set_ResBwidth = set_resolution_bandwidth  # noqa: N815
-    set_ResBwidthAuto = set_resolution_bandwidth_auto  # noqa: N815
-    set_CenterFreq = set_center_frequency  # noqa: N815
-    set_FreqSpan = set_span  # noqa: N815
-    set_Continuous = set_continuous  # noqa: N815
-    set_DataFormat = set_data_format  # noqa: N815
-    set_MarkerExcursionState = set_marker_excursion_state  # noqa: N815
-    set_MarkerExcursion = set_marker_excursion  # noqa: N815
-    set_NextPeak = set_next_peak  # noqa: N815
-    set_MaxPeak = set_max_peak  # noqa: N815
-    set_MarkerPreset = set_marker_preset  # noqa: N815
-    set_CHPowerState = set_ch_power_state  # noqa: N815
-    set_TraceType = set_trace_type  # noqa: N815
-    set_TraceSelected = set_trace_selected  # noqa: N815
-    set_TraceState = set_trace_state  # noqa: N815
-    set_RefLevel = set_reference_level  # noqa: N815
-    set_IFGainState = set_if_gain_state  # noqa: N815
-    set_DetectorType = set_detector_type  # noqa: N815
-    set_CaptureTime = set_capture_time  # noqa: N815
-    get_Data = get_data  # noqa: N815
-    ExtractTtraceData = extract_trace_data_legacy  # noqa: N815
-    ExtractTraceData = measure_and_get_trace  # noqa: N815
+    @deprecated("Use 'get_operation_status' instead")
+    def StatusOperation(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_operation_status()"""
+        self.logger.warning(
+            "Method 'StatusOperation()' is deprecated. Please use 'get_operation_status()' instead."
+        )
+        return self.get_operation_status(*args, **kwargs)
+
+    @deprecated("Use 'init' instead")
+    def Init(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for init()"""
+        self.logger.warning("Method 'Init()' is deprecated. Please use 'init()' instead.")
+        return self.init(*args, **kwargs)
+
+    @deprecated("Use 'clear_trace' instead")
+    def ClearTrace(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for clear_trace()"""
+        self.logger.warning(
+            "Method 'ClearTrace()' is deprecated. Please use 'clear_trace()' instead."
+        )
+        return self.clear_trace(*args, **kwargs)
+
+    @deprecated("Use 'get_start_frequency' instead")
+    def ask_freq_Start(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_start_frequency()"""
+        self.logger.warning(
+            "Method 'ask_freq_Start()' is deprecated. Please use 'get_start_frequency()' instead."
+        )
+        return self.get_start_frequency(*args, **kwargs)
+
+    @deprecated("Use 'get_stop_frequency' instead")
+    def ask_freq_Stop(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_stop_frequency()"""
+        self.logger.warning(
+            "Method 'ask_freq_Stop()' is deprecated. Please use 'get_stop_frequency()' instead."
+        )
+        return self.get_stop_frequency(*args, **kwargs)
+
+    @deprecated("Use 'get_resolution_bandwidth' instead")
+    def ask_ResBwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_resolution_bandwidth()"""
+        self.logger.warning(
+            """Method 'ask_ResBwidth()' is deprecated. 
+            Please use 'get_resolution_bandwidth()' instead."""
+        )
+        return self.get_resolution_bandwidth(*args, **kwargs)
+
+    @deprecated("Use 'get_continuous' instead")
+    def ask_SingleOrContinuesMeas(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_continuous()"""
+        self.logger.warning(
+            """Method 'ask_SingleOrContinuesMeas()' is deprecated. 
+            Please use 'get_continuous()' instead."""
+        )
+        return self.get_continuous(*args, **kwargs)
+
+    @deprecated("Use 'get_configuration' instead")
+    def ask_Configuration(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_configuration()"""
+        self.logger.warning(
+            "Method 'ask_Configuration()' is deprecated. Please use 'get_configuration()' instead."
+        )
+        return self.get_configuration(*args, **kwargs)
+
+    @deprecated("Use 'get_sweep_time' instead")
+    def ask_sweepTime(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_sweep_time()"""
+        self.logger.warning(
+            "Method 'ask_sweepTime()' is deprecated. Please use 'get_sweep_time()' instead."
+        )
+        return self.get_sweep_time(*args, **kwargs)
+
+    @deprecated("Use 'get_resolution_bandwidth_auto' instead")
+    def ask_ResBwidthAuto(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_resolution_bandwidth_auto()"""
+        self.logger.warning(
+            """Method 'ask_ResBwidthAuto()' is deprecated. 
+            Please use 'get_resolution_bandwidth_auto()' instead."""
+        )
+        return self.get_resolution_bandwidth_auto(*args, **kwargs)
+
+    @deprecated("Use 'get_sweep_points' instead")
+    def ask_DataPointCount(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_sweep_points()"""
+        self.logger.warning(
+            "Method 'ask_DataPointCount()' is deprecated. Please use 'get_sweep_points()' instead."
+        )
+        return self.get_sweep_points(*args, **kwargs)
+
+    @deprecated("Use 'get_marker_excursion_state' instead")
+    def ask_MarkerExcursionState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_marker_excursion_state()"""
+        self.logger.warning(
+            """Method 'ask_MarkerExcursionState()' is deprecated. 
+            Please use 'get_marker_excursion_state()' instead."""
+        )
+        return self.get_marker_excursion_state(*args, **kwargs)
+
+    @deprecated("Use 'get_marker_excursion' instead")
+    def ask_MarkerExcursion(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_marker_excursion()"""
+        self.logger.warning(
+            """Method 'ask_MarkerExcursion()' is deprecated. 
+            Please use 'get_marker_excursion()' instead."""
+        )
+        return self.get_marker_excursion(*args, **kwargs)
+
+    @deprecated("Use 'get_marker_values' instead")
+    def ask_MarkerValues(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_marker_values()"""
+        self.logger.warning(
+            "Method 'ask_MarkerValues()' is deprecated. Please use 'get_marker_values()' instead."
+        )
+        return self.get_marker_values(*args, **kwargs)
+
+    @deprecated("Use 'get_ch_power_state' instead")
+    def ask_CHPowerState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_ch_power_state()"""
+        self.logger.warning(
+            "Method 'ask_CHPowerState()' is deprecated. Please use 'get_ch_power_state()' instead."
+        )
+        return self.get_ch_power_state(*args, **kwargs)
+
+    @deprecated("Use 'get_data_format' instead")
+    def ask_DataFormat(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_data_format()"""
+        self.logger.warning(
+            "Method 'ask_DataFormat()' is deprecated. Please use 'get_data_format()' instead."
+        )
+        return self.get_data_format(*args, **kwargs)
+
+    @deprecated("Use 'get_center_frequency' instead")
+    def ask_CenterFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_center_frequency()"""
+        self.logger.warning(
+            "Method 'ask_CenterFreq()' is deprecated. Please use 'get_center_frequency()' instead."
+        )
+        return self.get_center_frequency(*args, **kwargs)
+
+    @deprecated("Use 'get_span' instead")
+    def ask_FreqSpan(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_span()"""
+        self.logger.warning(
+            "Method 'ask_FreqSpan()' is deprecated. Please use 'get_span()' instead."
+        )
+        return self.get_span(*args, **kwargs)
+
+    @deprecated("Use 'get_trace_type' instead")
+    def ask_TraceType(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_trace_type()"""
+        self.logger.warning(
+            "Method 'ask_TraceType()' is deprecated. Please use 'get_trace_type()' instead."
+        )
+        return self.get_trace_type(*args, **kwargs)
+
+    @deprecated("Use 'get_trace_selected' instead")
+    def ask_TraceSelected(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_trace_selected()"""
+        self.logger.warning(
+            "Method 'ask_TraceSelected()' is deprecated. Please use 'get_trace_selected()' instead."
+        )
+        return self.get_trace_selected(*args, **kwargs)
+
+    @deprecated("Use 'get_trace_state' instead")
+    def ask_TraceState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_trace_state()"""
+        self.logger.warning(
+            "Method 'ask_TraceState()' is deprecated. Please use 'get_trace_state()' instead."
+        )
+        return self.get_trace_state(*args, **kwargs)
+
+    @deprecated("Use 'get_reference_level' instead")
+    def ask_RefLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_reference_level()"""
+        self.logger.warning(
+            "Method 'ask_RefLevel()' is deprecated. Please use 'get_reference_level()' instead."
+        )
+        return self.get_reference_level(*args, **kwargs)
+
+    @deprecated("Use 'get_if_gain_state' instead")
+    def ask_IFGainState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_if_gain_state()"""
+        self.logger.warning(
+            "Method 'ask_IFGainState()' is deprecated. Please use 'get_if_gain_state()' instead."
+        )
+        return self.get_if_gain_state(*args, **kwargs)
+
+    @deprecated("Use 'get_detector_type' instead")
+    def ask_DetectorType(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_detector_type()"""
+        self.logger.warning(
+            "Method 'ask_DetectorType()' is deprecated. Please use 'get_detector_type()' instead."
+        )
+        return self.get_detector_type(*args, **kwargs)
+
+    @deprecated("Use 'get_capture_time' instead")
+    def ask_CaptureTime(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_capture_time()"""
+        self.logger.warning(
+            "Method 'ask_CaptureTime()' is deprecated. Please use 'get_capture_time()' instead."
+        )
+        return self.get_capture_time(*args, **kwargs)
+
+    @deprecated("Use 'set_trace_type' instead")
+    def set_trace_mode(self, *args, **kwargs):
+        """Deprecated alias for set_trace_type()"""
+        self.logger.warning(
+            "Method 'set_trace_mode()' is deprecated. Please use 'set_trace_type()' instead."
+        )
+        return self.set_trace_type(*args, **kwargs)
+
+    @deprecated("Use 'set_detector_type' instead")
+    def set_detection_function(self, *args, **kwargs):
+        """Deprecated alias for set_detector_type()"""
+        self.logger.warning(
+            """Method 'set_detection_function()' is deprecated. 
+            Please use 'set_detector_type()' instead."""
+        )
+        return self.set_detector_type(*args, **kwargs)
+
+    @deprecated("Use 'set_sweep_points' instead")
+    def set_DataPointCount(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_sweep_points()"""
+        self.logger.warning(
+            "Method 'set_DataPointCount()' is deprecated. Please use 'set_sweep_points()' instead."
+        )
+        return self.set_sweep_points(*args, **kwargs)
+
+    @deprecated("Use 'set_start_frequency' instead")
+    def set_freq_Start(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_start_frequency()"""
+        self.logger.warning(
+            "Method 'set_freq_Start()' is deprecated. Please use 'set_start_frequency()' instead."
+        )
+        return self.set_start_frequency(*args, **kwargs)
+
+    @deprecated("Use 'set_stop_frequency' instead")
+    def set_freq_Stop(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_stop_frequency()"""
+        self.logger.warning(
+            "Method 'set_freq_Stop()' is deprecated. Please use 'set_stop_frequency()' instead."
+        )
+        return self.set_stop_frequency(*args, **kwargs)
+
+    @deprecated("Use 'set_resolution_bandwidth' instead")
+    def set_ResBwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_resolution_bandwidth()"""
+        self.logger.warning(
+            """Method 'set_ResBwidth()' is deprecated. 
+            Please use 'set_resolution_bandwidth()' instead."""
+        )
+        return self.set_resolution_bandwidth(*args, **kwargs)
+
+    @deprecated("Use 'set_resolution_bandwidth_auto' instead")
+    def set_ResBwidthAuto(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_resolution_bandwidth_auto()"""
+        self.logger.warning(
+            """Method 'set_ResBwidthAuto()' is deprecated. 
+            Please use 'set_resolution_bandwidth_auto()' instead."""
+        )
+        return self.set_resolution_bandwidth_auto(*args, **kwargs)
+
+    @deprecated("Use 'set_center_frequency' instead")
+    def set_CenterFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_center_frequency()"""
+        self.logger.warning(
+            "Method 'set_CenterFreq()' is deprecated. Please use 'set_center_frequency()' instead."
+        )
+        return self.set_center_frequency(*args, **kwargs)
+
+    @deprecated("Use 'set_span' instead")
+    def set_FreqSpan(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_span()"""
+        self.logger.warning(
+            "Method 'set_FreqSpan()' is deprecated. Please use 'set_span()' instead."
+        )
+        return self.set_span(*args, **kwargs)
+
+    @deprecated("Use 'set_continuous' instead")
+    def set_Continuous(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_continuous()"""
+        self.logger.warning(
+            "Method 'set_Continuous()' is deprecated. Please use 'set_continuous()' instead."
+        )
+        return self.set_continuous(*args, **kwargs)
+
+    @deprecated("Use 'set_data_format' instead")
+    def set_DataFormat(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_data_format()"""
+        self.logger.warning(
+            "Method 'set_DataFormat()' is deprecated. Please use 'set_data_format()' instead."
+        )
+        return self.set_data_format(*args, **kwargs)
+
+    @deprecated("Use 'set_marker_excursion_state' instead")
+    def set_MarkerExcursionState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_marker_excursion_state()"""
+        self.logger.warning(
+            """Method 'set_MarkerExcursionState()' is deprecated. 
+            Please use 'set_marker_excursion_state()' instead."""
+        )
+        return self.set_marker_excursion_state(*args, **kwargs)
+
+    @deprecated("Use 'set_marker_excursion' instead")
+    def set_MarkerExcursion(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_marker_excursion()"""
+        self.logger.warning(
+            """Method 'set_MarkerExcursion()' is deprecated. 
+            Please use 'set_marker_excursion()' instead."""
+        )
+        return self.set_marker_excursion(*args, **kwargs)
+
+    @deprecated("Use 'set_next_peak' instead")
+    def set_NextPeak(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_next_peak()"""
+        self.logger.warning(
+            "Method 'set_NextPeak()' is deprecated. Please use 'set_next_peak()' instead."
+        )
+        return self.set_next_peak(*args, **kwargs)
+
+    @deprecated("Use 'set_max_peak' instead")
+    def set_MaxPeak(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_max_peak()"""
+        self.logger.warning(
+            "Method 'set_MaxPeak()' is deprecated. Please use 'set_max_peak()' instead."
+        )
+        return self.set_max_peak(*args, **kwargs)
+
+    @deprecated("Use 'set_marker_preset' instead")
+    def set_MarkerPreset(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_marker_preset()"""
+        self.logger.warning(
+            "Method 'set_MarkerPreset()' is deprecated. Please use 'set_marker_preset()' instead."
+        )
+        return self.set_marker_preset(*args, **kwargs)
+
+    @deprecated("Use 'set_ch_power_state' instead")
+    def set_CHPowerState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_ch_power_state()"""
+        self.logger.warning(
+            "Method 'set_CHPowerState()' is deprecated. Please use 'set_ch_power_state()' instead."
+        )
+        return self.set_ch_power_state(*args, **kwargs)
+
+    @deprecated("Use 'set_trace_type' instead")
+    def set_TraceType(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_trace_type()"""
+        self.logger.warning(
+            "Method 'set_TraceType()' is deprecated. Please use 'set_trace_type()' instead."
+        )
+        return self.set_trace_type(*args, **kwargs)
+
+    @deprecated("Use 'set_trace_selected' instead")
+    def set_TraceSelected(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_trace_selected()"""
+        self.logger.warning(
+            "Method 'set_TraceSelected()' is deprecated. Please use 'set_trace_selected()' instead."
+        )
+        return self.set_trace_selected(*args, **kwargs)
+
+    @deprecated("Use 'set_trace_state' instead")
+    def set_TraceState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_trace_state()"""
+        self.logger.warning(
+            "Method 'set_TraceState()' is deprecated. Please use 'set_trace_state()' instead."
+        )
+        return self.set_trace_state(*args, **kwargs)
+
+    @deprecated("Use 'set_reference_level' instead")
+    def set_RefLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_reference_level()"""
+        self.logger.warning(
+            "Method 'set_RefLevel()' is deprecated. Please use 'set_reference_level()' instead."
+        )
+        return self.set_reference_level(*args, **kwargs)
+
+    @deprecated("Use 'set_if_gain_state' instead")
+    def set_IFGainState(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_if_gain_state()"""
+        self.logger.warning(
+            "Method 'set_IFGainState()' is deprecated. Please use 'set_if_gain_state()' instead."
+        )
+        return self.set_if_gain_state(*args, **kwargs)
+
+    @deprecated("Use 'set_detector_type' instead")
+    def set_DetectorType(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_detector_type()"""
+        self.logger.warning(
+            "Method 'set_DetectorType()' is deprecated. Please use 'set_detector_type()' instead."
+        )
+        return self.set_detector_type(*args, **kwargs)
+
+    @deprecated("Use 'set_capture_time' instead")
+    def set_CaptureTime(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_capture_time()"""
+        self.logger.warning(
+            "Method 'set_CaptureTime()' is deprecated. Please use 'set_capture_time()' instead."
+        )
+        return self.set_capture_time(*args, **kwargs)
+
+    @deprecated("Use 'get_data' instead")
+    def get_Data(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_data()"""
+        self.logger.warning("Method 'get_Data()' is deprecated. Please use 'get_data()' instead.")
+        return self.get_data(*args, **kwargs)
+
+    @deprecated("Use 'extract_trace_data_legacy' instead")
+    def ExtractTtraceData(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for extract_trace_data_legacy()"""
+        self.logger.warning(
+            """Method 'ExtractTtraceData()' is deprecated. 
+            Please use 'extract_trace_data_legacy()' instead."""
+        )
+        return self.extract_trace_data_legacy(*args, **kwargs)
+
+    @deprecated("Use 'measure_and_get_trace' instead")
+    def ExtractTraceData(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for measure_and_get_trace()"""
+        self.logger.warning(
+            """Method 'ExtractTraceData()' is deprecated. 
+            Please use 'measure_and_get_trace()' instead."""
+        )
+        return self.measure_and_get_trace(*args, **kwargs)

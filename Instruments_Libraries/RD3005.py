@@ -10,17 +10,17 @@ and heavily modified by:
 #  it under the terms of the GNU General Public License as published by
 #  the Free Software Foundation; either version 2 of the License, or
 #  (at your option) any later version.
-#  
+#
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
-#  
+#
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, write to the Free Software
 #  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #  MA 02110-1301, USA.
-#  
+#
 #
 # Requirement: pyvisa (migrated from pyserial)
 #
@@ -42,6 +42,11 @@ import pyvisa
 import pyvisa.constants
 
 from .BaseInstrument import BaseInstrument
+
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
 
 
 class RD3005(BaseInstrument):
@@ -190,13 +195,59 @@ class RD3005(BaseInstrument):
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================
-    getIdn = get_idn  # noqa: N815
-    set_Volt = set_volt  # noqa: N815
-    ask_Volt = get_volt  # noqa: N815
-    read_Volt = read_volt  # noqa: N815
-    set_Amp = set_amp  # noqa: N815
-    ask_Amp = get_amp  # noqa: N815
-    read_Amp = read_amp  # noqa: N815
-    set_Out = set_out  # noqa: N815
-    set_Ocp = set_ocp  # noqa: N815
-    ask_Status = get_status  # noqa: N815
+
+    @deprecated("Use 'set_volt' instead")
+    def set_Volt(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_volt()"""
+        self.logger.warning("Method 'set_Volt()' is deprecated. Please use 'set_volt()' instead.")
+        return self.set_volt(*args, **kwargs)
+
+    @deprecated("Use 'get_volt' instead")
+    def ask_Volt(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_volt()"""
+        self.logger.warning("Method 'ask_Volt()' is deprecated. Please use 'get_volt()' instead.")
+        return self.get_volt(*args, **kwargs)
+
+    @deprecated("Use 'read_volt' instead")
+    def read_Volt(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for read_volt()"""
+        self.logger.warning("Method 'read_Volt()' is deprecated. Please use 'read_volt()' instead.")
+        return self.read_volt(*args, **kwargs)
+
+    @deprecated("Use 'set_amp' instead")
+    def set_Amp(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_amp()"""
+        self.logger.warning("Method 'set_Amp()' is deprecated. Please use 'set_amp()' instead.")
+        return self.set_amp(*args, **kwargs)
+
+    @deprecated("Use 'get_amp' instead")
+    def ask_Amp(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_amp()"""
+        self.logger.warning("Method 'ask_Amp()' is deprecated. Please use 'get_amp()' instead.")
+        return self.get_amp(*args, **kwargs)
+
+    @deprecated("Use 'read_amp' instead")
+    def read_Amp(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for read_amp()"""
+        self.logger.warning("Method 'read_Amp()' is deprecated. Please use 'read_amp()' instead.")
+        return self.read_amp(*args, **kwargs)
+
+    @deprecated("Use 'set_out' instead")
+    def set_Out(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_out()"""
+        self.logger.warning("Method 'set_Out()' is deprecated. Please use 'set_out()' instead.")
+        return self.set_out(*args, **kwargs)
+
+    @deprecated("Use 'set_ocp' instead")
+    def set_Ocp(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_ocp()"""
+        self.logger.warning("Method 'set_Ocp()' is deprecated. Please use 'set_ocp()' instead.")
+        return self.set_ocp(*args, **kwargs)
+
+    @deprecated("Use 'get_status' instead")
+    def ask_Status(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_status()"""
+        self.logger.warning(
+            "Method 'ask_Status()' is deprecated. Please use 'get_status()' instead."
+        )
+        return self.get_status(*args, **kwargs)

@@ -482,7 +482,7 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         start : int, optional
-            Starting point in the source memory for the first waveform point to transfer, 
+            Starting point in the source memory for the first waveform point to transfer,
             by default None.
         size : int, optional
             Number of points in the source memory to transfer. If larger than available data,

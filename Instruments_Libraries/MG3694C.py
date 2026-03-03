@@ -29,6 +29,11 @@ import pyvisa.constants as vi_const
 
 from .BaseInstrument import BaseInstrument
 
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
+
 
 def auto_reconnect(func: Callable) -> Callable:
     """
@@ -49,7 +54,7 @@ def auto_reconnect(func: Callable) -> Callable:
                     raise e
 
                 print(
-                    f"""Connection lost during {getattr(func, '__name__', 'function')}. 
+                    f"""Connection lost during {getattr(func, "__name__", "function")}. 
                     Reconnecting (Attempt {i + 1}/{attempts})..."""
                 )
                 try:
@@ -190,21 +195,19 @@ class MG3694C(BaseInstrument):
         return self.query(":SOURce:AM:INTernal:WAVE?")
 
     def get_am_internal_freq(self) -> float:
-        """        Requests the currently programmed modulating waveform frequency value for the
+        """Requests the currently programmed modulating waveform frequency value for the
         internal AM function.
         """
 
         return float(self.query(":SOURce:AM:INTernal:FREQuency?"))
 
     def get_am_state(self) -> str:
-        """        Requests currently programmed amplitude modulation state (on/off)
-        """
+        """Requests currently programmed amplitude modulation state (on/off)"""
 
         return self.query(":SOURce:AM:STATe?")
 
     def get_am_type(self) -> str:
-        """        Requests the currently programmed AM operating mode.
-        """
+        """Requests the currently programmed AM operating mode."""
 
         return self.query(":SOURce:AM:TYPE?")
 
@@ -517,7 +520,7 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal AM generator) 
+                Description: Selects the modulating waveform (from the internal AM generator)
                 for the internal AM function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
@@ -627,7 +630,7 @@ class MG3694C(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int                
+        state : str/int
                 Parameters: ON | OFF | 1 | 0
                 Default: OFF
 
@@ -651,7 +654,7 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal FM generator) 
+                Description: Selects the modulating waveform (from the internal FM generator)
                 for the internal FM function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
@@ -720,9 +723,9 @@ class MG3694C(BaseInstrument):
                 LOCKed[1] = Locked Narrow FM
                 LOCKed2 = Locked Narrow Low-Noise FM
                 UNLocked = Unlocked FM
-                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing 
-                the FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM 
-                signal is obtained by applying the modulating signal to the tuning coils of the 
+                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing
+                the FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM
+                signal is obtained by applying the modulating signal to the tuning coils of the
                 YIG-tuned oscillator.
                 Parameters: LOCKed[1] | LOCKed2 | UNLocked
                 Default: UNLocked
@@ -856,8 +859,8 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         value :  int/float
-                   Description: Sets the MG369xC RF output center frequency to the value entered. 
-                   :CENTER and :SPAN frequencies are coupled values. Entering the value for one 
+                   Description: Sets the MG369xC RF output center frequency to the value entered.
+                   :CENTER and :SPAN frequencies are coupled values. Entering the value for one
                    will cause the other to be recalculated. (See notes under :FREQuency:SPAN)
         unit : str
             Parameters: Frequency (in Hz)
@@ -1023,7 +1026,7 @@ class MG3694C(BaseInstrument):
         Parameters
         ----------
         state : str
-                Selects the modulating waveform (from the internal ΦM generator) for the internal 
+                Selects the modulating waveform (from the internal ΦM generator) for the internal
                 phase modulation function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
@@ -1056,7 +1059,7 @@ class MG3694C(BaseInstrument):
         value : str
             Parameter: Frequency (in Hz)
         unit : int/float
-            Description: Sets the frequency of the modulating waveform for the internal 
+            Description: Sets the frequency of the modulating waveform for the internal
             phase modulation (see :PM:INTernal:WAVE)
             Range: 0.1 Hz to 1 MHz for sine wave;
             0.1 Hz to 100 kHz for square, triangle, and ramp waveforms.
@@ -1121,48 +1124,374 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================
-    getIdn = BaseInstrument.get_idn  # noqa: N815
-    Close = BaseInstrument.close
-    reset = BaseInstrument.reset
-    ask_output_protection = get_output_protection
-    ask_output_retrace = get_output_retrace
-    ask_output_impedance = get_output_impedance
-    ask_OutputPowerLevel = get_output_power_level  # noqa: N815
-    ask_MaximalPowerLevel = get_maximal_power_level  # noqa: N815
-    ask_am_logsens = get_am_logsens
-    ask_am_logDepth = get_am_logdepth  # noqa: N815
-    ask_am_internalWave = get_am_internal_wave  # noqa: N815
-    ask_am_internalFreq = get_am_internal_freq  # noqa: N815
-    ask_am_state = get_am_state
-    ask_am_type = get_am_type
-    ask_fm_internalWave = get_fm_internal_wave  # noqa: N815
-    ask_fm_internalFreq = get_fm_internal_freq  # noqa: N815
-    ask_fm_mode = get_fm_mode
-    ask_fm_Bwidth = get_fm_bwidth  # noqa: N815
-    ask_fm_state = get_fm_state
-    ask_freq_CW = get_freq_cw  # noqa: N815
-    ask_freq_step = get_freq_step
-    ask_freq_centerFreq = get_freq_center_freq  # noqa: N815
-    ask_freq_mode = get_freq_mode
-    ask_freq_span = get_freq_span
-    ask_freq_start = get_freq_start
-    ask_freq_stop = get_freq_stop
-    ask_freq_unit = get_freq_unit
-    ask_pm_Bwidth = get_pm_bwidth  # noqa: N815
-    ask_pm_internalWave = get_pm_internal_wave  # noqa: N815
-    ask_pm_internalFreq = get_pm_internal_freq  # noqa: N815
-    ask_pm_state = get_pm_state
-    set_OutputPowerLevel = set_output_power_level  # noqa: N815
-    set_am_logDepth = set_am_logdepth  # noqa: N815
-    set_am_internalWave = set_am_internal_wave  # noqa: N815
-    set_am_internalFreq = set_am_internal_freq  # noqa: N815
-    set_correctionCommands = set_correction_commands  # noqa: N815
-    set_fm_internalWave = set_fm_internal_wave  # noqa: N815
-    set_fm_internalFreq = set_fm_internal_freq  # noqa: N815
-    set_fm_Bwidth = set_fm_bwidth  # noqa: N815
-    set_fm_steta = set_fm_state
-    set_freq_CW = set_freq_cw  # noqa: N815
-    set_pm_Bwidth = set_pm_bwidth  # noqa: N815
-    set_pm_internalWave = set_pm_internal_wave  # noqa: N815
-    set_pm_internalFreq = set_pm_internal_freq  # noqa: N815
-    get_Data = get_data  # noqa: N815
+    @deprecated("Use 'get_idn' instead")
+    def getIdn(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_idn()"""
+        self.logger.warning("Method 'getIdn()' is deprecated. Please use 'get_idn()' instead.")
+        return self.get_idn(*args, **kwargs)
+
+    @deprecated("Use 'close' instead")
+    def Close(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for close()"""
+        self.logger.warning("Method 'Close()' is deprecated. Please use 'close()' instead.")
+        return self.close(*args, **kwargs)
+
+    @deprecated("Use 'reset' instead")
+    def reset(self, *args, **kwargs):
+        """Deprecated alias for reset()"""
+        self.logger.warning("Method 'reset()' is deprecated. Please use 'reset()' instead.")
+        return self.reset(*args, **kwargs)
+
+    @deprecated("Use 'get_output_protection' instead")
+    def ask_output_protection(self, *args, **kwargs):
+        """Deprecated alias for get_output_protection()"""
+        self.logger.warning(
+            """Method 'ask_output_protection()' is deprecated. 
+            Please use 'get_output_protection()' instead."""
+        )
+        return self.get_output_protection(*args, **kwargs)
+
+    @deprecated("Use 'get_output_retrace' instead")
+    def ask_output_retrace(self, *args, **kwargs):
+        """Deprecated alias for get_output_retrace()"""
+        self.logger.warning(
+            """Method 'ask_output_retrace()' is deprecated. 
+            Please use 'get_output_retrace()' instead."""
+        )
+        return self.get_output_retrace(*args, **kwargs)
+
+    @deprecated("Use 'get_output_impedance' instead")
+    def ask_output_impedance(self, *args, **kwargs):
+        """Deprecated alias for get_output_impedance()"""
+        self.logger.warning(
+            """Method 'ask_output_impedance()' is deprecated. 
+            Please use 'get_output_impedance()' instead."""
+        )
+        return self.get_output_impedance(*args, **kwargs)
+
+    @deprecated("Use 'get_output_power_level' instead")
+    def ask_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_output_power_level()"""
+        self.logger.warning(
+            """Method 'ask_OutputPowerLevel()' is deprecated. 
+            Please use 'get_output_power_level()' instead."""
+        )
+        return self.get_output_power_level(*args, **kwargs)
+
+    @deprecated("Use 'get_maximal_power_level' instead")
+    def ask_MaximalPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_maximal_power_level()"""
+        self.logger.warning(
+            """Method 'ask_MaximalPowerLevel()' is deprecated. 
+            Please use 'get_maximal_power_level()' instead."""
+        )
+        return self.get_maximal_power_level(*args, **kwargs)
+
+    @deprecated("Use 'get_am_logsens' instead")
+    def ask_am_logsens(self, *args, **kwargs):
+        """Deprecated alias for get_am_logsens()"""
+        self.logger.warning(
+            "Method 'ask_am_logsens()' is deprecated. Please use 'get_am_logsens()' instead."
+        )
+        return self.get_am_logsens(*args, **kwargs)
+
+    @deprecated("Use 'get_am_logdepth' instead")
+    def ask_am_logDepth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_am_logdepth()"""
+        self.logger.warning(
+            "Method 'ask_am_logDepth()' is deprecated. Please use 'get_am_logdepth()' instead."
+        )
+        return self.get_am_logdepth(*args, **kwargs)
+
+    @deprecated("Use 'get_am_internal_wave' instead")
+    def ask_am_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_am_internal_wave()"""
+        self.logger.warning(
+            """Method 'ask_am_internalWave()' is deprecated. 
+            Please use 'get_am_internal_wave()' instead."""
+        )
+        return self.get_am_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'get_am_internal_freq' instead")
+    def ask_am_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_am_internal_freq()"""
+        self.logger.warning(
+            """Method 'ask_am_internalFreq()' is deprecated. 
+            Please use 'get_am_internal_freq()' instead."""
+        )
+        return self.get_am_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_am_state' instead")
+    def ask_am_state(self, *args, **kwargs):
+        """Deprecated alias for get_am_state()"""
+        self.logger.warning(
+            "Method 'ask_am_state()' is deprecated. Please use 'get_am_state()' instead."
+        )
+        return self.get_am_state(*args, **kwargs)
+
+    @deprecated("Use 'get_am_type' instead")
+    def ask_am_type(self, *args, **kwargs):
+        """Deprecated alias for get_am_type()"""
+        self.logger.warning(
+            "Method 'ask_am_type()' is deprecated. Please use 'get_am_type()' instead."
+        )
+        return self.get_am_type(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_internal_wave' instead")
+    def ask_fm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_fm_internal_wave()"""
+        self.logger.warning(
+            """Method 'ask_fm_internalWave()' is deprecated. 
+            Please use 'get_fm_internal_wave()' instead."""
+        )
+        return self.get_fm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_internal_freq' instead")
+    def ask_fm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_fm_internal_freq()"""
+        self.logger.warning(
+            """Method 'ask_fm_internalFreq()' is deprecated. 
+            Please use 'get_fm_internal_freq()' instead."""
+        )
+        return self.get_fm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_mode' instead")
+    def ask_fm_mode(self, *args, **kwargs):
+        """Deprecated alias for get_fm_mode()"""
+        self.logger.warning(
+            "Method 'ask_fm_mode()' is deprecated. Please use 'get_fm_mode()' instead."
+        )
+        return self.get_fm_mode(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_bwidth' instead")
+    def ask_fm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_fm_bwidth()"""
+        self.logger.warning(
+            "Method 'ask_fm_Bwidth()' is deprecated. Please use 'get_fm_bwidth()' instead."
+        )
+        return self.get_fm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_state' instead")
+    def ask_fm_state(self, *args, **kwargs):
+        """Deprecated alias for get_fm_state()"""
+        self.logger.warning(
+            "Method 'ask_fm_state()' is deprecated. Please use 'get_fm_state()' instead."
+        )
+        return self.get_fm_state(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_cw' instead")
+    def ask_freq_CW(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_freq_cw()"""
+        self.logger.warning(
+            "Method 'ask_freq_CW()' is deprecated. Please use 'get_freq_cw()' instead."
+        )
+        return self.get_freq_cw(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_step' instead")
+    def ask_freq_step(self, *args, **kwargs):
+        """Deprecated alias for get_freq_step()"""
+        self.logger.warning(
+            "Method 'ask_freq_step()' is deprecated. Please use 'get_freq_step()' instead."
+        )
+        return self.get_freq_step(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_center_freq' instead")
+    def ask_freq_centerFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_freq_center_freq()"""
+        self.logger.warning(
+            """Method 'ask_freq_centerFreq()' is deprecated. 
+            Please use 'get_freq_center_freq()' instead."""
+        )
+        return self.get_freq_center_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_mode' instead")
+    def ask_freq_mode(self, *args, **kwargs):
+        """Deprecated alias for get_freq_mode()"""
+        self.logger.warning(
+            "Method 'ask_freq_mode()' is deprecated. Please use 'get_freq_mode()' instead."
+        )
+        return self.get_freq_mode(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_span' instead")
+    def ask_freq_span(self, *args, **kwargs):
+        """Deprecated alias for get_freq_span()"""
+        self.logger.warning(
+            "Method 'ask_freq_span()' is deprecated. Please use 'get_freq_span()' instead."
+        )
+        return self.get_freq_span(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_start' instead")
+    def ask_freq_start(self, *args, **kwargs):
+        """Deprecated alias for get_freq_start()"""
+        self.logger.warning(
+            "Method 'ask_freq_start()' is deprecated. Please use 'get_freq_start()' instead."
+        )
+        return self.get_freq_start(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_stop' instead")
+    def ask_freq_stop(self, *args, **kwargs):
+        """Deprecated alias for get_freq_stop()"""
+        self.logger.warning(
+            "Method 'ask_freq_stop()' is deprecated. Please use 'get_freq_stop()' instead."
+        )
+        return self.get_freq_stop(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_unit' instead")
+    def ask_freq_unit(self, *args, **kwargs):
+        """Deprecated alias for get_freq_unit()"""
+        self.logger.warning(
+            "Method 'ask_freq_unit()' is deprecated. Please use 'get_freq_unit()' instead."
+        )
+        return self.get_freq_unit(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_bwidth' instead")
+    def ask_pm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_pm_bwidth()"""
+        self.logger.warning(
+            "Method 'ask_pm_Bwidth()' is deprecated. Please use 'get_pm_bwidth()' instead."
+        )
+        return self.get_pm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_internal_wave' instead")
+    def ask_pm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_pm_internal_wave()"""
+        self.logger.warning(
+            """Method 'ask_pm_internalWave()' is deprecated. 
+            Please use 'get_pm_internal_wave()' instead."""
+        )
+        return self.get_pm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_internal_freq' instead")
+    def ask_pm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_pm_internal_freq()"""
+        self.logger.warning(
+            """Method 'ask_pm_internalFreq()' is deprecated. 
+            Please use 'get_pm_internal_freq()' instead."""
+        )
+        return self.get_pm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_state' instead")
+    def ask_pm_state(self, *args, **kwargs):
+        """Deprecated alias for get_pm_state()"""
+        self.logger.warning(
+            "Method 'ask_pm_state()' is deprecated. Please use 'get_pm_state()' instead."
+        )
+        return self.get_pm_state(*args, **kwargs)
+
+    @deprecated("Use 'set_output_power_level' instead")
+    def set_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_output_power_level()"""
+        self.logger.warning(
+            """Method 'set_OutputPowerLevel()' is deprecated. 
+            Please use 'set_output_power_level()' instead."""
+        )
+        return self.set_output_power_level(*args, **kwargs)
+
+    @deprecated("Use 'set_am_logdepth' instead")
+    def set_am_logDepth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_am_logdepth()"""
+        self.logger.warning(
+            "Method 'set_am_logDepth()' is deprecated. Please use 'set_am_logdepth()' instead."
+        )
+        return self.set_am_logdepth(*args, **kwargs)
+
+    @deprecated("Use 'set_am_internal_wave' instead")
+    def set_am_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_am_internal_wave()"""
+        self.logger.warning(
+            """Method 'set_am_internalWave()' is deprecated. 
+            Please use 'set_am_internal_wave()' instead."""
+        )
+        return self.set_am_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'set_am_internal_freq' instead")
+    def set_am_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_am_internal_freq()"""
+        self.logger.warning(
+            """Method 'set_am_internalFreq()' is deprecated. 
+            Please use 'set_am_internal_freq()' instead."""
+        )
+        return self.set_am_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'set_correction_commands' instead")
+    def set_correctionCommands(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_correction_commands()"""
+        self.logger.warning(
+            """Method 'set_correctionCommands()' is deprecated. 
+            Please use 'set_correction_commands()' instead."""
+        )
+        return self.set_correction_commands(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_internal_wave' instead")
+    def set_fm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_fm_internal_wave()"""
+        self.logger.warning(
+            """Method 'set_fm_internalWave()' is deprecated. 
+            Please use 'set_fm_internal_wave()' instead."""
+        )
+        return self.set_fm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_internal_freq' instead")
+    def set_fm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_fm_internal_freq()"""
+        self.logger.warning(
+            """Method 'set_fm_internalFreq()' is deprecated. 
+            Please use 'set_fm_internal_freq()' instead."""
+        )
+        return self.set_fm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_bwidth' instead")
+    def set_fm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_fm_bwidth()"""
+        self.logger.warning(
+            "Method 'set_fm_Bwidth()' is deprecated. Please use 'set_fm_bwidth()' instead."
+        )
+        return self.set_fm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_state' instead")
+    def set_fm_steta(self, *args, **kwargs):
+        """Deprecated alias for set_fm_state()"""
+        self.logger.warning(
+            "Method 'set_fm_steta()' is deprecated. Please use 'set_fm_state()' instead."
+        )
+        return self.set_fm_state(*args, **kwargs)
+
+    @deprecated("Use 'set_freq_cw' instead")
+    def set_freq_CW(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_freq_cw()"""
+        self.logger.warning(
+            "Method 'set_freq_CW()' is deprecated. Please use 'set_freq_cw()' instead."
+        )
+        return self.set_freq_cw(*args, **kwargs)
+
+    @deprecated("Use 'set_pm_bwidth' instead")
+    def set_pm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_pm_bwidth()"""
+        self.logger.warning(
+            "Method 'set_pm_Bwidth()' is deprecated. Please use 'set_pm_bwidth()' instead."
+        )
+        return self.set_pm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'set_pm_internal_wave' instead")
+    def set_pm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_pm_internal_wave()"""
+        self.logger.warning(
+            """Method 'set_pm_internalWave()' is deprecated. 
+            Please use 'set_pm_internal_wave()' instead."""
+        )
+        return self.set_pm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'set_pm_internal_freq' instead")
+    def set_pm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_pm_internal_freq()"""
+        self.logger.warning(
+            """Method 'set_pm_internalFreq()' is deprecated. 
+            Please use 'set_pm_internal_freq()' instead."""
+        )
+        return self.set_pm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_data' instead")
+    def get_Data(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_data()"""
+        self.logger.warning("Method 'get_Data()' is deprecated. Please use 'get_data()' instead.")
+        return self.get_data(*args, **kwargs)

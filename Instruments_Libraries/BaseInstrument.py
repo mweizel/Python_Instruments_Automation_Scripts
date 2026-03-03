@@ -1,4 +1,3 @@
-
 """
 Created on Tue Feb 27 2025
 
@@ -32,30 +31,31 @@ class BaseInstrument:
             Additional arguments passed to `open_resource`.
         """
         import re
-        
+
         # Auto-format IP address or localhost to TCPIP VISA string if needed
         # We assume it's an IP/locahost if it perfectly matches an IPv4 format or 'localhost'
-        ip_pattern = re.compile(r'^(\d{1,3}\.){3}\d{1,3}$|^localhost$', re.IGNORECASE)
-        
+        ip_pattern = re.compile(r"^(\d{1,3}\.){3}\d{1,3}$|^localhost$", re.IGNORECASE)
+
         # If the user just gave an IP, add the TCPIP...INSTR decorators
         if ip_pattern.match(resource_str):
-             resource_str = f"TCPIP::{resource_str}::INSTR"
+            resource_str = f"TCPIP::{resource_str}::INSTR"
         # If it's an IP with a port (socket), example: 192.168.1.1:5025
-        elif re.match(r'^(\d{1,3}\.){3}\d{1,3}:\d+$|^localhost:\d+$', resource_str, re.IGNORECASE):
-             ip, port = resource_str.split(':')
-             resource_str = f"TCPIP::{ip}::{port}::SOCKET"
-             
+        elif re.match(r"^(\d{1,3}\.){3}\d{1,3}:\d+$|^localhost:\d+$", resource_str, re.IGNORECASE):
+            ip, port = resource_str.split(":")
+            resource_str = f"TCPIP::{ip}::{port}::SOCKET"
+
         self.resource_str = resource_str
         self.logger = logging.getLogger(f"{self.__class__.__name__}({resource_str})")
-        
+
         # Ensure a basic handler exists if none are configured
         if not self.logger.hasHandlers() and not logging.getLogger().handlers:
-             logging.basicConfig(level=logging.INFO)
+            logging.basicConfig(level=logging.INFO)
 
         try:
             self._rm = pyvisa.ResourceManager(visa_library)
             self._resource = cast(
-                MessageBasedResource, self._rm.open_resource(resource_str, **kwargs))
+                MessageBasedResource, self._rm.open_resource(resource_str, **kwargs)
+            )
             self.logger.info(f"Connected to {resource_str}")
         except Exception as e:
             self.logger.error(f"Failed to connect to {resource_str}: {e}")
@@ -214,9 +214,9 @@ class BaseInstrument:
         Close the connection to the instrument.
         """
         try:
-            if hasattr(self, '_resource'):
+            if hasattr(self, "_resource"):
                 self._resource.close()
-            if hasattr(self, '_rm'):
+            if hasattr(self, "_rm"):
                 self._rm.close()
             self.logger.info(f"Connection to {self.resource_str} closed.")
         except Exception as e:

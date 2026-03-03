@@ -10,6 +10,12 @@ import numpy as np
 
 from .BaseInstrument import BaseInstrument
 
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
+
+
 # Try to import matlab engine
 try:
     import matlab
@@ -504,7 +510,33 @@ class M8070B(BaseInstrument):
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================
-    Close = BaseInstrument.close
-    set_freq_CW = set_freq_cw  # noqa: N815
-    _validate_channel = validate_channel  # noqa: N815
-    set_OutputPowerLevel = set_output_power_level  # noqa: N815
+    @deprecated("Use 'close' instead")
+    def Close(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for close()"""
+        self.logger.warning("Method 'Close()' is deprecated. Please use 'close()' instead.")
+        return self.close(*args, **kwargs)
+
+    @deprecated("Use 'set_freq_cw' instead")
+    def set_freq_CW(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_freq_cw()"""
+        self.logger.warning(
+            "Method 'set_freq_CW()' is deprecated. Please use 'set_freq_cw()' instead."
+        )
+        return self.set_freq_cw(*args, **kwargs)
+
+    @deprecated("Use 'validate_channel' instead")
+    def _validate_channel(self, *args, **kwargs):
+        """Deprecated alias for validate_channel()"""
+        self.logger.warning(
+            "Method '_validate_channel()' is deprecated. Please use 'validate_channel()' instead."
+        )
+        return self.validate_channel(*args, **kwargs)
+
+    @deprecated("Use 'set_output_power_level' instead")
+    def set_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_output_power_level()"""
+        self.logger.warning(
+            """Method 'set_OutputPowerLevel()' is deprecated. 
+            Please use 'set_output_power_level()' instead."""
+        )
+        return self.set_output_power_level(*args, **kwargs)

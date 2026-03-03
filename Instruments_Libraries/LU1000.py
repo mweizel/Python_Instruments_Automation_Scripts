@@ -2,8 +2,8 @@
 # version: 1.1.0 2025/02/07 modified by Maxim.Weizel for LU1000 CBand+OBand (partially tested)
 
 try:
-    from Instruments_Libraries.NovoptelUSB import NovoptelUSB
     from Instruments_Libraries.NovoptelTCP import NovoptelTCP
+    from Instruments_Libraries.NovoptelUSB import NovoptelUSB
 except ImportError:
     raise ImportError(
         """

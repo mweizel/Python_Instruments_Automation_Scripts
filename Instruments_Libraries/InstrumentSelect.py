@@ -6,10 +6,30 @@ Refactored on Tue Feb 27 2025
 @author: Maxim Weizel
 """
 
+from __future__ import annotations
+
 import logging
 import re
+import typing
 
 import pyvisa as visa
+
+if typing.TYPE_CHECKING:
+    from Instruments_Libraries.APPH import APPH
+    from Instruments_Libraries.AQ6370D import AQ6370D
+    from Instruments_Libraries.CoBrite import CoBrite
+    from Instruments_Libraries.FSWP50 import FSWP50
+    from Instruments_Libraries.GPP4323 import GPP4323
+    from Instruments_Libraries.KEITHLEY2612 import KEITHLEY2612
+    from Instruments_Libraries.LU1000 import LU1000_Cband
+    from Instruments_Libraries.MG3694C import MG3694C
+    from Instruments_Libraries.MS2760A import MS2760A
+    from Instruments_Libraries.MS4647B import MS4647B
+    from Instruments_Libraries.PM100D import PM100D
+    from Instruments_Libraries.RD3005 import RD3005
+    from Instruments_Libraries.SMA100B import SMA100B
+    from Instruments_Libraries.UXR import UXR
+
 from pyvisa.errors import VisaIOError
 
 # Configure logging
@@ -100,10 +120,10 @@ def find_resource(
 # =============================================================================
 
 
-def OSA(resource: str | None = None):  # noqa: N802
+def OSA(resource: str | None = None) -> AQ6370D:  # noqa: N802
     from Instruments_Libraries.AQ6370D import AQ6370D
     # Default fallback to old IP if not provided and not found?
-    # User requested: "auto-discovery ... only when I use localhost as hard coded ip adress, 
+    # User requested: "auto-discovery ... only when I use localhost as hard coded ip adress,
     # that should stay there hard coded."
     # The original file had '169.254.58.101'. We will try to find it or use provided.
 
@@ -123,12 +143,12 @@ def OSA(resource: str | None = None):  # noqa: N802
         # Fallback to original hardcoded IP just in case, or raise error?
         # Given instruction "User should always provide...", we shouldn't magic hardcodes.
         # But for backward compatibility of scripts calling OSA() without args...
-        # We will attempt connection to old default IP if nothing else works, BUT prefer 
+        # We will attempt connection to old default IP if nothing else works, BUT prefer
         # auto discovery.
         return AQ6370D("169.254.58.101")  # Keeping old default as last resort
 
 
-def CoBrite(resource: str | None = None):  # noqa: N802
+def CoBrite(resource: str | None = None) -> CoBrite:  # noqa: N802
     from Instruments_Libraries.CoBrite import CoBrite
 
     if resource is None:
@@ -136,7 +156,7 @@ def CoBrite(resource: str | None = None):  # noqa: N802
     return CoBrite(resource)
 
 
-def SourceMeter(resource: str | None = None):  # noqa: N802
+def SourceMeter(resource: str | None = None) -> KEITHLEY2612:  # noqa: N802
     from Instruments_Libraries.KEITHLEY2612 import KEITHLEY2612
 
     if resource is None:
@@ -144,7 +164,7 @@ def SourceMeter(resource: str | None = None):  # noqa: N802
     return KEITHLEY2612(resource)
 
 
-def PowerSupply(resource: str | None = None):  # noqa: N802
+def PowerSupply(resource: str | None = None) -> RD3005:  # noqa: N802
     from Instruments_Libraries.RD3005 import RD3005
     # This function was complex, handling multiple drivers (RD3005, KA3005, etc.) based on IDN.
     # We will try to preserve that logic but simplify resource finding.
@@ -164,7 +184,6 @@ def PowerSupply(resource: str | None = None):  # noqa: N802
                 # We instantiate RD3005 temporarily to check IDN
                 # Note: This implies RD3005 class handles the visa/serial connection string format
                 # We assume it takes 'ASRLx::INSTR' or COMx
-                res_str = f"ASRL{port.device}::INSTR"  # PyVISA format for Serial
                 # But looking at old code: RD3005(data) where data is from comports which are
                 # usually objects or strings?
                 # Old code: RD3005(data) where data comes from `COM_List.append(port)`
@@ -172,8 +191,8 @@ def PowerSupply(resource: str | None = None):  # noqa: N802
                 # e.g. "COM3"
 
                 test_inst = RD3005(port.device)
-                idn = test_inst.getIdn()  # Assuming legacy method exists or we updated it
-                test_inst.Close()
+                idn = test_inst.get_idn()  # Assuming legacy method exists or we updated it
+                test_inst.close()
 
                 if idn and any(tid in idn for tid in target_ids):
                     resource = port.device
@@ -187,7 +206,7 @@ def PowerSupply(resource: str | None = None):  # noqa: N802
     return RD3005(resource)
 
 
-def PowerMeter(index: int = 0, resource: str | None = None):  # noqa: N802
+def PowerMeter(index: int = 0, resource: str | None = None) -> PM100D:  # noqa: N802
     """
     Auto-detect a connected Thorlabs PM100-series power meter.
     """
@@ -246,13 +265,13 @@ def PowerMeter(index: int = 0, resource: str | None = None):  # noqa: N802
     return PM100D(matches[index])
 
 
-def LU1000(resource: str | None = "USB"):  # noqa: N802
+def LU1000(resource: str | None = "USB") -> LU1000_Cband:  # noqa: N802
     from Instruments_Libraries.LU1000 import LU1000_Cband
 
     return LU1000_Cband(resource)
 
 
-def SpecAnalyser(resource: str | None = None):  # noqa: N802
+def SpecAnalyser(resource: str | None = None) -> MS2760A:  # noqa: N802
     from Instruments_Libraries.MS2760A import MS2760A
 
     # Defaults to localhost per user request for hardcoded localhost
@@ -261,7 +280,7 @@ def SpecAnalyser(resource: str | None = None):  # noqa: N802
     return MS2760A(resource)
 
 
-def SigGen(resource: str | None = None, visa_library: str = "@ivi"):  # noqa: N802
+def SigGen(resource: str | None = None, visa_library: str = "@ivi") -> MG3694C:  # noqa: N802
     from Instruments_Libraries.MG3694C import MG3694C
 
     if resource is None:
@@ -269,7 +288,7 @@ def SigGen(resource: str | None = None, visa_library: str = "@ivi"):  # noqa: N8
     return MG3694C(resource_str=resource, visa_library=visa_library)
 
 
-def RnS_SMA100B(resource: str | None = None, visa_library: str = "@ivi"):  # noqa: N802
+def RnS_SMA100B(resource: str | None = None, visa_library: str = "@ivi") -> SMA100B:  # noqa: N802
     from Instruments_Libraries.SMA100B import SMA100B
 
     if resource is None:
@@ -277,7 +296,7 @@ def RnS_SMA100B(resource: str | None = None, visa_library: str = "@ivi"):  # noq
     return SMA100B(resource_str=resource, visa_library=visa_library)
 
 
-def VNA(resource: str | None = None):  # noqa: N802
+def VNA(resource: str | None = None) -> MS4647B:  # noqa: N802
     from Instruments_Libraries.MS4647B import MS4647B
 
     if resource is None:
@@ -291,7 +310,7 @@ def VNA(resource: str | None = None):  # noqa: N802
     return MS4647B(resource)
 
 
-def APPH(resource: str | None = None):  # noqa: N802
+def APPH(resource: str | None = None) -> APPH:  # noqa: N802
     from Instruments_Libraries.APPH import APPH
 
     if resource is None:
@@ -313,7 +332,7 @@ def APPH(resource: str | None = None):  # noqa: N802
     return APPH(resource)
 
 
-def PowerSupply_GPP4323(resource: str | None = None):  # noqa: N802
+def PowerSupply_GPP4323(resource: str | None = None) -> GPP4323:  # noqa: N802
     import serial.tools.list_ports
 
     from Instruments_Libraries.GPP4323 import GPP4323
@@ -341,7 +360,7 @@ def PowerSupply_GPP4323(resource: str | None = None):  # noqa: N802
     raise RuntimeError("No GPP4323 Power Supply found.")
 
 
-def UXR_1002A(resource: str | None = None):  # noqa: N802
+def UXR_1002A(resource: str | None = None) -> UXR:  # noqa: N802
     from Instruments_Libraries.UXR import UXR
 
     if resource is None:
@@ -362,7 +381,7 @@ def UXR_1002A(resource: str | None = None):  # noqa: N802
     return my_UXR
 
 
-def FSWP50(resource: str | None = None):  # noqa: N802
+def FSWP50(resource: str | None = None) -> FSWP50:  # noqa: N802
     from Instruments_Libraries.FSWP50 import FSWP50
 
     if resource is None:
@@ -376,7 +395,7 @@ def FSWP50(resource: str | None = None):  # noqa: N802
 # =============================================================================
 
 
-def InstInit(num):  # noqa: N802
+def InstInit(num) -> typing.Any:  # noqa: N802
     """
     Initialize instrument based on selection string.
     Recommended to use specific functions (e.g. SpecAnalyser()) directly instead.

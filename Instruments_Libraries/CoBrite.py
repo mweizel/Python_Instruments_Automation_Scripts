@@ -6,6 +6,11 @@ Created on Mon Feb 14 13:54:49 2022
 
 from .BaseInstrument import BaseInstrument
 
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
+
 
 class CoBrite(BaseInstrument):
     def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
@@ -384,19 +389,124 @@ class CoBrite(BaseInstrument):
     # =============================================================================
     # Aliases for backward compatibility
     # =============================================================================
-    Close = BaseInstrument.close
-    Identification = get_identification
-    ask_FreqTHz = get_freq_thz  # noqa: N815
-    ask_Wavelength = get_wavelength  # noqa: N815
-    ask_Offset = get_offset  # noqa: N815
-    ask_LaserOutput = get_laser_output  # noqa: N815
-    ask_Power = get_power  # noqa: N815
-    ask_ActualPower = get_actual_power  # noqa: N815
-    ask_LaserLim = get_laser_lim  # noqa: N815
-    ask_Configuration = get_configuration  # noqa: N815
-    set_Power = set_power  # noqa: N815
-    set_Wavelength = set_wavelength  # noqa: N815
-    set_FreqTHz = set_freq_thz  # noqa: N815
-    set_LaserOutput = set_laser_output  # noqa: N815
-    set_Offset = set_offset  # noqa: N815
-    set_Configuration = set_configuration  # noqa: N815
+    @deprecated("Use 'close' instead")
+    def Close(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for close()"""
+        self.logger.warning("Method 'Close()' is deprecated. Please use 'close()' instead.")
+        return self.close(*args, **kwargs)
+
+    @deprecated("Use 'get_identification' instead")
+    def Identification(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_identification()"""
+        self.logger.warning(
+            "Method 'Identification()' is deprecated. Please use 'get_identification()' instead."
+        )
+        return self.get_identification(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_thz' instead")
+    def ask_FreqTHz(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_freq_thz()"""
+        self.logger.warning(
+            "Method 'ask_FreqTHz()' is deprecated. Please use 'get_freq_thz()' instead."
+        )
+        return self.get_freq_thz(*args, **kwargs)
+
+    @deprecated("Use 'get_wavelength' instead")
+    def ask_Wavelength(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_wavelength()"""
+        self.logger.warning(
+            "Method 'ask_Wavelength()' is deprecated. Please use 'get_wavelength()' instead."
+        )
+        return self.get_wavelength(*args, **kwargs)
+
+    @deprecated("Use 'get_offset' instead")
+    def ask_Offset(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_offset()"""
+        self.logger.warning(
+            "Method 'ask_Offset()' is deprecated. Please use 'get_offset()' instead."
+        )
+        return self.get_offset(*args, **kwargs)
+
+    @deprecated("Use 'get_laser_output' instead")
+    def ask_LaserOutput(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_laser_output()"""
+        self.logger.warning(
+            "Method 'ask_LaserOutput()' is deprecated. Please use 'get_laser_output()' instead."
+        )
+        return self.get_laser_output(*args, **kwargs)
+
+    @deprecated("Use 'get_power' instead")
+    def ask_Power(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_power()"""
+        self.logger.warning("Method 'ask_Power()' is deprecated. Please use 'get_power()' instead.")
+        return self.get_power(*args, **kwargs)
+
+    @deprecated("Use 'get_actual_power' instead")
+    def ask_ActualPower(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_actual_power()"""
+        self.logger.warning(
+            "Method 'ask_ActualPower()' is deprecated. Please use 'get_actual_power()' instead."
+        )
+        return self.get_actual_power(*args, **kwargs)
+
+    @deprecated("Use 'get_laser_lim' instead")
+    def ask_LaserLim(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_laser_lim()"""
+        self.logger.warning(
+            "Method 'ask_LaserLim()' is deprecated. Please use 'get_laser_lim()' instead."
+        )
+        return self.get_laser_lim(*args, **kwargs)
+
+    @deprecated("Use 'get_configuration' instead")
+    def ask_Configuration(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_configuration()"""
+        self.logger.warning(
+            "Method 'ask_Configuration()' is deprecated. Please use 'get_configuration()' instead."
+        )
+        return self.get_configuration(*args, **kwargs)
+
+    @deprecated("Use 'set_power' instead")
+    def set_Power(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_power()"""
+        self.logger.warning("Method 'set_Power()' is deprecated. Please use 'set_power()' instead.")
+        return self.set_power(*args, **kwargs)
+
+    @deprecated("Use 'set_wavelength' instead")
+    def set_Wavelength(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_wavelength()"""
+        self.logger.warning(
+            "Method 'set_Wavelength()' is deprecated. Please use 'set_wavelength()' instead."
+        )
+        return self.set_wavelength(*args, **kwargs)
+
+    @deprecated("Use 'set_freq_thz' instead")
+    def set_FreqTHz(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_freq_thz()"""
+        self.logger.warning(
+            "Method 'set_FreqTHz()' is deprecated. Please use 'set_freq_thz()' instead."
+        )
+        return self.set_freq_thz(*args, **kwargs)
+
+    @deprecated("Use 'set_laser_output' instead")
+    def set_LaserOutput(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_laser_output()"""
+        self.logger.warning(
+            "Method 'set_LaserOutput()' is deprecated. Please use 'set_laser_output()' instead."
+        )
+        return self.set_laser_output(*args, **kwargs)
+
+    @deprecated("Use 'set_offset' instead")
+    def set_Offset(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_offset()"""
+        self.logger.warning(
+            "Method 'set_Offset()' is deprecated. Please use 'set_offset()' instead."
+        )
+        return self.set_offset(*args, **kwargs)
+
+    @deprecated("Use 'set_configuration' instead")
+    def set_Configuration(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_configuration()"""
+        self.logger.warning(
+            "Method 'set_Configuration()' is deprecated. Please use 'set_configuration()' instead."
+        )
+        return self.set_configuration(*args, **kwargs)
