@@ -56,6 +56,7 @@ How to use this Library
 
    _rst/Instruments_Libraries.APPH
    _rst/Instruments_Libraries.AQ6370D
+   _rst/Instruments_Libraries.BaseInstrument
    _rst/Instruments_Libraries.CoBrite
    _rst/Instruments_Libraries.FSWP50
    _rst/Instruments_Libraries.GPP4323

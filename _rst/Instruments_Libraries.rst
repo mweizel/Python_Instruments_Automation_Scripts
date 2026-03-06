@@ -7,6 +7,7 @@ Instruments\_Libraries package
 
    Instruments_Libraries.APPH
    Instruments_Libraries.AQ6370D
+   Instruments_Libraries.BaseInstrument
    Instruments_Libraries.CoBrite
    Instruments_Libraries.FSWP50
    Instruments_Libraries.GPP4323

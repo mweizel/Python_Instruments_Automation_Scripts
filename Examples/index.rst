@@ -18,7 +18,8 @@ Full Code Examples:
 .. toctree::
    :maxdepth: 1
 
-   Example_MS2760A
+   Example_Spectrum_FSWP50
+   Example_Spectrum_MS2760A
    Example_Powersupply_advanced
    Example_Powersupply_GPP4323
    Example_Powersupply_Keithly
