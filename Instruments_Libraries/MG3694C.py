@@ -15,7 +15,7 @@ Legacy instructions (not applicable as of 13.01.2026):
     2) Change the IP-Address from 'automatic' to 'static' and give the IP:192.168.0.1
     3) DNS will be filled automatically! Press 'OK' and leave.
     4) The standard IP of the instrument is: 192.168.0.254
-    7) After your measurement dont forget to change the IP back to 'automatic'!
+    5) After your measurement dont forget to change the IP back to 'automatic'!
 """
 
 import functools

@@ -175,26 +175,26 @@ class BaseInstrument:
 
     def get_idn(self) -> str:
         """
-        Get the instrument identification string (*IDN?).
+        Get the instrument identification string (``*IDN?``).
         """
         return self.query("*IDN?")
 
     def reset(self) -> None:
         """
-        Reset the instrument (*RST).
+        Reset the instrument (``*RST``).
         """
         self.write("*RST")
         self.logger.info("Instrument reset (*RST)")
 
     def clear(self) -> None:
         """
-        Clear the instrument status (*CLS).
+        Clear the instrument status (``*CLS``).
         """
         self.write("*CLS")
 
     def get_opc(self) -> int:
         """
-        Wait until operation complete (*OPC?).
+        Wait until operation complete (``*OPC?``).
 
         Returns
         -------
@@ -205,7 +205,7 @@ class BaseInstrument:
 
     def wait(self) -> None:
         """
-        Wait for operation to complete (*WAI).
+        Wait for operation to complete (``*WAI``).
         """
         self.write("*WAI")
 
