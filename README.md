@@ -36,6 +36,8 @@ The Live Update extension for the GUI is still in development and since it is no
 
 | Instrument | Picture |
 | :--------: | :-----: |
+| **Keysight UXR Oscilloscope** | ![UXR](https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts/blob/docu/Pictures/UXR_Front.jpg?raw=true) |
+| **Rohde & Schwarz FSWP50** | ![FSWP50](https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts/blob/docu/Pictures/FSWP50_Front.jpg?raw=true) |
 | **Anritsu Spectrum Analyzer MS2760A** | ![MS2760A](https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts/blob/docu/Pictures/SA_Back.jpg?raw=true) |
 | **Anritsu Signal Generator MG3694C**   | ![MG3694C](https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts/blob/docu/Pictures/SG_Front.jpg?raw=true) |
 | **Rohde & Schwarz Signal Generator SMA100B** | ![SMA100B](https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts/blob/docu/Pictures/SMA100B_Front.jpg?raw=true) |
