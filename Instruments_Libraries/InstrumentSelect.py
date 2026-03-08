@@ -54,9 +54,9 @@ def find_resource(
     Parameters
     ----------
     model_regex : str
-        Regular expression to match against the *IDN? string.
+        Regular expression to match against the ``*IDN?`` string.
     resource_filter : str
-        VISA resource filter string (default: "?*INSTR").
+        VISA resource filter string (default: ``?*INSTR``).
     specific_address : str, optional
         Specific VISA resource string to use.
 

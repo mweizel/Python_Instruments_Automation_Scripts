@@ -23,7 +23,6 @@ import time
 from collections.abc import Callable
 from typing import Any, cast
 
-import numpy as np
 import pyvisa as visa
 import pyvisa.constants as vi_const
 
@@ -116,8 +115,8 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     def abort(self):
         """
-        Description: Forces the trigger system to the idle state. Any sweep in
-        progress is aborted as soon as possible
+        Forces the trigger system to the idle state. Any sweep in progress is aborted
+        as soon as possible.
 
         Parameters: None
         """
@@ -344,13 +343,13 @@ class MG3694C(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            'ON' 1 or 'OFF' 0
+        state : str | int
+            ``ON`` | ``OFF`` | ``1`` | ``0``
 
         Raises
         ------
         ValueError
-            Valid values are: \'ON\', \'OFF\', 1, 0
+            Valid values are: ON, OFF, 1, 0
         """
 
         state = self._parse_state(state)
@@ -361,74 +360,57 @@ class MG3694C(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            'ON' 1 or 'OFF' 0
+        state : str | int
+            ``ON`` | ``OFF`` | ``1`` | ``0``
 
         Raises
         ------
         ValueError
-            Valid values are: \'ON\', \'OFF\', 1, 0
+            Valid values are: ON, OFF, 1, 0
         """
         self.set_rf_output(state)
 
-    def set_output_protection(self, state):
+    def set_output_protection(self, state: int | str) -> None:
         """
-
+        ON causes the MG369xC RF output to be turned off (blanked) during frequency changes
+        in CW or step sweep mode.
+        OFF leaves RF output turned on (un blanked).
 
         Parameters
         ----------
-        state : str/int
-               Description: ON causes the MG369xC RF output to be turned off (blanked)
-               during frequency changes in CW or step sweep mode.
-               OFF leaves RF output turned on (un blanked).
-               Parameters: ON | OFF | 1 | 0
-               Default: ON
-
-        Raises
-        ------
-        ValueError
-            Error message
+        state : str | int
+            Default: ``ON``
+            * ``ON`` | ``OFF`` | ``1`` | ``0``
         """
 
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":OUTPut:PROTection " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(f":OUTPut:PROTection {state}")
 
-    def set_output_retrace(self, state):
+    def set_output_retrace(self, state: int | str) -> None:
         """
-
+        ON causes the MG369xC RF output to be turned off during sweep retrace.
+        OFF leaves RF output turned on.
 
         Parameters
         ----------
-        state :  str/int
-                Description: ON causes the MG369xC RF output to be turned off during
-                sweep retrace.
-                OFF leaves RF output turned on
-                Parameters: ON | OFF | 1 | 0
-                Default: OFF
-
-        Raises
-        ------
-        ValueError
-            Error message
+        state : str | int
+            Default: ``OFF``
+            * ``ON`` | ``OFF`` | ``1`` | ``0``
         """
 
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":OUTPut:PROTection:RETRace " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(":OUTPut:PROTection:RETRace " + str(state))
 
     # =============================================================================
     # SOURce:POWer subsystem
     # =============================================================================
 
-    def set_rf_power(self, value):
+    def set_rf_power(self, value: int | float):
         """Sets the Signal Generator Output Power in dBm.
 
         Parameters
         ----------
-        value : float/int
+        value : int | float
             Output Power in dBm
         """
         min_val = -20.0
@@ -445,7 +427,7 @@ class MG3694C(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Output Power in dBm
         """
         self.set_rf_power(value)
@@ -462,151 +444,125 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     #   Source - AM
     # =============================================================================
-    def set_am_logsens(self, value):
+    def set_am_logsens(self, value: int | float) -> None:
         """
+        Sets the AM sensitivity for the external AM Log mode.
 
 
         Parameters
         ----------
-        value : int/float
-                Description: Sets the AM sensitivity for the external AM Log mode.
-                Parameters: Sensitivity (in dB/V)
-                Range: 0 to 25 dB/V
-                Default: 3 dB/V
-
-        Raises
-        ------
-        ValueError
-            Error message
+        value : int | float
+            Sensitivity (in dB/V)
+            Range: 0 to 25 dB/V
+            Default: 3 dB/V
         """
 
-        if int(value) in np.arange(0, 26, 1):
+        if 0 <= int(value) <= 25:
             self.write(":SOURce:AM:LOGSens " + str(value) + " dB/V")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError(
+                f"Invalid AM log sensitivity: {value} dB/V. Valid range is 0 to 25 dB/V."
+            )
 
-    def set_am_logdepth(self, value):
+    def set_am_logdepth(self, value: int | float) -> None:
         """
-
+        Sets the modulation depth of the AM signal in the internal AM Log mode.
 
         Parameters
         ----------
-        value : int/float
-                Description: Sets the modulation depth of the AM signal in the internal AM Log mode.
-                Parameters: Modulation depth (in dB)
-                Range: 0 to 25 dB
-                Default: 3 dB
-
-        Raises
-        ------
-        ValueError
-             Error message
+        value : int | float
+            Modulation depth (in dB).
+            Valid range is 0 to 25 dB.
+            Default is 3 dB.
         """
 
-        if int(value) in np.arange(0, 26, 1):
-            self.write(":SOURce:AM:LOGDepth " + str(value) + " dB")
+        if 0 <= int(value) <= 25:
+            self.write(f":SOURce:AM:LOGDepth {int(value)} dB")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError(f"Invalid AM log depth: {int(value)} dB. Valid range is 0 to 25 dB.")
 
-    def set_am_internal_wave(self, state):
+    def set_am_internal_wave(self, state: str) -> None:
         """
-
+        Selects the modulating waveform (from the internal AM generator)
+        for the internal AM function.
 
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal AM generator)
-                for the internal AM function, as follows:
-                SINE = Sine wave
-                GAUSsian = Gaussian noise
-                RDOWn = Negative ramp
-                RUP = Positive ramp
-                SQUare = Square wave
-                TRIangle = Triangle wave
-                UNIForm = Uniform noiseParameters
 
-        Raises
-        ------
-        ValueError
-            Error message
+            * ``'SINE'`` - Sine wave
+            * ``'GAUSsian'`` - Gaussian noise
+            * ``'RDOWn'`` - Negative ramp
+            * ``'RUP'`` - Positive ramp
+            * ``'SQUare'`` - Square wave
+            * ``'TRIangle'`` - Triangle wave
+            * ``'UNIForm'`` - Uniform noise
         """
 
         valid_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
         valid_state = self._check_scpi_param(state, valid_list)
         self.write(":SOURce:AM:INTernal:WAVE " + valid_state)
 
-    def set_am_internal_freq(self, value, unit):
+    def set_am_internal_freq(self, value: int | float, unit: str) -> None:
         """
-
+        Sets the frequency of the modulating waveform for the internal AM function
+        (see :AM:INTernal:WAVE).
 
         Parameters
         ----------
-        value : str
-            Description: Sets the frequency of the modulating waveform for the internal AM function
-            (see :AM:INTernal:WAVE).
-            Parameters: Frequency
-        unit : int/float
-            Range: 0.1 Hz to 1 MHz for sine wave
-            0.1 Hz to 100 kHz for square, triangle, and ramp waveforms
+        value : int | float
+            Frequency
+            Range: 0.1 Hz to 1 MHz for sine wave.
+            0.1 Hz to 100 kHz for square, triangle, and ramp waveforms.
             Default: 1 kHz
-
-         Raises
-        ------
-        ValueError
-            Error message
+        unit : str
+            Unit of the frequency (Hz, kHz, MHz)
         """
 
-        state = self.get_am_internal_freq()
-        unit_list = ["Hz", "kHz", "MHz"]
-        if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in unit_list:
-                self.write(":SOURce:AM:INTernal:FREQuency " + str(value) + " " + unit)
-            else:
-                raise ValueError("Unknown input! See function description for more info.")
+        wave = self.get_am_internal_wave().strip()
 
+        multipliers = {"HZ": 1, "KHZ": 1e3, "MHZ": 1e6}
+        if unit.upper() not in multipliers:
+            raise ValueError(f"Invalid unit '{unit}'. Must be one of 'Hz', 'kHz', 'MHz'.")
+
+        freq_hz = value * multipliers[unit.upper()]
+
+        if wave == "SINE":
+            if not (0.1 <= freq_hz <= 1e6):
+                raise ValueError(
+                    f"Frequency {value} {unit} is out of range (0.1 Hz to 1 MHz) for SINE wave."
+                )
         else:
-            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
-                self.write(":SOURce:AM:INTernal:FREQuency " + str(value) + " " + unit)
-            else:
-                raise ValueError("Unknown input! See function description for more info.")
+            if not (0.1 <= freq_hz <= 100e3):
+                raise ValueError(
+                    f"Frequency {value} {unit} is out of range (0.1 Hz to 100 kHz) for {wave} wave."
+                )
 
-    def set_am_state(self, state):
+        self.write(f":SOURce:AM:INTernal:FREQuency {value} {unit}")
+
+    def set_am_state(self, state: str | int) -> None:
         """
-
+        Enable/disable amplitude modulation of MG369xC RF output signal.
 
         Parameters
         ----------
-        state : str/int
-                Description: Enable/disable amplitude modulation of MG369xC RF output signal.
-                Parameters: ON | OFF | 1 | 0
-                Default: OFF
-
-        Raises
-        ------
-        ValueError
-            Error message
+        state : str | int
+            Default: ``OFF``
+            * ``ON`` | ``OFF`` | ``1`` | ``0``
         """
 
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SOURce:AM:STATe " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(":SOURce:AM:STATe " + str(state))
 
-    def set_am_type(self, state):
+    def set_am_type(self, state: str) -> None:
         """
-
+        Selects the AM operating mode.
 
         Parameters
         ----------
         state : str
-                Description: Selects the AM operating mode.
-                Parameters: LINear | LOGarithmic
-                Default: LINear
-
-        Raises
-        ------
-        ValueError
-            Error message
+            Default: ``LINear``
+            * ``LINear`` | ``LOGarithmic``
         """
 
         valid_state = self._check_scpi_param(state, ["LINear", "LOGarithmic"])
@@ -615,165 +571,136 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     #     Correction Commands
     # =============================================================================
-    def set_correction_commands(self, state):
+    def set_correction_commands(self, state: str | int) -> None:
         """
-        Description: Turns the selected user level flatness correction power-offset table on/off.
+        Turns the selected user level flatness correction power-offset table on/off.
 
         Parameters
         ----------
-        state : str/int
-                Parameters: ON | OFF | 1 | 0
-                Default: OFF
-
-        Raises
-        ------
-        ValueError
-            Error message
+        state : str | int
+            Default: ``OFF``
+            * ``ON`` | ``OFF`` | ``1`` | ``0``
         """
 
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SOURce:CORRection:STATe " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(":SOURce:CORRection:STATe " + str(state))
 
     # =============================================================================
     # Frequency Modulation
     # =============================================================================
-    def set_fm_internal_wave(self, state):
+    def set_fm_internal_wave(self, state: str) -> None:
         """
+        Selects the modulating waveform (from the internal FM generator)
+        for the internal FM function.
 
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal FM generator)
-                for the internal FM function, as follows:
-                SINE = Sine wave
-                GAUSsian = Gaussian noise
-                RDOWn = Negative ramp
-                RUP =Positive ramp
-                SQUare = Square wave
-                TRIangle = Triangle wave
-                UNIForm = Uniform noise
-                Parameters: SINE | GAUSsian | RDOWn | RUP | SQUare | TRIangle | UNIForm
-                Default: SINE
+            Default: SINE
 
-        Raises
-        ------
-        ValueError
-            Error message
+            * ``SINE`` = Sine wave
+            * ``GAUSsian`` = Gaussian noise
+            * ``RDOWn`` = Negative ramp
+            * ``RUP`` =Positive ramp
+            * ``SQUare`` = Square wave
+            * ``TRIangle`` = Triangle wave
+            * ``UNIForm`` = Uniform noise
         """
 
         valid_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
         valid_state = self._check_scpi_param(state, valid_list)
         self.write(":SOURce:FM:INTernal:WAVE " + valid_state)
 
-    def set_fm_internal_freq(self, value, unit):
+    def set_fm_internal_freq(self, value: int | float, unit: str) -> None:
         """
-
+        Sets the frequency of the modulating waveform for the internal FM function
+        (see :FM:INTernal:WAVE).
 
         Parameters
         ----------
-        value : int/float
-            Range: 0.1 Hz to 1 MHz for sine wave
-        unit : str
-            Parameters: Frequency
-            Description: Sets the frequency of the modulating waveform for the internal FM function
-            (see :FM:INTernal:WAVE).
+        value : int | float
+            Frequency
+            Range: 0.1 Hz to 1 MHz for sine wave.
+            0.1 Hz to 100 kHz for square, triangle, and ramp waveforms.
             Default: 1 kHz
-
-        Raises
-        ------
-        ValueError
-            Error message
+        unit : str
+            Unit of the frequency (Hz, kHz, MHz)
         """
 
-        state = self.get_fm_internal_freq()
-        unit_list = ["Hz", "kHz", "MHz"]
-        if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in unit_list:
-                self.write(":SOURce:FM:INTernal:FREQuency " + str(value) + " " + unit)
-            else:
-                raise ValueError("Unknown input! See function description for more info.")
+        wave = self.get_fm_internal_wave().strip()
 
+        multipliers = {"Hz": 1, "kHz": 1e3, "MHz": 1e6}
+        if unit not in multipliers:
+            raise ValueError(f"Invalid unit '{unit}'. Must be one of 'Hz', 'kHz', 'MHz'.")
+
+        freq_hz = value * multipliers[unit]
+
+        if wave == "SINE":
+            if not (0.1 <= freq_hz <= 1e6):
+                raise ValueError(
+                    f"Frequency {value} {unit} is out of range (0.1 Hz to 1 MHz) for SINE wave."
+                )
         else:
-            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
-                self.write(":SOURce:FM:INTernal:FREQuency " + str(value) + " " + unit)
-            else:
-                raise ValueError("Unknown input! See function description for more info.")
+            if not (0.1 <= freq_hz <= 100e3):
+                raise ValueError(
+                    f"Frequency {value} {unit} is out of range (0.1 Hz to 100 kHz) for {wave} wave."
+                )
 
-    def set_fm_mode(self, state):
+        self.write(f":SOURce:FM:INTernal:FREQuency {value} {unit}")
+
+    def set_fm_mode(self, state: str) -> None:
         """
-
+        Selects the synthesis mode employed in generating the FM signal.
+        If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing
+        the FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM
+        signal is obtained by applying the modulating signal to the tuning coils of the
+        YIG-tuned oscillator.
 
         Parameters
         ----------
         state : str
-                Sets the synthesis mode employed in generating the FM signal, as follows:
-                LOCKed[1] = Locked Narrow FM
-                LOCKed2 = Locked Narrow Low-Noise FM
-                UNLocked = Unlocked FM
-                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing
-                the FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM
-                signal is obtained by applying the modulating signal to the tuning coils of the
-                YIG-tuned oscillator.
-                Parameters: LOCKed[1] | LOCKed2 | UNLocked
-                Default: UNLocked
+            Default: UNLocked
 
-        Raises
-        ------
-        ValueError
-            Error message
+            * ``LOCKed[1]`` = Locked Narrow FM
+            * ``LOCKed2`` = Locked Narrow Low-Noise FM
+            * ``UNLocked`` = Unlocked FM
         """
 
         valid_state = self._check_scpi_param(state, ["LOCKed[1]", "LOCKed2", "UNLocked"])
         self.write(":SOURce:FM:MODE " + valid_state)
 
-    def set_fm_bwidth(self, state):
+    def set_fm_bwidth(self, state: str) -> None:
         """
-
+        Sets the Unlocked FM synthesis mode to wide or narrow mode of operation.
+        The Unlocked Wide FM synthesis mode allows maximum deviations of ±100 MHz for
+        DC to 100 Hz rates.
+        The Unlocked Narrow FM synthesis mode allows maximum deviations of ±10 MHz for
+        DC to 8 MHz rates.
 
         Parameters
         ----------
         state : str
-            Description: Sets the Unlocked FM synthesis mode to wide or narrow mode of operation.
-            The Unlocked Wide FM synthesis mode allows maximum deviations of ±100 MHz for
-            DC to 100 Hz rates.
-            The Unlocked Narrow FM synthesis mode allows maximum deviations of ±10 MHz for
-            DC to 8 MHz rates.
-            Parameters: MIN | MAX
-            Range: MIN = narrow mode; MAX = wide mode
+            * ``MIN`` = narrow mode
+            * ``MAX`` = wide mode
             Default: MIN
-
-        Raises
-        ------
-        ValueError
-            Error message
         """
 
         valid_state = self._check_scpi_param(state, ["MIN", "MAX"])
         self.write(":SOURce:FM:BWIDth " + valid_state)
 
-    def set_fm_state(self, state):
+    def set_fm_state(self, state: str | int) -> None:
         """
-
+        Enable/disable frequency modulation of MG369xC RF output signal.
 
         Parameters
         ----------
-        state : str/int
-                Description: Enable/disable frequency modulation of MG369xC RF output signal.
-                Parameters: ON | OFF | 1 | 0
-                Default: OFF
-
-        Raises
-        ------
-        ValueError
-            Error message
+        state : str | int
+            Default: ``OFF``
+            * ``ON`` | ``OFF`` | ``1`` | ``0``
         """
 
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SOURce:FM:STATe " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(":SOURce:FM:STATe " + str(state))
 
     # =============================================================================
     # Frequency Commands
@@ -782,8 +709,9 @@ class MG3694C(BaseInstrument):
         """
         Parameters
         ----------
-        value : int/float
-            Parameter Frequency
+        value : int | float
+            Continuous Wave Frequency.
+            Range: 10 MHz to 40 GHz
 
         unit : str (optional)
             Frequency Unit: 'GHz' or 'MHz' or 'Hz'
@@ -792,97 +720,86 @@ class MG3694C(BaseInstrument):
         min_freq = 10e6  # 10 MHz
         max_freq = 40e9  # 40 GHz
 
-        if unit == "Hz" or unit is None:
+        if unit is None or unit.upper() == "HZ":
             unit = "Hz"
             if value <= max_freq and value >= min_freq:
                 self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
                 raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
-        elif unit == "MHz":
+        elif unit.upper() == "MHZ":
             if value * 1e6 <= max_freq and value * 1e6 >= min_freq:
                 self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
                 raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
-        elif unit == "GHz":
+        elif unit.upper() == "GHZ":
             if value * 1e9 <= max_freq and value * 1e9 >= min_freq:
                 self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
                 raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
         else:
-            raise ValueError('Unknown input! Unit must be None or "MHz" or "GHz"!')
+            raise ValueError('Unknown input! Unit must be None or "Hz", "MHz", or "GHz"!')
 
-    def set_freq_step(self, value, unit):
+    def set_freq_step(self, value: int | float, unit: str) -> None:
         """
-
+        Sets the step increment size used with the :FREQuency:CW command.
 
         Parameters
         ----------
-        value : int/float
-                 Description: Sets the step increment size used with the :FREQuency:CW command.
-                 Range: 0.01 Hz to (MAX  MIN)
-                 Default: 0.1 GHz
+        value : int | float
+            Step increment size
+            Range: 0.01 Hz to (MAX  MIN)
+            Default: 0.1 GHz
         unit : str
-                Parameters: Frequency (in Hz)
-
-        Raises
-        ------
-        ValueError
-            Error message
+            Frequency Unit: 'Hz' or 'kHz' or 'MHz' or 'GHz'
         """
 
-        unit_list = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in unit_list and value > 0.01:
-            self.write(":SOURce:FREQuency:CW:STEP:INCRement " + str(value) + " " + unit)
+        multipliers = {"HZ": 1, "KHZ": 1e3, "MHZ": 1e6, "GHZ": 1e9}
+        if unit.upper() not in multipliers:
+            raise ValueError('Unknown unit! Unit must be "Hz", "kHz", "MHz", or "GHz"')
+
+        freq_hz = value * multipliers[unit.upper()]
+        if freq_hz >= 0.01:
+            self.write(f":SOURce:FREQuency:CW:STEP:INCRement {value} {unit}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError(f"Frequency step must be >= 0.01 Hz. Got: {freq_hz} Hz")
 
-    def set_freq_cent(self, value, unit):
+    def set_freq_cent(self, value: int | float, unit: str) -> None:
         """
-
+        Sets the MG369xC RF output center frequency to the value entered.
+        :CENTER and :SPAN frequencies are coupled values. Entering the value for one
+        will cause the other to be recalculated. (See notes under :FREQuency:SPAN)
 
         Parameters
         ----------
-        value :  int/float
-                   Description: Sets the MG369xC RF output center frequency to the value entered.
-                   :CENTER and :SPAN frequencies are coupled values. Entering the value for one
-                   will cause the other to be recalculated. (See notes under :FREQuency:SPAN)
+        value : int | float
+            Center frequency
         unit : str
-            Parameters: Frequency (in Hz)
-
-        Raises
-        ------
-        ValueError
-            Error message
+            Frequency Unit: 'Hz' or 'kHz' or 'MHz' or 'GHz'
         """
 
-        unit_list = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in unit_list and value > 0.01:
-            self.write(":SOURce:FREQuency:CENTer " + str(value) + " " + unit)
+        multipliers = {"HZ": 1, "KHZ": 1e3, "MHZ": 1e6, "GHZ": 1e9}
+        if unit.upper() not in multipliers:
+            raise ValueError('Unknown unit! Unit must be "Hz", "kHz", "MHz", or "GHz"')
+
+        freq_hz = value * multipliers[unit.upper()]
+        if freq_hz >= 0.01:
+            self.write(f":SOURce:FREQuency:CENTer {value} {unit}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError(f"Center frequency must be >= 0.01 Hz. Got: {freq_hz} Hz")
 
-    def set_freq_mode(self, state):
+    def set_frequency_mode(self, mode):
         """
-
+        Specifies which command subsystem controls the MG369xC frequency.
 
         Parameters
         ----------
-        state : str
-                Specifies which command subsystem controls the MG369xC frequency, as follows:
-                CW|FIXed = [:SOURce]:FREQuency:CW|FIXed
-                SWEep[1] = [:SOURce]:SWEep[1] (see Datasheet)
-                SWCW = (see notes)
-                ALSW = (see notes)
-                LIST<n> = [:SOURce]:LIST<n> (see DataSheet)
-                :SWEep and :SWEep1may be used interchangeably
-
-                Parameters: CW | FIXed | SWEep[1] | SWCW | ALSW | LIST[1] | LIST2 | LIST3 | LIST4
-                Default: CW
-
-        Raises
-        ------
-        ValueError
-            Error message
+        mode : str
+            Default: ``CW``
+            * ``CW`` | ``FIXed`` = [:SOURce]:FREQuency:CW|FIXed
+            * ``SWEep[1]`` = [:SOURce]:SWEep[1] :SWEep and :SWEep1 may be used interchangeably
+            * ``SWCW`` = (see notes)
+            * ``ALSW`` = (see notes)
+            * ``LIST<n>`` = [:SOURce]:LIST<n> (n=1-4)
         """
 
         valid_list = [
@@ -896,87 +813,62 @@ class MG3694C(BaseInstrument):
             "LIST3",
             "LIST4",
         ]
-        valid_state = self._check_scpi_param(state, valid_list)
+        valid_state = self._check_scpi_param(mode, valid_list)
         self.write(":SOURce:FREQuency:MODE " + valid_state)
 
-    def set_freq_span(self, value, unit):
+    def set_freq_span(self, value: int | float, unit: str) -> None:
         """
-
+        Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values.
 
         Parameters
         ----------
-        value : int/float
-            Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
+        value : int | float
             Range: 1 kHz to (MAX  MIN)
             Default: MAX  MIN
         unit : str
-            Parameters: Frequency (in Hz)
-
-        Raises
-        ------
-        ValueError
-            Error message
-        """
-        """
-        Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
-        Parameters: Frequency (in Hz)
-        Range: 1 kHz to (MAX  MIN)
-        Default: MAX  MIN
+            Frequency Unit: 'Hz' or 'kHz' or 'MHz' or 'GHz'
         """
 
-        unit_list = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in unit_list:
+        unit_list = ["HZ", "KHZ", "MHZ", "GHZ"]
+        if unit.upper() in unit_list:
             self.write(":SOURce:FREQuency:SPAN " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_freq_start(self, value, unit):
+    def set_freq_start(self, value: int | float, unit: str) -> None:
         """
-
+        Sets start frequency for SWEep[1] to the value entered.
 
         Parameters
         ----------
-        value : int/float
-            Sets start frequency for SWEep[1] to the value entered. (MIN is defined in the notes)
+        value : int | float
             Range: MIN to MAX
             Default: MIN
         unit : str
-            Parameters: Frequency (in Hz) | MIN
-
-        Raises
-        ------
-        ValueError
-            Error message
+            Frequency Unit: 'Hz' or 'kHz' or 'MHz' or 'GHz'
         """
 
-        unit_list = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in unit_list:
+        unit_list = ["HZ", "KHZ", "MHZ", "GHZ"]
+        if unit.upper() in unit_list:
             self.write(":SOURce:FREQuency:STARt " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_freq_stop(self, value, unit):
+    def set_freq_stop(self, value: int | float, unit: str) -> None:
         """
-
+        Sets stop frequency for SWEep[1] to the value entered.
 
         Parameters
         ----------
-        value : int/float
-            Sets stop frequency for SWEep[1] to the value entered. (MAX is defined in the notes
-            under [:SOURce]:FREQuency:CW|FIXed).
+        value : int | float
             Range: MIN to MAX
             Default: MAX
         unit : str
-            Parameters: Frequency (in Hz) | MAX
-
-        Raises
-        ------
-        ValueError
-            Error message
+            Frequency Unit: 'Hz' or 'kHz' or 'MHz' or 'GHz'
         """
 
-        unit_list = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in unit_list:
+        unit_list = ["HZ", "KHZ", "MHZ", "GHZ"]
+        if unit.upper() in unit_list:
             self.write(":SOURce:FREQuency:STOP " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -984,127 +876,104 @@ class MG3694C(BaseInstrument):
     # =============================================================================
     # Pulse Modulation
     # =============================================================================
-    def set_pm_bwidth(self, state):
+    def set_pm_bwidth(self, state: str) -> None:
         """
-
+        Selects the phase modulation (ΦM) operating mode.
+        The Narrow ΦM mode allows maximum deviations of ±3 radians for DC to 8 MHz rates.
+        The Wide ΦM mode allows maximum deviations of ±400 radians for DC to 1 MHz rates.
 
         Parameters
         ----------
         state : str
-            Selects the phase modulation (ΦM) operating mode.
-            The Narrow ΦM mode allows maximum deviations of ±3 radians for DC to 8 MHz rates.
-            The Wide ΦM mode allows maximum deviations of ±400 radians for DC to 1 MHz rates.
-            Parameters: MIN | MAX
-            Range: MIN = narrow mode
-            MAX = wide mode
-            Default: MIN
-
-        Raises
-        ------
-        ValueError
-            Error message
+            Default: ``MIN``
+            * ``MIN`` = narrow mode
+            * ``MAX`` = wide mode
         """
 
         valid_state = self._check_scpi_param(state, ["MIN", "MAX"])
         self.write(":SOURce:PM:BWIDth " + valid_state)
 
-    def set_pm_internal_wave(self, state):
+    def set_pm_internal_wave(self, state: str) -> None:
         """
-
+        Selects the modulating waveform (from the internal ΦM generator) for the internal
+        phase modulation function.
 
         Parameters
         ----------
         state : str
-                Selects the modulating waveform (from the internal ΦM generator) for the internal
-                phase modulation function, as follows:
-                SINE = Sine wave
-                GAUSsian = Gaussian noise
-                RDOWn = Negative ramp
-                RUP = Positive ramp
-                SQUare = Square wave
-                TRIangle = Triangle wave
-                UNIForm = Uniform noise
-                Parameters: SINE | GAUSsian | RDOWn | RUP | SQUare | TRIangle | UNIForm
-                Default: SINE
-
-        Raises
-        ------
-        ValueError
-             Error message
+            Default: ``SINE``
+            * ``SINE`` = Sine wave
+            * ``GAUSsian`` = Gaussian noise
+            * ``RDOWn`` = Negative ramp
+            * ``RUP`` = Positive ramp
+            * ``SQUare`` = Square wave
+            * ``TRIangle`` = Triangle wave
+            * ``UNIForm`` = Uniform noise
         """
 
         valid_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
         valid_state = self._check_scpi_param(state, valid_list)
         self.write(":SOURce:PM:INTernal:WAVE " + valid_state)
 
-    def set_pm_internal_freq(self, value, unit):
+    def set_pm_internal_freq(self, value: int | float, unit: str) -> None:
         """
-
+        Sets the frequency of the modulating waveform for the internal
+        phase modulation (see :PM:INTernal:WAVE)
 
         Parameters
         ----------
-        value : str
-            Parameter: Frequency (in Hz)
-        unit : int/float
-            Description: Sets the frequency of the modulating waveform for the internal
-            phase modulation (see :PM:INTernal:WAVE)
+        value : int | float
+            Frequency
             Range: 0.1 Hz to 1 MHz for sine wave;
             0.1 Hz to 100 kHz for square, triangle, and ramp waveforms.
             Default: 1 kHz
-
-        Raises
-        ------
-        ValueError
-             Error message
+        unit : str
+            Unit of the frequency (Hz, kHz, MHz)
         """
 
-        state = self.get_pm_internal_freq()
-        unit_list = ["Hz", "kHz", "MHz"]
-        if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in unit_list:
-                self.write(":SOURce:PM:INTernal:FREQuency " + str(value) + " " + unit)
-            else:
-                raise ValueError("Unknown input! See function description for more info.")
+        wave = self.get_pm_internal_wave().strip()
 
+        multipliers = {"HZ": 1, "KHZ": 1e3, "MHZ": 1e6}
+        if unit.upper() not in multipliers:
+            raise ValueError(f"Invalid unit '{unit}'. Must be one of 'Hz', 'kHz', 'MHz'.")
+
+        freq_hz = value * multipliers[unit.upper()]
+
+        if wave == "SINE":
+            if not (0.1 <= freq_hz <= 1e6):
+                raise ValueError(
+                    f"Frequency {value} {unit} is out of range (0.1 Hz to 1 MHz) for SINE wave."
+                )
         else:
-            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
-                self.write(":SOURce:PM:INTernal:FREQuency " + str(value) + " " + unit)
-            else:
-                raise ValueError("Unknown input! See function description for more info.")
+            if not (0.1 <= freq_hz <= 100e3):
+                raise ValueError(
+                    f"Frequency {value} {unit} is out of range (0.1 Hz to 100 kHz) for {wave} wave."
+                )
 
-    def set_pm_state(self, state):
+        self.write(f":SOURce:PM:INTernal:FREQuency {value} {unit}")
+
+    def set_pm_state(self, state: str | int) -> None:
         """
-
+        Enable/disable phase modulation of the MG369xC RF output signal.
 
         Parameters
         ----------
-        state : str/int
-            Description: Enable/disable phase modulation of the MG369xC RF output signal.
-            Parameters: ON | OFF | 1 | 0
-            Default: OFF
-
-        Raises
-        ------
-        ValueError
-            v
+        state : str | int
+            Default: ``OFF``
+            * ``ON`` | ``OFF`` | ``1`` | ``0``
         """
 
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SOURce:PM:STATe " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state = self._parse_state(state)
+        self.write(":SOURce:PM:STATe " + str(state))
 
     # =============================================================================
     # Get/Save Data
     # =============================================================================
-    def get_data(self):
+    def get_data(self) -> dict[str, float]:
         """
         Return a dictionary with the measured Power and CW Frequency.
         """
-        output = {}
-        freq = self.get_freq_cw()
-        power = self.get_output_power_level()
-        output["Power/dBm"] = power
-        output["CW Frequency/" + str(self.get_freq_unit())] = freq
-        return output
-
+        return {
+            "Power/dBm": self.get_output_power_level(),
+            f"CW Frequency/{self.get_freq_unit().strip()}": self.get_freq_cw(),
+        }
