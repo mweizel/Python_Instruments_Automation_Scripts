@@ -6,11 +6,6 @@ Created on Fir Feb 02 13:00:00 2024
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class SMA100B(BaseInstrument):
     """
@@ -257,64 +252,3 @@ class SMA100B(BaseInstrument):
 
         self.write(f"SOURce:POWer:LEVel:IMMediate:AMPlitude {value}")
 
-    # =============================================================================
-    # Aliases for backwards compatibility
-    # =============================================================================
-
-    @deprecated("Use 'get_output_impedance' instead")
-    def ask_OutputImpedance(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_output_impedance()"""
-        self.logger.warning(
-            """Method 'ask_OutputImpedance()' is deprecated. 
-            Please use 'get_output_impedance()' instead."""
-        )
-        return self.get_output_impedance(*args, **kwargs)
-
-    @deprecated("Use 'set_dc_offset' instead")
-    def set_DCOffset(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_dc_offset()"""
-        self.logger.warning(
-            "Method 'set_DCOffset()' is deprecated. Please use 'set_dc_offset()' instead."
-        )
-        return self.set_dc_offset(*args, **kwargs)
-
-    @deprecated("Use 'set_cmos_voltage' instead")
-    def set_CMOS_Voltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_cmos_voltage()"""
-        self.logger.warning(
-            "Method 'set_CMOS_Voltage()' is deprecated. Please use 'set_cmos_voltage()' instead."
-        )
-        return self.set_cmos_voltage(*args, **kwargs)
-
-    @deprecated("Use 'set_clock_sig_phase' instead")
-    def set_ClockSigPhase(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_clock_sig_phase()"""
-        self.logger.warning(
-            """Method 'set_ClockSigPhase()' is deprecated.
-            Please use 'set_clock_sig_phase()' instead."""
-        )
-        return self.set_clock_sig_phase(*args, **kwargs)
-
-    @deprecated("Use 'set_freq_cw' instead")
-    def set_freq_CW(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_freq_cw()"""
-        self.logger.warning(
-            "Method 'set_freq_CW()' is deprecated. Please use 'set_freq_cw()' instead."
-        )
-        return self.set_freq_cw(*args, **kwargs)
-
-    @deprecated("Use 'activate_dc_offset' instead")
-    def activate_DCOffset(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for activate_dc_offset()"""
-        self.logger.warning(
-            "Method 'activate_DCOffset()' is deprecated. Please use 'activate_dc_offset()' instead."
-        )
-        return self.activate_dc_offset(*args, **kwargs)
-
-    @deprecated("Use 'set_rf_power' instead")
-    def set_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_rf_power()"""
-        self.logger.warning(
-            "Method 'set_OutputPowerLevel()' is deprecated. Please use 'set_rf_power()' instead."
-        )
-        return self.set_rf_power(*args, **kwargs)

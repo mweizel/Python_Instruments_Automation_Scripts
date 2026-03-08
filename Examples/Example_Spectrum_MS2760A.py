@@ -40,7 +40,7 @@ datapoints = 4001
 # %% ==========================================================================
 # Configure the Instrument
 # =============================================================================
-mySpecAnalyser.set_Continuous('OFF')
+mySpecAnalyser.set_continuous('OFF')
 # time.sleep(0.5) # probably not needed
 mySpecAnalyser.set_sweep_points(datapoints)
 mySpecAnalyser.set_reference_level(SA_ref_level) # in dBm
