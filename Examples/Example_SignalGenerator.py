@@ -1,21 +1,20 @@
 # %% ==========================================================================
 # Import and Definitions
 # =============================================================================
-import time
 import datetime
-import pandas as pd
-import numpy as np
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
-
-
 
 # Instrument Libraries Github: https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts
 # Install with:
 # pip install git+https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts.git
-
 from Instruments_Libraries.MG3694C import MG3694C  # Anritsu SigGen
-from Instruments_Libraries.SMA100B import SMA100B  # Rohde&Schwarz SigGen
+
+# from Instruments_Libraries.SMA100B import SMA100B  # Rohde&Schwarz SigGen
 
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
@@ -48,7 +47,7 @@ SigGen_power_init = test_powerlevels[0]
 # %% ==========================================================================
 # Configure the Instrument
 # =============================================================================
-SignalGenerator.set_freq_CW(test_frequencies[0])
+SignalGenerator.set_freq_cw(test_frequencies[0])
 SignalGenerator.set_rf_power(test_powerlevels[0])
 
 # %% ==========================================================================
@@ -71,7 +70,7 @@ for idx in tqdm(range(num_of_measurements)):
         rec["Signal_Frequency"] = test_frequencies[freq_idx]
 
         SignalGenerator.set_rf_power(test_powerlevels[power_idx]) # Set Power
-        SignalGenerator.set_freq_CW(test_frequencies[freq_idx]) # Set Frequency
+        SignalGenerator.set_freq_cw(test_frequencies[freq_idx]) # Set Frequency
     else:  # Capture a reference measurement with no signal applied
         SignalGenerator.set_output(0) # turn OFF
         rec["Signal_Power"] = -100

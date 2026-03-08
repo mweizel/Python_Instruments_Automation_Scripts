@@ -12,42 +12,73 @@ from tqdm import tqdm
 # Instrument Libraries Github: https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts
 # Install with:
 # pip install git+https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts.git
-# from Instruments_Libraries.PM100D import PM100D
-from Instruments_Libraries.InstrumentSelect import PowerMeter
+# from Instruments_Libraries.MS2760A import MS2760A  # SpectrumAnalyzer
+from Instruments_Libraries.InstrumentSelect import SpecAnalyser
 
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
-# myPowermeter = PM100D('Seriennummer') # replace with your serial number   # noqa: N816
-myPowermeter = PowerMeter()  # noqa: N816
+# mySpecAnalyser = MS2760A('127.0.0.1') # using class directly  # noqa: N816
+mySpecAnalyser = SpecAnalyser() # using InstrumentSelect  # noqa: N816
+mySpecAnalyser.reset()
 
 # %% ==========================================================================
 # Setup the Measurement
 # =============================================================================
 num_of_points = 10
-sleep_time = 0.5
-wavelength = 1550 # nm
+sleep_time = 1 # in seconds
+freq = np.linspace(1e9, 40e9, num_of_points)
+
+# Initial Spectrum Analyzer Sweep Settings
+SA_TraceNum = 1  # only for Anrisu MS2760A
+SA_f_min = 0
+SA_f_max = 40e9
+SA_resBW = 100e3
+SA_ref_level = -10  # dBm
+datapoints = 4001
 
 # %% ==========================================================================
 # Configure the Instrument
 # =============================================================================
-myPowermeter.config_power()
-myPowermeter.set_auto_power_range('ON')
-myPowermeter.set_power_units('dBm')
-myPowermeter.set_wavelength(wavelength) # nm
+mySpecAnalyser.set_Continuous('OFF')
+# time.sleep(0.5) # probably not needed
+mySpecAnalyser.set_sweep_points(datapoints)
+mySpecAnalyser.set_reference_level(SA_ref_level) # in dBm
+mySpecAnalyser.set_if_gain_state('ON') # Enable IF Gain (need ref level <= -10dBm)
+mySpecAnalyser.set_resolution_bandwidth(SA_resBW, 'HZ')
+mySpecAnalyser.set_stop_frequency(SA_f_max, 'HZ')
+mySpecAnalyser.set_start_frequency(SA_f_min, 'HZ')
+mySpecAnalyser.set_trace_type('NORM', SA_TraceNum)
+# Detector Type: POS -> Peak (default), others are: RMS, NEG
+mySpecAnalyser.set_detector_type('POS', SA_TraceNum) 
 
 # %% ==========================================================================
 # Measurement
 # =============================================================================
+
 records = [] # Empty list to store data and meta data
 for idx in tqdm(range(num_of_points)):
     rec = {} # single record
-    rec["Power_dBm"] = myPowermeter.get_power()
-    rec["WaveLength"] = myPowermeter.get_wavelength()
+
+    # Do some changes, like change input frequency
+    # SignalGenerator.set_freq_CW(freq[i])
+
+    # Write Meta Data
+    rec["SA f_min"] = SA_f_min
+    rec["SA f_max"] = SA_f_max
+    rec["SA ref level"] = SA_ref_level
+    rec["SA Resolution BW"] = SA_resBW
+
+    # Take the Measurement
+    time.sleep(sleep_time)
+    rec["data_peak"] = mySpecAnalyser.measure_and_get_trace(
+        trace_number=SA_TraceNum, clear_trace=True)
+
+    # append the record
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
-    time.sleep(sleep_time)
     temp = idx*np.pi # do something with idx
+    
 
 # %% ==========================================================================
 # Create Dataframe
@@ -57,11 +88,11 @@ meas_df = pd.DataFrame.from_records(records)
 # %% ==========================================================================
 # Plot the Measurement
 # =============================================================================
-t0 = meas_df["Timestamps"].iloc[0]
-relative_time = (meas_df["Timestamps"] - t0).dt.total_seconds()
+freq_hz = np.linspace(SA_f_min, SA_f_max, datapoints)
+power_dBm = np.vstack(meas_df["data_peak"])  # noqa: N816
 
-plt.plot(relative_time, meas_df["Power_dBm"])
-plt.xlabel('Time (s)')
+plt.plot(freq_hz, meas_df["data_peak"][0])
+plt.xlabel('Frequency (Hz)')
 plt.ylabel('Power (dBm)')
 plt.show()
 # %% ==========================================================================
@@ -89,4 +120,4 @@ print(loaded_df.head())
 # %% ==========================================================================
 # Close Instrument
 # =============================================================================
-myPowermeter.Close()
+mySpecAnalyser.Close()

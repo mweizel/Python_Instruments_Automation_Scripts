@@ -1,48 +1,48 @@
 # %% ==========================================================================
 # Import and Definitions
 # =============================================================================
-import time
 import datetime
-import pandas as pd
-import numpy as np
+import time
+from dataclasses import dataclass
+from typing import Any
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
-from dataclasses import dataclass
-from typing import Any, Union
 
 @dataclass
 class SourceCfg:
     name: str
     device: Any    # or a Protocol for your instrument API
     auto: bool
-    channel: Union[int, str]
+    channel: int | str
     set_voltage: float
     current_limit: float
 
     def apply_startup(self) -> None:
         if self.auto:
-            self.device.set_Voltage(self.channel, self.set_voltage)
-            self.device.set_CurrentLimit(self.channel, self.current_limit)
+            self.device.set_voltage(self.channel, self.set_voltage)
+            self.device.set_current_limit(self.channel, self.current_limit)
 
 # Instrument Libraries Github: https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts
 # Install with:
 # pip install git+https://github.com/MartinMiroslavovMihaylov/Python_Instruments_Automation_Scripts.git
 
 # from Instruments_Libraries.GPP4323 import GPP4323
-from Instruments_Libraries.InstrumentSelect import PowerSupply_GPP4323
 # from Instruments_Libraries.KEITHLEY2612 import KEITHLEY2612
-from Instruments_Libraries.InstrumentSelect import SourceMeter
+from Instruments_Libraries.InstrumentSelect import PowerSupply_GPP4323, SourceMeter
 
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
-# myGPP4323 = GPP4323('COMXX') # replace with your COM Port
-myGPP4323 = PowerSupply_GPP4323()
+# myGPP4323 = GPP4323('COMXX') # noqa: N816
+myGPP4323 = PowerSupply_GPP4323()  # noqa: N816
 myGPP4323.reset()
 
-# myKEITHLEY2612 = KEITHLEY2612('COMXX') # replace with your COM Port
-myKEITHLEY2612 = SourceMeter()
+# myKEITHLEY2612 = KEITHLEY2612('COMXX') # noqa: N816
+myKEITHLEY2612 = SourceMeter() # noqa: N816
 myKEITHLEY2612.reset()
 
 # %% ==========================================================================
@@ -61,11 +61,11 @@ DC_Sources: dict[str, SourceCfg] = {
 # Configure the Instrument
 # =============================================================================
 # Keithly Sourcemeter needs to be setup as voltage source more specifically
-myKEITHLEY2612.set_ChannelDisplay() # Display all channels
-myKEITHLEY2612.set_OutputSourceFunction('a', "voltage")
-myKEITHLEY2612.set_OutputSourceFunction('b', "voltage")
-myKEITHLEY2612.set_DisplayMeasurementFunction('a','amp') # measure current
-myKEITHLEY2612.set_DisplayMeasurementFunction('b','amp') # measure current
+myKEITHLEY2612.set_channel_display() # Display all channels
+myKEITHLEY2612.set_output_source_function('a', "voltage")
+myKEITHLEY2612.set_output_source_function('b', "voltage")
+myKEITHLEY2612.set_display_measurement_function('a','amp') # measure current
+myKEITHLEY2612.set_display_measurement_function('b','amp') # measure current
 
 
 for source in DC_Sources.values():
@@ -75,20 +75,21 @@ for source in DC_Sources.values():
 # Measurement
 # =============================================================================
 for source in DC_Sources.values():
-    if source.auto == True: # if the source is set to auto
-        source.device.set_Out(source.channel, 'ON') # Turn on the channel
+    if source.auto: # if the source is set to auto
+        source.device.set_output(source.channel, 'ON') # Turn on the channel
 
 records = [] # Empty list to store data and meta data
-for i in tqdm(range(num_of_points)):
+for idx in tqdm(range(num_of_points)):
     rec = {} # single record
     for source in DC_Sources.values():
-        rec[source.name + "_Voltage"] = source.device.ask_Voltage(source.channel)
-        rec[source.name + "_Current"] = source.device.ask_Current(source.channel)
-        rec[source.name + "_Power"] = source.device.ask_Power(source.channel)
+        rec[source.name + "_Voltage"] = source.device.measure_voltage(source.channel)
+        rec[source.name + "_Current"] = source.device.measure_current(source.channel)
+        rec[source.name + "_Power"] = source.device.measure_power(source.channel)
 
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
     time.sleep(sleep_time)
+    temp = idx*np.pi # do something with idx
 
 # %% ==========================================================================
 # Create Dataframe

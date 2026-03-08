@@ -1,112 +1,54 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Feb 14 13:54:49 2022
 
 @author: Martin.Mihaylov
 """
 
+from .BaseInstrument import BaseInstrument
 
-import numpy as np
-import pyvisa as visa
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
 
 
-    
-class CoBrite:
-    def __init__(self, resource_str):
-        '''
-        This Class is using PyVisa to connect to CoBrite Laser, please install PyVisa and Numpy first!
-        '''
+class CoBrite(BaseInstrument):
+    def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
+        """
+        This Class is using PyVisa to connect to CoBrite Laser, please install PyVisa.
+        """
+        kwargs.setdefault("query_delay", 0.5)
+        super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
+        print(self.get_idn())
 
-        self._resource = visa.ResourceManager().open_resource(str(resource_str), query_delay  = 0.5)
-        print(self._resource.query('*IDN?'))
-
-        
-    def query(self, message):
-        return self._resource.query(message)
-    
-    def write(self, message):
-        return self._resource.write(message)
-    
-    def read(self):
-        '''
-        Returns
-        -------
-        None
-            This function must be set after each set_() function. CoBrite 
-            writes the set_() to register and returns ;/r/n to the user. The
-            ;/r/n command will mess up the next data sent to CoBrite from the user.
-            An empty read() is required to be sended after each set_() function to the
-            laser. 
-
-        '''
+    def read(self) -> bytes:  # type: ignore[override]
+        """
+        This function must be set after each set_() function. CoBrite
+        writes the set_() to register and returns ;/r/n to the user. The
+        ;/r/n command will mess up the next data sent to CoBrite from the user.
+        An empty read() is required to be sended after each set_() function to the
+        laser.
+        """
         return self._resource.read_raw()
-    
-    def Close(self):
-        self._resource.close()
-        print('Instrument CoBrite is closed!')
-        
-        
-# =============================================================================
-# Identify       
-# =============================================================================
 
-    def Identification(self):
-        '''
-        
+    # =============================================================================
+    # Identify
+    # =============================================================================
 
-        Returns
-        -------
-        float
-            Identification name and model of the instrument. 
+    def get_identification(self) -> str:
+        """
+        Identification name and model of the instrument.
+        """
+        return self.query("*IDN?")
 
-        '''
-        
-        return self.query('*IDN?')
-# =============================================================================
-# ASK 
-# =============================================================================
-    
+    # =============================================================================
+    # ASK
+    # =============================================================================
 
-    def ask_FreqTHz(self,chan):
-        
-        '''
-    
-        Parameters
-        ----------
-        chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
-
-        Raises
-        ------
-        ValueError
-            Error message.
-
-        Returns
-        -------
-        float
-            Queries the wavelength setting of a tunable laser port.
-            Value format is in THz.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                freq = self.query('FREQ? 1,1,1')
-            elif chan == 2:
-                freq = self.query('FREQ? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-                
-        return float(freq.split(';')[0])
-    
-    
-    
-    
-    
-    def ask_Wavelength(self,chan):
-        '''
-        
+    def get_freq_thz(self, chan: int) -> float:
+        """
+        Queries the wavelength setting of a tunable laser port.
+        Value format is in THz.
 
         Parameters
         ----------
@@ -117,35 +59,17 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        float
-            Queries the wavelength setting of a tunable laser port. 
-            Value format is in Nanometer.
+        freq = self.query(f"FREQ? 1,1,{chan}")
+        return float(freq.split(";")[0])
 
-        '''
-
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                wav = self.query('WAV? 1,1,1')
-            elif chan == 2:
-                wav = self.query('WAV? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        return float(wav.split(';')[0])
-
-    
-
-
-
-
-    def ask_Offset(self,chan):
-        
-        '''
-        
+    def get_wavelength(self, chan: int) -> float:
+        """
+        Queries the wavelength setting of a tunable laser port.
+        Value format is in Nanometer.
 
         Parameters
         ----------
@@ -156,32 +80,17 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        float
-            Queries the frequency offset setting of a tunable laser port. 
-            Value format is in GHz.
+        wav = self.query(f"WAV? 1,1,{chan}")
+        return float(wav.split(";")[0])
 
-        '''
-       
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                freq = self.query('OFF? 1,1,1')
-            elif chan == 2:
-                freq = self.query('OFF? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        return float(freq.split(';')[0])
-
-
-
-
-
-    def ask_LaserOutput(self,chan):
-        '''
-        
+    def get_offset(self, chan: int) -> float:
+        """
+        Queries the frequency offset setting of a tunable laser port.
+        Value format is in GHz.
 
         Parameters
         ----------
@@ -192,78 +101,16 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        str
-            Query if laser is ON or OFF. 
+        freq = self.query(f"OFF? 1,1,{chan}")
+        return float(freq.split(";")[0])
 
-        '''
-        
-        chanLs = [1,2]
-        
-        if chan in chanLs:
-            if chan == 1:
-                out =  float(self.query('STATe? 1,1,1').split(';')[0])
-                if out == 0:
-                    out = 'OFF'
-                else:
-                    out = 'ON'
-            elif chan == 2:
-                out = float(self.query('STATe? 1,1,2').split(';')[0])
-                if out == 0:
-                    out = 'OFF'
-                else:
-                    out = 'ON'
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        return out 
-        
-    
-    
-        
-        
-
-    def ask_Power(self,chan):
-        '''
-        
-
-        Parameters
-        ----------
-        chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
-
-
-        Raises
-        ------
-        ValueError
-            Error message.
-
-        Returns
-        -------
-        float
-            Queries the optical output power target setting of a tunable laser
-            port. Value format is in dBm.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                power =  self.query('POW? 1,1,1')
-            elif chan == 2:
-                power = self.query('POW? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        return float(power.split(';')[0])
-    
-    
-    
-    
-    
-    def ask_ActualPower(self,chan):
-        '''
-        
+    def get_laser_output(self, chan: int) -> str:
+        """
+        Query if laser is ON or OFF.
 
         Parameters
         ----------
@@ -274,32 +121,17 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        float
-            Queries the current optical output power reading of a tunable laser
-            port. Value format is in dBm.
+        out = float(self.query(f"STATe? 1,1,{chan}").split(";")[0])
+        return "ON" if out != 0 else "OFF"
 
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                apow =  self.query('APOW? 1,1,1')
-            elif chan == 2:
-                apow = self.query('APOW? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        return float(apow.split(';')[0])
-
-
-
-
-
-    def ask_LaserLim(self,chan):
-        '''
-        
+    def get_power(self, chan: int) -> float:
+        """
+        Queries the optical output power target setting of a tunable laser
+        port. Value format is in dBm.
 
         Parameters
         ----------
@@ -310,38 +142,70 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        DataDic : dictionary
-            Query maximum tuning Parameters of Laser in location C-S-D in csv 
-            format.
+        power = self.query(f"POW? 1,1,{chan}")
+        return float(power.split(";")[0])
 
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                lim =  self.query('LIM? 1,1,1')
-            elif chan == 2:
-                lim = self.query('LIM? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        datasep = lim.split(';')[0]
-        datasep = datasep.split(',')
-        DataDic =  {}
-        labels = ['Minimum Frequency','Maximum Frequency','Fine tuning Range','Minimum Power','Maximum Power']
+    def get_actual_power(self, chan: int) -> float:
+        """
+        Queries the current optical output power reading of a tunable laser
+        port. Value format is in dBm.
+
+        Parameters
+        ----------
+        chan : int
+            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+
+        Raises
+        ------
+        ValueError
+            Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
+
+        apow = self.query(f"APOW? 1,1,{chan}")
+        return float(apow.split(";")[0])
+
+    def get_laser_lim(self, chan: int) -> dict[str, float]:
+        """
+        Query maximum tuning Parameters of Laser in location C-S-D in csv
+        format.
+
+        Parameters
+        ----------
+        chan : int
+            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+
+        Raises
+        ------
+        ValueError
+            Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
+
+        lim = self.query(f"LIM? 1,1,{chan}")
+        datasep = lim.split(";")[0].split(",")
+
+        data_dict: dict[str, float] = {}
+        labels = [
+            "Minimum Frequency",
+            "Maximum Frequency",
+            "Fine tuning Range",
+            "Minimum Power",
+            "Maximum Power",
+        ]
         for i in range(len(datasep)):
-            DataDic[labels[i]] = float(datasep[i])
-        return DataDic
-    
-    
-    
-    
-    
-    def ask_Configuration(self,chan):
-        '''
-        
+            data_dict[labels[i]] = float(datasep[i])
+        return data_dict
+
+    def get_configuration(self, chan: int) -> dict[str, float | str]:
+        """
+        Query current configuration of Laser in location C-S-D in csv format
 
         Parameters
         ----------
@@ -352,44 +216,39 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        Returns
-        -------
-        DataDic : dictionary
-            Query current configuration of Laser in location C-S-D in csv format
-
-        '''
-       
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                config =  self.query(':SOURce:CONFiguration? 1,1,1')
-            elif chan == 2:
-                config = self.query(':SOURce:CONFiguration? 1,1,2')
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        datasep = config.split(';')[0]
-        datasep = datasep.split(',')
-        if datasep[-1] == '-1':  
-            datasep[-1] = 'NO'
+        config = self.query(f":SOURce:CONFiguration? 1,1,{chan}")
+        datasep = config.split(";")[0].split(",")
+        if datasep[-1] == "-1":
+            datasep[-1] = "NO"
         else:
-            datasep[-1] = 'YES'
-        DataDic =  {}
-        labels = ['Wavelength','Offset','Output Power','Output state','Busy state','Dither state']
-        for i in range(int(len(datasep)-1)):
-            DataDic[labels[i]] = float(datasep[i])
-        DataDic['Dither supported'] = datasep[-1]
-        return DataDic
+            datasep[-1] = "YES"
 
+        data_dict: dict[str, float | str] = {}
+        labels = [
+            "Wavelength",
+            "Offset",
+            "Output Power",
+            "Output state",
+            "Busy state",
+            "Dither state",
+        ]
+        for i in range(int(len(datasep) - 1)):
+            data_dict[labels[i]] = float(datasep[i])
+        data_dict["Dither supported"] = datasep[-1]
+        return data_dict
 
+    # =============================================================================
+    # SET
+    # =============================================================================
 
-# =============================================================================
-# SET
-# =============================================================================
-    
-    def set_Power(self,chan,value):
-        '''
-        
+    def set_power(self, chan: int, value: float) -> None:
+        """
+        Sets the optical output power target setting of a tunable laser port.
+        Value format is in dBm.
 
         Parameters
         ----------
@@ -403,65 +262,37 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
+        self.write(f"POW 1,1,{chan},{value}")
 
-        Returns
-        -------
-        None.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                self.write('POW 1,1,1,'+str(value))
-            elif chan == 2:
-                self.write('POW 1,1,2,'+str(value))
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-     
-        
-     
-        
-     
-    def set_Wavelength(self,chan,value):
-        '''
-        
+    def set_wavelength(self, chan: int, value: float) -> None:
+        """
+        Sets the wavelength setting of a tunable laser port. Value format
+        is in Nanometer.
 
         Parameters
         ----------
         chan : int
             Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
         value : float
-            Sets the wavelength setting of a tunable laser port. Value format 
+            Sets the wavelength setting of a tunable laser port. Value format
             is in Nanometer.
 
         Raises
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
+        self.write(f"WAV 1,1,{chan},{value}")
 
-        Returns
-        -------
-        None.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                self.write('WAV 1,1,1,'+str(value))
-            elif chan == 2:
-                self.write('WAV 1,1,2,'+str(value))
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-        
-        
-        
-        
-      
-    def set_FreqTHz(self,chan,value):
-        '''
-        
+    def set_freq_thz(self, chan: int, value: float) -> None:
+        """
+        Sets or queries the wavelength setting of a tunable laser port.
+        Value format is in Tera Hertz.
 
         Parameters
         ----------
@@ -475,112 +306,60 @@ class CoBrite:
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
+        self.write(f"FREQ 1,1,{chan},{value}")
 
-        Returns
-        -------
-        None.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                self.write('FREQ 1,1,1,'+str(value))
-            elif chan == 2:
-                self.write('FREQ 1,1,2,'+str(value))
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-                
-        
-
-
-
-
-        
-    def set_LaserOutput(self,chan,state):
-        '''
-        
+    def set_laser_output(self, chan: int, state: str | int) -> None:
+        """
+        Set if laser is ON or OFF.
 
         Parameters
         ----------
         chan : int
             Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
         state : float/int
-            Set if laser is ON or OFF. Can be integer 0 or 1, but can be a str 
+            Set if laser is ON or OFF. Can be integer 0 or 1, but can be a str
             ON and OFF.
 
         Raises
         ------
         ValueError
             Error message.
+        """
+        parsed_state = self._parse_state(state)
+        state_val = "1" if parsed_state == "ON" else "0"
 
-        Returns
-        -------
-        None.
+        if chan in [1, 2]:
+            self.write(f"STATe 1,1,{chan},{state_val}")
+        else:
+            raise ValueError("Unknown input! See function description for more info.")
 
-        '''
-        
-        chanLs = [1,2]
-        stateLs = ['ON','OFF',1,0,'1','0']
-        if state == 'ON' or state == 1:
-            state = '1'
-        elif state == 'OFF' or state == 0:
-            state = '0'
-        if chan in chanLs and state in stateLs:
-            if chan == 1:
-                self.write('STATe 1,1,1,' + state)
-            elif chan == 2:
-                self.write('STATe 1,1,2,' + state)
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-                
-              
-                
-              
-                
-              
-                
-    def set_Offset(self,chan,value):
-        '''
-        
+    def set_offset(self, chan: int, value: float) -> None:
+        """
+        Sets the frequency offset setting of a tunable laser port.
+        Value format is in Giga Hertz.
 
         Parameters
         ----------
         chan : int
             Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
         value : float
-            Sets the frequency offset setting of a tunable laser port. 
+            Sets the frequency offset setting of a tunable laser port.
             Value format is in Giga Hertz.
 
         Raises
         ------
         ValueError
             Error message.
+        """
+        if chan not in [1, 2]:
+            raise ValueError("Unknown input! See function description for more info.")
+        self.write(f"OFF 1,1,{chan},{value}")
 
-        Returns
-        -------
-        None.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                self.write('OFF 1,1,1,'+str(value))
-            elif chan == 2:
-                self.write('OFF 1,1,2,'+str(value))
-            else:
-                raise ValueError('Unknown input! See function description for more info.') 
-         
-         
-         
-         
-         
-        
-    def set_Configuration(self,chan,freq,power,offset):
-        '''
-        
-
+    def set_configuration(self, chan: int, freq: float, power: float, offset: float) -> None:
+        """
         Parameters
         ----------
         chan : int
@@ -589,9 +368,9 @@ class CoBrite:
             Sets frequency in Thz format. For example freq = 192.2345
         power : float
             Sets the power to dBm. For example power = 9.8.
-            min Power = 8.8 
+            min Power = 8.8
             max Power = 17.8
-            Check ask_LaserLim() for more info. 
+            Check ask_LaserLim() for more info.
         offset : float
             Sets offset Freq in range Ghz.
 
@@ -599,26 +378,135 @@ class CoBrite:
         ------
         ValueError
             Error message.
-
-        Returns
-        -------
-        None.
-
-        '''
-        
-        chanLs = [1,2]
-        if chan in chanLs:
-            if chan == 1:
-                self.set_FreqTHz(chan, freq)
-                self.set_Power(chan, power)
-                self.set_Offset(chan, offset)
-            elif chan == 2:
-                self.set_FreqTHz(chan, freq)
-                self.set_Power(chan, power)
-                self.set_Offset(chan, offset)
+        """
+        if chan in [1, 2]:
+            self.set_freq_thz(chan, freq)
+            self.set_power(chan, power)
+            self.set_offset(chan, offset)
         else:
-            raise ValueError('Unknown input! See function description for more info.') 
-            
-            
-        
-        
+            raise ValueError("Unknown input! See function description for more info.")
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    @deprecated("Use 'close' instead")
+    def Close(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for close()"""
+        self.logger.warning("Method 'Close()' is deprecated. Please use 'close()' instead.")
+        return self.close(*args, **kwargs)
+
+    @deprecated("Use 'get_identification' instead")
+    def Identification(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_identification()"""
+        self.logger.warning(
+            "Method 'Identification()' is deprecated. Please use 'get_identification()' instead."
+        )
+        return self.get_identification(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_thz' instead")
+    def ask_FreqTHz(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_freq_thz()"""
+        self.logger.warning(
+            "Method 'ask_FreqTHz()' is deprecated. Please use 'get_freq_thz()' instead."
+        )
+        return self.get_freq_thz(*args, **kwargs)
+
+    @deprecated("Use 'get_wavelength' instead")
+    def ask_Wavelength(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_wavelength()"""
+        self.logger.warning(
+            "Method 'ask_Wavelength()' is deprecated. Please use 'get_wavelength()' instead."
+        )
+        return self.get_wavelength(*args, **kwargs)
+
+    @deprecated("Use 'get_offset' instead")
+    def ask_Offset(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_offset()"""
+        self.logger.warning(
+            "Method 'ask_Offset()' is deprecated. Please use 'get_offset()' instead."
+        )
+        return self.get_offset(*args, **kwargs)
+
+    @deprecated("Use 'get_laser_output' instead")
+    def ask_LaserOutput(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_laser_output()"""
+        self.logger.warning(
+            "Method 'ask_LaserOutput()' is deprecated. Please use 'get_laser_output()' instead."
+        )
+        return self.get_laser_output(*args, **kwargs)
+
+    @deprecated("Use 'get_power' instead")
+    def ask_Power(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_power()"""
+        self.logger.warning("Method 'ask_Power()' is deprecated. Please use 'get_power()' instead.")
+        return self.get_power(*args, **kwargs)
+
+    @deprecated("Use 'get_actual_power' instead")
+    def ask_ActualPower(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_actual_power()"""
+        self.logger.warning(
+            "Method 'ask_ActualPower()' is deprecated. Please use 'get_actual_power()' instead."
+        )
+        return self.get_actual_power(*args, **kwargs)
+
+    @deprecated("Use 'get_laser_lim' instead")
+    def ask_LaserLim(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_laser_lim()"""
+        self.logger.warning(
+            "Method 'ask_LaserLim()' is deprecated. Please use 'get_laser_lim()' instead."
+        )
+        return self.get_laser_lim(*args, **kwargs)
+
+    @deprecated("Use 'get_configuration' instead")
+    def ask_Configuration(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_configuration()"""
+        self.logger.warning(
+            "Method 'ask_Configuration()' is deprecated. Please use 'get_configuration()' instead."
+        )
+        return self.get_configuration(*args, **kwargs)
+
+    @deprecated("Use 'set_power' instead")
+    def set_Power(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_power()"""
+        self.logger.warning("Method 'set_Power()' is deprecated. Please use 'set_power()' instead.")
+        return self.set_power(*args, **kwargs)
+
+    @deprecated("Use 'set_wavelength' instead")
+    def set_Wavelength(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_wavelength()"""
+        self.logger.warning(
+            "Method 'set_Wavelength()' is deprecated. Please use 'set_wavelength()' instead."
+        )
+        return self.set_wavelength(*args, **kwargs)
+
+    @deprecated("Use 'set_freq_thz' instead")
+    def set_FreqTHz(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_freq_thz()"""
+        self.logger.warning(
+            "Method 'set_FreqTHz()' is deprecated. Please use 'set_freq_thz()' instead."
+        )
+        return self.set_freq_thz(*args, **kwargs)
+
+    @deprecated("Use 'set_laser_output' instead")
+    def set_LaserOutput(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_laser_output()"""
+        self.logger.warning(
+            "Method 'set_LaserOutput()' is deprecated. Please use 'set_laser_output()' instead."
+        )
+        return self.set_laser_output(*args, **kwargs)
+
+    @deprecated("Use 'set_offset' instead")
+    def set_Offset(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_offset()"""
+        self.logger.warning(
+            "Method 'set_Offset()' is deprecated. Please use 'set_offset()' instead."
+        )
+        return self.set_offset(*args, **kwargs)
+
+    @deprecated("Use 'set_configuration' instead")
+    def set_Configuration(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_configuration()"""
+        self.logger.warning(
+            "Method 'set_Configuration()' is deprecated. Please use 'set_configuration()' instead."
+        )
+        return self.set_configuration(*args, **kwargs)

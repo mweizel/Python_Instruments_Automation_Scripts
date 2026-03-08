@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed Dec  1 07:00:19 2021
 
@@ -17,21 +15,33 @@ Legacy instructions (not applicable as of 13.01.2026):
     2) Change the IP-Address from 'automatic' to 'static' and give the IP:192.168.0.1
     3) DNS will be filled automatically! Press 'OK' and leave.
     4) The standard IP of the instrument is: 192.168.0.254
-    7) After your measurement dont forget to change the IP back to 'automatic'!
+    5) After your measurement dont forget to change the IP back to 'automatic'!
 """
+
+import functools
+import time
+from collections.abc import Callable
+from typing import Any, cast
 
 import numpy as np
 import pyvisa as visa
 import pyvisa.constants as vi_const
-import functools
-import time
 
-def auto_reconnect(func):
+from .BaseInstrument import BaseInstrument
+
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
+
+
+def auto_reconnect(func: Callable) -> Callable:
     """
     Decorator that catches VISA errors, reconnects, and retries the command.
     """
+
     @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
         attempts = 3
         for i in range(attempts):
             try:
@@ -42,105 +52,69 @@ def auto_reconnect(func):
                 if i == attempts - 1:
                     print(f"Failed after {attempts} attempts. Error: {e}")
                     raise e
-                
-                print(f"Connection lost during {func.__name__}. Reconnecting (Attempt {i+1}/{attempts})...")
+
+                print(
+                    f"""Connection lost during {getattr(func, "__name__", "function")}. 
+                    Reconnecting (Attempt {i + 1}/{attempts})..."""
+                )
                 try:
                     self.reconnect()
                 except Exception as reconnect_err:
                     print(f"Reconnect failed: {reconnect_err}")
-                    time.sleep(1) # Wait a bit before next loop
+                    time.sleep(1)  # Wait a bit before next loop
+
     return wrapper
 
-class MG3694C():
+
+class MG3694C(BaseInstrument):
     """
     This class uses pyvisa to connect to an Anritsu MG3694C Signal Generator.
     """
 
-    def __init__(
-        self,
-        resource_str="192.168.0.254",
-        visa_library="@ivi",
-    ):
-        if "TCPIP" not in resource_str.upper():
-            self.resource_str = f"TCPIP::{resource_str}::INSTR"
-        else:
-            self.resource_str = resource_str
+    def __init__(self, resource_str: str = "192.168.0.254", visa_library: str = "@ivi", **kwargs):
+        kwargs.setdefault("read_termination", "\n")
+        kwargs.setdefault("query_delay", 0.5)
+        self._pyvisa_kwargs = kwargs
+        super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
         self.visa_library = visa_library
 
-        self.connect()
-
-        # Predefine Lists
-        self._StateLS_mapping = {
-            "on": 1,
-            "off": 0,
-            1: 1,
-            0: 0,
-            "1": 1,
-            "0": 0,
-            True: 1,
-            False: 0,
-        }
-
-        # Get name and identification
-        print(f"Connected to: {self.getIdn()}")
-    
-    def connect(self):
-        """Opens connection and sets up attributes."""
-        rm = visa.ResourceManager(self.visa_library)
-        self._resource = rm.open_resource(
-            str(self.resource_str), 
-            read_termination="\n", 
-            query_delay=0.5
-        )
-        
-        # Enable Native TCP KeepAlive to prevent timeouts
         try:
-            self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)
-        except visa.VisaIOError:
-            pass # Not all interfaces support this
+            self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)  # type: ignore
+        except visa.errors.VisaIOError:
+            pass
+
+        print(f"Connected to: {self.get_idn()}")
+
+    def connect(self):
+        self._rm = visa.ResourceManager(self.visa_library)
+        self._resource = cast(
+            visa.resources.MessageBasedResource,
+            self._rm.open_resource(str(self.resource_str), **self._pyvisa_kwargs),
+        )
+        try:
+            self._resource.set_visa_attribute(vi_const.VI_ATTR_TCPIP_KEEPALIVE, True)  # type: ignore
+        except visa.errors.VisaIOError:
+            pass
 
     def reconnect(self):
-        """Closes and re-opens the connection."""
         try:
             self._resource.close()
-        except:
-            pass # Ignore errors if it was already closed
-        
-        time.sleep(1) # Give the socket a moment to clear
+        except Exception:
+            pass
+        time.sleep(1)
         self.connect()
 
     @auto_reconnect
-    def write(self, message, encoding="utf-8"):
-        self._resource.write(message, encoding=encoding)
+    def write(self, command: str) -> None:
+        super().write(command)
 
     @auto_reconnect
-    def query(self, message):
-        return self._resource.query(message)
-    
+    def query(self, command: str) -> str:
+        return super().query(command)
+
     @auto_reconnect
-    def read(self):
+    def read(self) -> str:
         return self._resource.read()
-
-    def Close(self):
-        return self._resource.close()
-    
-    def reset(self):
-        return self.write('*RST')
-    
-    def getIdn(self):
-        return self.query('*IDN?')
-    
-    # =============================================================================
-    # Validate Variables
-    # =============================================================================
-
-    def _validate_state(self, state: int | str) -> int:
-        state_normalized = self._StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [on,off,1,0,True,False].")
-        return state_normalized
 
     # =============================================================================
     # Abort Command
@@ -157,222 +131,121 @@ class MG3694C():
     # =============================================================================
     # Ask Instrument about Stats and Parameters
     # =============================================================================
-    def ask_output_protection(self):
+    def get_output_protection(self) -> str:
         """
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed state of the MG369xC RF output during
-            frequency changes in CW or step sweep mode.
-
+        Requests the currently programmed state of the MG369xC RF output during
+        frequency changes in CW or step sweep mode.
         """
         return self.query(":OUTPut:PROTection?")
 
-    def ask_output_retrace(self):
+    def get_output_retrace(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed state of the MG369xC RF output during
-            sweep retrace
-
-
+        Requests the currently programmed state of the MG369xC RF output during
+        sweep retrace.
         """
 
         return self.query(":OUTPut:PROTection:RETRace?")
 
-    def ask_output_impedance(self):
+    def get_output_impedance(self) -> float:
+        """
+        Queries the MG369xC RF output impedance. The impedance is
+        nominally 50 ohms and is not settable.
         """
 
+        return float(self.query(":OUTPut:IMPedance?"))
 
-        Returns
-        -------
-        TYPE Query str
-            Description: Queries the MG369xC RF output impedance. The impedance is
-            nominally 50 ohms and is not settable.
-
+    def get_output_power_level(self) -> float:
+        """
+        Requests the value currently programmed for the RF output power level.
         """
 
-        return self.query(":OUTPut:IMPedance?")
+        return float(self.query(":SOURce:POWer:LEVel:IMMediate:AMPLitude?") or 0.0)
 
-    def ask_OutputPowerLevel(self):
+    def get_maximal_power_level(self) -> float:
+        """
+        Requests the maximum RF output power level value that can be programmed for the
+        particular MG369xC model.
         """
 
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the value currently programmed for the RF output power level
-
-        """
-
-        return float(self.query(":SOURce:POWer:LEVel:IMMediate:AMPLitude?"))
-
-    def ask_MaximalPowerLevel(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the maximum RF output power level value that can be programmed for the
-            particular MG369xC model
-
-        """
-
-        return self.query(":SOURce:POWer? MAX")
+        return float(self.query(":SOURce:POWer? MAX"))
 
     # =============================================================================
     # Ask Source Amplitude Modulation
     # =============================================================================
-    def ask_am_logsens(self):
+    def get_am_logsens(self) -> float:
+        """
+        Requests the currently programmed AM sensitivity value for the external AM Log mode.
         """
 
+        return float(self.query(":SOURce:AM:LOGSens?"))
 
-        Returns
-        -------
-        TYPE Query
-            Requests the currently programmed AM sensitivity value for the external AM Log mode.
-
+    def get_am_logdepth(self) -> float:
+        """
+        Requests the currently programmed modulation depth value for the internal
+        AM Log mode.
         """
 
-        return self.query(":SOURce:AM:LOGSens?")
+        return float(self.query(":SOURce:AM:LOGDepth?"))
 
-    def ask_am_logDepth(self):
+    def get_am_internal_wave(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed modulation depth value for the internal
-            AM Log mode.
-
-        """
-
-        return self.query(":SOURce:AM:LOGDepth?")
-
-    def ask_am_internalWave(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected modulating waveform for the internal AM function.
-
+        Requests the currently selected modulating waveform for the internal AM function.
         """
 
         return self.query(":SOURce:AM:INTernal:WAVE?")
 
-    def ask_am_internalFreq(self):
+    def get_am_internal_freq(self) -> float:
+        """Requests the currently programmed modulating waveform frequency value for the
+        internal AM function.
         """
 
+        return float(self.query(":SOURce:AM:INTernal:FREQuency?"))
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed modulating waveform frequency value for the
-            internal AM function.
-
-        """
-
-        return self.query(":SOURce:AM:INTernal:FREQuency?")
-
-    def ask_am_state(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-           Requests currently programmed amplitude modulation state (on/off)
-
-        """
+    def get_am_state(self) -> str:
+        """Requests currently programmed amplitude modulation state (on/off)"""
 
         return self.query(":SOURce:AM:STATe?")
 
-    def ask_am_type(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed AM operating mode.
-
-        """
+    def get_am_type(self) -> str:
+        """Requests the currently programmed AM operating mode."""
 
         return self.query(":SOURce:AM:TYPE?")
 
     # =============================================================================
     # Frequency Modulation
     # =============================================================================
-    def ask_fm_internalWave(self):
+    def get_fm_internal_wave(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected modulating waveform for the internal FM function.
-
+        Requests the currently selected modulating waveform for the internal FM function.
         """
 
         return self.query(":SOURce:FM:INTernal:WAVE?")
 
-    def ask_fm_internalFreq(self):
+    def get_fm_internal_freq(self) -> float:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed modulating waveform frequency value for the
-            internal FM function.
-
+        Requests the currently programmed modulating waveform frequency value for the
+        internal FM function.
         """
-        return self.query(":SOURce:FM:INTernal:FREQuency?")
+        return float(self.query(":SOURce:FM:INTernal:FREQuency?"))
 
-    def ask_fm_mode(self):
+    def get_fm_mode(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-             Requests the currently programmed synthesis mode used to generate the FM signal.
-
+        Requests the currently programmed synthesis mode used to generate the FM signal.
         """
 
         return self.query(":SOURce:FM:MODE?")
 
-    def ask_fm_Bwidth(self):
+    def get_fm_bwidth(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed Unlocked FM synthesis mode of operation
-            (narrow or wide)
-
+        Requests the currently programmed Unlocked FM synthesis mode of operation
+        (narrow or wide).
         """
 
         return self.query(":SOURce:FM:BWIDth?")
 
-    def ask_fm_state(self):
+    def get_fm_state(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed frequency modulation state (on/off).
-
+        Requests the currently programmed frequency modulation state (on/off).
         """
 
         return self.query(":SOURce:FM:STATe?")
@@ -380,162 +253,90 @@ class MG3694C():
     # =============================================================================
     # Frequency Commands
     # =============================================================================
-    def ask_freq_CW(self):
+    def get_freq_cw(self) -> float:
+        """
+        Requests the current value of the frequency parameter.
         """
 
+        return float(self.query(":SOURce:FREQuency:CW?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value of the frequency parameter.
-
+    def get_freq_step(self) -> float:
+        """
+        Requests the current step increment value of the frequency parameter.
         """
 
-        return float(self.query(":SOURce:FREQuency:CW?"))
+        return float(self.query(":SOURce:FREQuency:CW:STEP:INCRement?") or 0.0)
 
-    def ask_freq_step(self):
+    def get_freq_center_freq(self) -> float:
+        """
+        Requests the current value of the RF output center frequency.
         """
 
+        return float(self.query(":SOURce:FREQuency:CENTer?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current step increment value of the frequency parameter.
-
+    def get_freq_mode(self) -> str:
         """
-
-        return self.query(":SOURce:FREQuency:CW:STEP:INCRement?")
-
-    def ask_freq_centerFreq(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value of the RF output center frequency.
-
-        """
-
-        return self.query(":SOURce:FREQuency:CENTer?")
-
-    def ask_freq_mode(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected programming mode for frequency control.
-
+        Requests the currently selected programming mode for frequency control.
         """
 
         return self.query(":SOURce:FREQuency:MODE?")
 
-    def ask_freq_span(self):
+    def get_freq_span(self) -> float:
+        """
+        Requests the current value for SWEep[1] sweep span.
         """
 
+        return float(self.query(":SOURce:FREQuencySPAN:?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value for SWEep[1] sweep span
-
+    def get_freq_start(self) -> float:
+        """
+        Requests the current value for SWEep[1] start frequency.
         """
 
-        return self.query(":SOURce:FREQuencySPAN:?")
+        return float(self.query(":SOURce:FREQuency:STARt?") or 0.0)
 
-    def ask_freq_start(self):
+    def get_freq_stop(self) -> float:
+        """
+        Requests the current value for SWEep[1] stop frequency.
         """
 
+        return float(self.query(":SOURce:FREQuency:STOP?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-            Requests the current value for SWEep[1] start frequency.
-
+    def get_freq_unit(self) -> str:
         """
-
-        return self.query(":SOURce:FREQuency:STARt?")
-
-    def ask_freq_stop(self):
-        """
-
-
-        Returns
-        -------
-         Query str
-            Requests the current value for SWEep[1] stop frequency.
-
-        """
-
-        return self.query(":SOURce:FREQuency:STOP?")
-
-    def ask_freq_unit(self):
-        """
-
-
-        Returns
-        -------
-        Query str
-            Requests the currently selected frequency unit.
-
+        Requests the currently selected frequency unit.
         """
         return self.query("UNIT:FREQuency?")
 
     # =============================================================================
     # Pulse Modulation
     # =============================================================================
-    def ask_pm_Bwidth(self):
+    def get_pm_bwidth(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed phase modulation operating mode.
-
+        Requests the currently programmed phase modulation operating mode.
         """
 
         return self.query(":SOURce:PM:BWIDth?")
 
-    def ask_pm_internalWave(self):
+    def get_pm_internal_wave(self) -> str:
         """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently selected modulating waveform for the internal phase modulation
-            function.
-
+        Requests the currently selected modulating waveform for the internal phase
+        modulation function.
         """
 
         return self.query(":SOURce:PM:INTernal:WAVE?")
 
-    def ask_pm_internalFreq(self):
+    def get_pm_internal_freq(self) -> float:
+        """
+        Requests the currently programmed modulating waveform frequency value for the
+        internal phase modulation function.
         """
 
+        return float(self.query(":SOURce:PM:INTernal:FREQuency?") or 0.0)
 
-        Returns
-        -------
-        TYPE Query str
-             Requests the currently programmed modulating waveform frequency value for the
-             internal phase modulation function.
-
+    def get_pm_state(self) -> str:
         """
-
-        return self.query(":SOURce:PM:INTernal:FREQuency?")
-
-    def ask_pm_state(self):
-        """
-
-
-        Returns
-        -------
-        TYPE Query str
-            Requests the currently programmed phase modulation state (on/off).
-
+        Requests the currently programmed phase modulation state (on/off).
         """
 
         return self.query(":SOURce:PM:STATe?")
@@ -557,9 +358,8 @@ class MG3694C():
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
 
-        state = self._validate_state(state)
+        state = self._parse_state(state)
         self.write(f":OUTPut:STATe {state}")
-
 
     def set_output(self, state: int | str) -> None:
         """Activates the Signal Genrator RF Output.
@@ -575,7 +375,6 @@ class MG3694C():
             Valid values are: \'ON\', \'OFF\', 1, 0
         """
         self.set_rf_output(state)
-
 
     def set_output_protection(self, state):
         """
@@ -594,11 +393,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -623,11 +417,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -635,9 +424,9 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-# =============================================================================
-# SOURce:POWer subsystem
-# =============================================================================
+    # =============================================================================
+    # SOURce:POWer subsystem
+    # =============================================================================
 
     def set_rf_power(self, value):
         """Sets the Signal Generator Output Power in dBm.
@@ -647,14 +436,16 @@ class MG3694C():
         value : float/int
             Output Power in dBm
         """
-        minVal = -20.0
-        maxVal = 30.0
-        if value > maxVal or value < minVal:
-            raise ValueError(f'Power out of range! You can set power between {minVal} and {maxVal} dBm!')
+        min_val = -20.0
+        max_val = 30.0
+        if value > max_val or value < min_val:
+            raise ValueError(
+                f"Power out of range! You can set power between {min_val} and {max_val} dBm!"
+            )
 
         self.write(f":SOURce:POWer:LEVel:IMMediate:AMPLitude {str(value)} dBm")
 
-    def set_OutputPowerLevel(self, value: int | float) -> None:
+    def set_output_power_level(self, value: int | float) -> None:
         """Sets the Signal Generator Output Power in dBm. Alias for set_rf_power().
 
         Parameters
@@ -663,7 +454,7 @@ class MG3694C():
             Output Power in dBm
         """
         self.set_rf_power(value)
-    
+
     # =============================================================================
     # Set Control system commands:
     #            Amplitude Modulation
@@ -692,11 +483,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if int(value) in np.arange(0, 26, 1):
@@ -704,7 +490,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_am_logDepth(self, value):
+    def set_am_logdepth(self, value):
         """
 
 
@@ -720,11 +506,6 @@ class MG3694C():
         ------
         ValueError
              Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if int(value) in np.arange(0, 26, 1):
@@ -732,43 +513,36 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_am_internalWave(self, state):
+    def set_am_internal_wave(self, state):
         """
 
 
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal AM generator) for the internal AM
-                function, as follows:
+                Description: Selects the modulating waveform (from the internal AM generator)
+                for the internal AM function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
                 RDOWn = Negative ramp
                 RUP = Positive ramp
                 SQUare = Square wave
                 TRIangle = Triangle wave
-                UNIForm = Uniform noiseParameters:
-                Parameters: SINE | GAUSsian | RDOWn | RUP | SQUare | TRIangle | UNIForm
-                Default: SINE
+                UNIForm = Uniform noiseParameters
 
         Raises
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in stList:
+        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        if state in state_list:
             self.write(":SOURce:AM:INTernal:WAVE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_am_internalFreq(self, value, unit):
+    def set_am_internal_freq(self, value, unit):
         """
 
 
@@ -787,23 +561,18 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        state = self.ask_am_internalFreq()
-        sinUnit = ["Hz", "kHz", "MHz"]
+        state = self.get_am_internal_freq()
+        unit_list = ["Hz", "kHz", "MHz"]
         if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in sinUnit:
+            if value >= 0.1 or value <= 1 and unit in unit_list:
                 self.write(":SOURce:AM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
 
         else:
-            if value >= 0.1 or value <= 100 and unit in sinUnit[:-1]:
+            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
                 self.write(":SOURce:AM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
@@ -823,11 +592,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -850,11 +614,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["LINear", "LOGarithmic"]:
@@ -865,14 +624,13 @@ class MG3694C():
     # =============================================================================
     #     Correction Commands
     # =============================================================================
-    def set_correctionCommands(self, state):
+    def set_correction_commands(self, state):
         """
-
+        Description: Turns the selected user level flatness correction power-offset table on/off.
 
         Parameters
         ----------
         state : str/int
-                Description: Turns the selected user level flatness correction power-offset table on/off.
                 Parameters: ON | OFF | 1 | 0
                 Default: OFF
 
@@ -880,11 +638,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -895,15 +648,14 @@ class MG3694C():
     # =============================================================================
     # Frequency Modulation
     # =============================================================================
-    def set_fm_internalWave(self, state):
+    def set_fm_internal_wave(self, state):
         """
-
 
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal FM generator) for the internal
-                FM function, as follows:
+                Description: Selects the modulating waveform (from the internal FM generator)
+                for the internal FM function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
                 RDOWn = Negative ramp
@@ -918,20 +670,15 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in stList:
+        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        if state in state_list:
             self.write(":SOURce:FM:INTernal:WAVE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_fm_internalFreq(self, value, unit):
+    def set_fm_internal_freq(self, value, unit):
         """
 
 
@@ -949,23 +696,18 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        state = self.ask_fm_internalFreq()
-        sinUnit = ["Hz", "kHz", "MHz"]
+        state = self.get_fm_internal_freq()
+        unit_list = ["Hz", "kHz", "MHz"]
         if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in sinUnit:
+            if value >= 0.1 or value <= 1 and unit in unit_list:
                 self.write(":SOURce:FM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
 
         else:
-            if value >= 0.1 or value <= 100 and unit in sinUnit[:-1]:
+            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
                 self.write(":SOURce:FM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
@@ -977,14 +719,14 @@ class MG3694C():
         Parameters
         ----------
         state : str
-                Description: Sets the synthesis mode employed in generating the FM signal, as follows:
+                Sets the synthesis mode employed in generating the FM signal, as follows:
                 LOCKed[1] = Locked Narrow FM
                 LOCKed2 = Locked Narrow Low-Noise FM
                 UNLocked = Unlocked FM
-                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing the
-                FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM signal is
-                obtained by applying the modulating signal to the tuning coils of the YIG-tuned
-                oscillator.
+                If LOCKed[1] or LOCKed2 is set, the YIG phase-locked loop is used in synthesizing
+                the FM signal. If UNLocked is set, the YIG phase-lock loop is disabled and the FM
+                signal is obtained by applying the modulating signal to the tuning coils of the
+                YIG-tuned oscillator.
                 Parameters: LOCKed[1] | LOCKed2 | UNLocked
                 Default: UNLocked
 
@@ -992,20 +734,15 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        modList = ["LOCKed[1]", "LOCKed2", "UNLocked"]
-        if state in modList:
+        mod_list = ["LOCKed[1]", "LOCKed2", "UNLocked"]
+        if state in mod_list:
             self.write(":SOURce:FM:MODE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_fm_Bwidth(self, state):
+    def set_fm_bwidth(self, state):
         """
 
 
@@ -1025,11 +762,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["MIN", "MAX"]:
@@ -1037,7 +769,7 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_fm_steta(self, state):
+    def set_fm_state(self, state):
         """
 
 
@@ -1052,11 +784,6 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -1067,7 +794,7 @@ class MG3694C():
     # =============================================================================
     # Frequency Commands
     # =============================================================================
-    def set_freq_CW(self, value: int | float, unit: str = None) -> None:
+    def set_freq_cw(self, value: int | float, unit: str | None = None) -> None:
         """
         Parameters
         ----------
@@ -1076,35 +803,29 @@ class MG3694C():
 
         unit : str (optional)
             Frequency Unit: 'GHz' or 'MHz' or 'Hz'
-
-        Returns
-        -------
-        None.
-
         """
 
-        minFreq = 10e6  # 10 MHz
-        maxFreq = 40e9  # 40 GHz
+        min_freq = 10e6  # 10 MHz
+        max_freq = 40e9  # 40 GHz
 
-        if unit == 'Hz' or unit is None:
-            unit = 'Hz'
-            if value <= maxFreq and value >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+        if unit == "Hz" or unit is None:
+            unit = "Hz"
+            if value <= max_freq and value >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
-        elif unit == 'MHz':
-            if value*1e6 <= maxFreq and value*1e6 >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+                raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
+        elif unit == "MHz":
+            if value * 1e6 <= max_freq and value * 1e6 >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
-        elif unit == 'GHz':
-            if value*1e9 <= maxFreq and value*1e9 >= minFreq:
-                self.write(f':SOURce:FREQuency:CW {value} {unit}')
+                raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
+        elif unit == "GHz":
+            if value * 1e9 <= max_freq and value * 1e9 >= min_freq:
+                self.write(f":SOURce:FREQuency:CW {value} {unit}")
             else:
-                raise ValueError('Minimum Frequency = 8 kHz and Maximum Frequency = 67 GHz')
+                raise ValueError("Minimum Frequency = 10 MHz and Maximum Frequency = 40 GHz")
         else:
-            raise ValueError(
-                'Unknown input! Unit must be None or "MHz" or "GHz"!')
+            raise ValueError('Unknown input! Unit must be None or "MHz" or "GHz"!')
 
     def set_freq_step(self, value, unit):
         """
@@ -1123,15 +844,10 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit and value > 0.01:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list and value > 0.01:
             self.write(":SOURce:FREQuency:CW:STEP:INCRement " + str(value) + " " + unit)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1143,9 +859,9 @@ class MG3694C():
         Parameters
         ----------
         value :  int/float
-                   Description: Sets the MG369xC RF output center frequency to the value entered. :CENTER and :SPAN
-                   frequencies are coupled values. Entering the value for one will cause the other to be
-                   recalculated. (See notes under :FREQuency:SPAN)
+                   Description: Sets the MG369xC RF output center frequency to the value entered.
+                   :CENTER and :SPAN frequencies are coupled values. Entering the value for one
+                   will cause the other to be recalculated. (See notes under :FREQuency:SPAN)
         unit : str
             Parameters: Frequency (in Hz)
 
@@ -1153,15 +869,10 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit and value > 0.01:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list and value > 0.01:
             self.write(":SOURce:FREQuency:CENTer " + str(value) + " " + unit)
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1173,7 +884,7 @@ class MG3694C():
         Parameters
         ----------
         state : str
-                Description: Specifies which command subsystem controls the MG369xC frequency, as follows:
+                Specifies which command subsystem controls the MG369xC frequency, as follows:
                 CW|FIXed = [:SOURce]:FREQuency:CW|FIXed
                 SWEep[1] = [:SOURce]:SWEep[1] (see Datasheet)
                 SWCW = (see notes)
@@ -1188,15 +899,10 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stState = ["CW", "FIXed", "SWEep[1]", "SWCW", "ALSW", "LIST[1]", "LIST2", "LIST3", "LIST4"]
-        if state in stState:
+        s_list = ["CW", "FIXed", "SWEep[1]", "SWCW", "ALSW", "LIST[1]", "LIST2", "LIST3", "LIST4"]
+        if state in s_list:
             self.write(":SOURce:FREQuency:MODE " + str(state))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1208,7 +914,7 @@ class MG3694C():
         Parameters
         ----------
         value : int/float
-            Description: Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
+            Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
             Range: 1 kHz to (MAX  MIN)
             Default: MAX  MIN
         unit : str
@@ -1218,21 +924,16 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
         """
-        Description: Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
+        Sets sweep span for SWEep[1] to value entered. :SPAN and :CENTer are coupled values
         Parameters: Frequency (in Hz)
         Range: 1 kHz to (MAX  MIN)
         Default: MAX  MIN
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list:
             self.write(":SOURce:FREQuency:SPAN " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1244,9 +945,9 @@ class MG3694C():
         Parameters
         ----------
         value : int/float
-            Description: Sets start frequency for SWEep[1] to the value entered. (MIN is defined in the notes
-             Range: MIN to MAX
-             Default: MIN
+            Sets start frequency for SWEep[1] to the value entered. (MIN is defined in the notes)
+            Range: MIN to MAX
+            Default: MIN
         unit : str
             Parameters: Frequency (in Hz) | MIN
 
@@ -1254,15 +955,10 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list:
             self.write(":SOURce:FREQuency:STARt " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1274,10 +970,10 @@ class MG3694C():
         Parameters
         ----------
         value : int/float
-                Description: Sets stop frequency for SWEep[1] to the value entered. (MAX is defined in the notes
-                under [:SOURce]:FREQuency:CW|FIXed).
-                Range: MIN to MAX
-                Default: MAX
+            Sets stop frequency for SWEep[1] to the value entered. (MAX is defined in the notes
+            under [:SOURce]:FREQuency:CW|FIXed).
+            Range: MIN to MAX
+            Default: MAX
         unit : str
             Parameters: Frequency (in Hz) | MAX
 
@@ -1285,16 +981,10 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-
-        Returns
-        -------
-        None.
-
         """
 
-        stUnit = ["Hz", "kHz", "MHz", "GHz"]
-        if unit in stUnit:
+        unit_list = ["Hz", "kHz", "MHz", "GHz"]
+        if unit in unit_list:
             self.write(":SOURce:FREQuency:STOP " + str(value) + " " + str(unit))
         else:
             raise ValueError("Unknown input! See function description for more info.")
@@ -1302,14 +992,14 @@ class MG3694C():
     # =============================================================================
     # Pulse Modulation
     # =============================================================================
-    def set_pm_Bwidth(self, state):
+    def set_pm_bwidth(self, state):
         """
 
 
         Parameters
         ----------
         state : str
-            Description: Selects the phase modulation (ΦM) operating mode.
+            Selects the phase modulation (ΦM) operating mode.
             The Narrow ΦM mode allows maximum deviations of ±3 radians for DC to 8 MHz rates.
             The Wide ΦM mode allows maximum deviations of ±400 radians for DC to 1 MHz rates.
             Parameters: MIN | MAX
@@ -1321,29 +1011,23 @@ class MG3694C():
         ------
         ValueError
             Error message
-
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["MIN", "MAX"]
-        if state in stList:
+        state_list = ["MIN", "MAX"]
+        if state in state_list:
             self.write(":SOURce:PM:BWIDth " + str(state))
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_pm_internalWave(self, state):
+    def set_pm_internal_wave(self, state):
         """
 
 
         Parameters
         ----------
         state : str
-                Description: Selects the modulating waveform (from the internal ΦM generator) for the internal phase
-                modulation function, as follows:
+                Selects the modulating waveform (from the internal ΦM generator) for the internal
+                phase modulation function, as follows:
                 SINE = Sine wave
                 GAUSsian = Gaussian noise
                 RDOWn = Negative ramp
@@ -1358,20 +1042,15 @@ class MG3694C():
         ------
         ValueError
              Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        stList = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in stList:
+        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        if state in state_list:
             self.write(":SOURce:PM:INTernal:WAVE " + state)
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def set_pm_internalFreq(self, value, unit):
+    def set_pm_internal_freq(self, value, unit):
         """
 
 
@@ -1380,8 +1059,8 @@ class MG3694C():
         value : str
             Parameter: Frequency (in Hz)
         unit : int/float
-            Description: Sets the frequency of the modulating waveform for the internal phase modulation
-            (see :PM:INTernal:WAVE)
+            Description: Sets the frequency of the modulating waveform for the internal
+            phase modulation (see :PM:INTernal:WAVE)
             Range: 0.1 Hz to 1 MHz for sine wave;
             0.1 Hz to 100 kHz for square, triangle, and ramp waveforms.
             Default: 1 kHz
@@ -1390,23 +1069,18 @@ class MG3694C():
         ------
         ValueError
              Error message
-
-        Returns
-        -------
-        None.
-
         """
 
-        state = self.ask_pm_internalFreq()
-        sinUnit = ["Hz", "kHz", "MHz"]
+        state = self.get_pm_internal_freq()
+        unit_list = ["Hz", "kHz", "MHz"]
         if state == "SINE":
-            if value >= 0.1 or value <= 1 and unit in sinUnit:
+            if value >= 0.1 or value <= 1 and unit in unit_list:
                 self.write(":SOURce:PM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
 
         else:
-            if value >= 0.1 or value <= 100 and unit in sinUnit[:-1]:
+            if value >= 0.1 or value <= 100 and unit in unit_list[:-1]:
                 self.write(":SOURce:PM:INTernal:FREQuency " + str(value) + " " + unit)
             else:
                 raise ValueError("Unknown input! See function description for more info.")
@@ -1426,11 +1100,6 @@ class MG3694C():
         ------
         ValueError
             v
-
-        Returns
-        -------
-        None.
-
         """
 
         if state in ["ON", "OFF", 1, 0]:
@@ -1438,66 +1107,391 @@ class MG3694C():
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
-    def DisplayParamDict(self, Type):
-        """
-        This function will print all the adjusted parameters.
-        """
-        Headers = ["Params", "Vaue/Type/Info"]
-        Params = ["Adapter Type", "Max Frequency range", "Min Frequency range", "Wavelength"]
-        Data = [
-            self.ask_AdapterType(),
-            self.ask_freqRange("MAX"),
-            self.ask_freqRange("MIN"),
-            self.ask_Wavelength(),
-        ]
-
-        meas = Type
-        measList = ["Power", "Energy", "Current", "Voltage"]
-        if meas in measList:
-            if meas == "Power":
-                Params.append("Power Unit set")
-                Data.append(self.ask_PowerUnits())
-                Params.append("Power range auto")
-                Data.append(self.ask_AutoPowerRange())
-                Params.append("Power Range set")
-                Data.append(self.ask_PowerRange())
-
-            elif meas == "Energy":
-                Params.append("Energy range auto")
-                Data.append(self.ask_energyRange())
-
-            elif meas == "Voltage":
-                Params.append("Voltage range auto")
-                Data.append(self.ask_AutoVoltageRange())
-                Params.append("Voltage range")
-                Data.append(self.ask_voltRange())
-            elif meas == "Current":
-                Params.append("Current range auto")
-                Data.append(self.ask_AutoCurrentRange())
-                Params.append("Current range")
-                Data.append(self.ask_currentRange())
-
-        else:
-            print("Invalid Value! Function will be terminated.")
-
-        return Headers, Data, Params
-
     # =============================================================================
     # Get/Save Data
     # =============================================================================
-    def get_Data(self):
+    def get_data(self):
         """
-
-
-        Returns
-        -------
-        OutPut : dict
-            Return a dictionary with the measured Power and CW Frequency.
-
+        Return a dictionary with the measured Power and CW Frequency.
         """
-        OutPut = {}
-        Freq = self.ask_freq_CW()
-        Power = self.ask_OutputPowerLevel()
-        OutPut["Power/dBm"] = Power
-        OutPut["CW Frequency/" + self.ask_freq_unit()] = Freq
-        return OutPut
+        output = {}
+        freq = self.get_freq_cw()
+        power = self.get_output_power_level()
+        output["Power/dBm"] = power
+        output["CW Frequency/" + str(self.get_freq_unit())] = freq
+        return output
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    @deprecated("Use 'get_idn' instead")
+    def getIdn(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_idn()"""
+        self.logger.warning("Method 'getIdn()' is deprecated. Please use 'get_idn()' instead.")
+        return self.get_idn(*args, **kwargs)
+
+    @deprecated("Use 'close' instead")
+    def Close(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for close()"""
+        self.logger.warning("Method 'Close()' is deprecated. Please use 'close()' instead.")
+        return self.close(*args, **kwargs)
+
+    @deprecated("Use 'reset' instead")
+    def reset(self, *args, **kwargs):
+        """Deprecated alias for reset()"""
+        self.logger.warning("Method 'reset()' is deprecated. Please use 'reset()' instead.")
+        return self.reset(*args, **kwargs)
+
+    @deprecated("Use 'get_output_protection' instead")
+    def ask_output_protection(self, *args, **kwargs):
+        """Deprecated alias for get_output_protection()"""
+        self.logger.warning(
+            """Method 'ask_output_protection()' is deprecated. 
+            Please use 'get_output_protection()' instead."""
+        )
+        return self.get_output_protection(*args, **kwargs)
+
+    @deprecated("Use 'get_output_retrace' instead")
+    def ask_output_retrace(self, *args, **kwargs):
+        """Deprecated alias for get_output_retrace()"""
+        self.logger.warning(
+            """Method 'ask_output_retrace()' is deprecated. 
+            Please use 'get_output_retrace()' instead."""
+        )
+        return self.get_output_retrace(*args, **kwargs)
+
+    @deprecated("Use 'get_output_impedance' instead")
+    def ask_output_impedance(self, *args, **kwargs):
+        """Deprecated alias for get_output_impedance()"""
+        self.logger.warning(
+            """Method 'ask_output_impedance()' is deprecated. 
+            Please use 'get_output_impedance()' instead."""
+        )
+        return self.get_output_impedance(*args, **kwargs)
+
+    @deprecated("Use 'get_output_power_level' instead")
+    def ask_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_output_power_level()"""
+        self.logger.warning(
+            """Method 'ask_OutputPowerLevel()' is deprecated. 
+            Please use 'get_output_power_level()' instead."""
+        )
+        return self.get_output_power_level(*args, **kwargs)
+
+    @deprecated("Use 'get_maximal_power_level' instead")
+    def ask_MaximalPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_maximal_power_level()"""
+        self.logger.warning(
+            """Method 'ask_MaximalPowerLevel()' is deprecated. 
+            Please use 'get_maximal_power_level()' instead."""
+        )
+        return self.get_maximal_power_level(*args, **kwargs)
+
+    @deprecated("Use 'get_am_logsens' instead")
+    def ask_am_logsens(self, *args, **kwargs):
+        """Deprecated alias for get_am_logsens()"""
+        self.logger.warning(
+            "Method 'ask_am_logsens()' is deprecated. Please use 'get_am_logsens()' instead."
+        )
+        return self.get_am_logsens(*args, **kwargs)
+
+    @deprecated("Use 'get_am_logdepth' instead")
+    def ask_am_logDepth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_am_logdepth()"""
+        self.logger.warning(
+            "Method 'ask_am_logDepth()' is deprecated. Please use 'get_am_logdepth()' instead."
+        )
+        return self.get_am_logdepth(*args, **kwargs)
+
+    @deprecated("Use 'get_am_internal_wave' instead")
+    def ask_am_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_am_internal_wave()"""
+        self.logger.warning(
+            """Method 'ask_am_internalWave()' is deprecated. 
+            Please use 'get_am_internal_wave()' instead."""
+        )
+        return self.get_am_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'get_am_internal_freq' instead")
+    def ask_am_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_am_internal_freq()"""
+        self.logger.warning(
+            """Method 'ask_am_internalFreq()' is deprecated. 
+            Please use 'get_am_internal_freq()' instead."""
+        )
+        return self.get_am_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_am_state' instead")
+    def ask_am_state(self, *args, **kwargs):
+        """Deprecated alias for get_am_state()"""
+        self.logger.warning(
+            "Method 'ask_am_state()' is deprecated. Please use 'get_am_state()' instead."
+        )
+        return self.get_am_state(*args, **kwargs)
+
+    @deprecated("Use 'get_am_type' instead")
+    def ask_am_type(self, *args, **kwargs):
+        """Deprecated alias for get_am_type()"""
+        self.logger.warning(
+            "Method 'ask_am_type()' is deprecated. Please use 'get_am_type()' instead."
+        )
+        return self.get_am_type(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_internal_wave' instead")
+    def ask_fm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_fm_internal_wave()"""
+        self.logger.warning(
+            """Method 'ask_fm_internalWave()' is deprecated. 
+            Please use 'get_fm_internal_wave()' instead."""
+        )
+        return self.get_fm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_internal_freq' instead")
+    def ask_fm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_fm_internal_freq()"""
+        self.logger.warning(
+            """Method 'ask_fm_internalFreq()' is deprecated. 
+            Please use 'get_fm_internal_freq()' instead."""
+        )
+        return self.get_fm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_mode' instead")
+    def ask_fm_mode(self, *args, **kwargs):
+        """Deprecated alias for get_fm_mode()"""
+        self.logger.warning(
+            "Method 'ask_fm_mode()' is deprecated. Please use 'get_fm_mode()' instead."
+        )
+        return self.get_fm_mode(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_bwidth' instead")
+    def ask_fm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_fm_bwidth()"""
+        self.logger.warning(
+            "Method 'ask_fm_Bwidth()' is deprecated. Please use 'get_fm_bwidth()' instead."
+        )
+        return self.get_fm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'get_fm_state' instead")
+    def ask_fm_state(self, *args, **kwargs):
+        """Deprecated alias for get_fm_state()"""
+        self.logger.warning(
+            "Method 'ask_fm_state()' is deprecated. Please use 'get_fm_state()' instead."
+        )
+        return self.get_fm_state(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_cw' instead")
+    def ask_freq_CW(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_freq_cw()"""
+        self.logger.warning(
+            "Method 'ask_freq_CW()' is deprecated. Please use 'get_freq_cw()' instead."
+        )
+        return self.get_freq_cw(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_step' instead")
+    def ask_freq_step(self, *args, **kwargs):
+        """Deprecated alias for get_freq_step()"""
+        self.logger.warning(
+            "Method 'ask_freq_step()' is deprecated. Please use 'get_freq_step()' instead."
+        )
+        return self.get_freq_step(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_center_freq' instead")
+    def ask_freq_centerFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_freq_center_freq()"""
+        self.logger.warning(
+            """Method 'ask_freq_centerFreq()' is deprecated. 
+            Please use 'get_freq_center_freq()' instead."""
+        )
+        return self.get_freq_center_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_mode' instead")
+    def ask_freq_mode(self, *args, **kwargs):
+        """Deprecated alias for get_freq_mode()"""
+        self.logger.warning(
+            "Method 'ask_freq_mode()' is deprecated. Please use 'get_freq_mode()' instead."
+        )
+        return self.get_freq_mode(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_span' instead")
+    def ask_freq_span(self, *args, **kwargs):
+        """Deprecated alias for get_freq_span()"""
+        self.logger.warning(
+            "Method 'ask_freq_span()' is deprecated. Please use 'get_freq_span()' instead."
+        )
+        return self.get_freq_span(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_start' instead")
+    def ask_freq_start(self, *args, **kwargs):
+        """Deprecated alias for get_freq_start()"""
+        self.logger.warning(
+            "Method 'ask_freq_start()' is deprecated. Please use 'get_freq_start()' instead."
+        )
+        return self.get_freq_start(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_stop' instead")
+    def ask_freq_stop(self, *args, **kwargs):
+        """Deprecated alias for get_freq_stop()"""
+        self.logger.warning(
+            "Method 'ask_freq_stop()' is deprecated. Please use 'get_freq_stop()' instead."
+        )
+        return self.get_freq_stop(*args, **kwargs)
+
+    @deprecated("Use 'get_freq_unit' instead")
+    def ask_freq_unit(self, *args, **kwargs):
+        """Deprecated alias for get_freq_unit()"""
+        self.logger.warning(
+            "Method 'ask_freq_unit()' is deprecated. Please use 'get_freq_unit()' instead."
+        )
+        return self.get_freq_unit(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_bwidth' instead")
+    def ask_pm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_pm_bwidth()"""
+        self.logger.warning(
+            "Method 'ask_pm_Bwidth()' is deprecated. Please use 'get_pm_bwidth()' instead."
+        )
+        return self.get_pm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_internal_wave' instead")
+    def ask_pm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_pm_internal_wave()"""
+        self.logger.warning(
+            """Method 'ask_pm_internalWave()' is deprecated. 
+            Please use 'get_pm_internal_wave()' instead."""
+        )
+        return self.get_pm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_internal_freq' instead")
+    def ask_pm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_pm_internal_freq()"""
+        self.logger.warning(
+            """Method 'ask_pm_internalFreq()' is deprecated. 
+            Please use 'get_pm_internal_freq()' instead."""
+        )
+        return self.get_pm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_pm_state' instead")
+    def ask_pm_state(self, *args, **kwargs):
+        """Deprecated alias for get_pm_state()"""
+        self.logger.warning(
+            "Method 'ask_pm_state()' is deprecated. Please use 'get_pm_state()' instead."
+        )
+        return self.get_pm_state(*args, **kwargs)
+
+    @deprecated("Use 'set_output_power_level' instead")
+    def set_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_output_power_level()"""
+        self.logger.warning(
+            """Method 'set_OutputPowerLevel()' is deprecated. 
+            Please use 'set_output_power_level()' instead."""
+        )
+        return self.set_output_power_level(*args, **kwargs)
+
+    @deprecated("Use 'set_am_logdepth' instead")
+    def set_am_logDepth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_am_logdepth()"""
+        self.logger.warning(
+            "Method 'set_am_logDepth()' is deprecated. Please use 'set_am_logdepth()' instead."
+        )
+        return self.set_am_logdepth(*args, **kwargs)
+
+    @deprecated("Use 'set_am_internal_wave' instead")
+    def set_am_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_am_internal_wave()"""
+        self.logger.warning(
+            """Method 'set_am_internalWave()' is deprecated. 
+            Please use 'set_am_internal_wave()' instead."""
+        )
+        return self.set_am_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'set_am_internal_freq' instead")
+    def set_am_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_am_internal_freq()"""
+        self.logger.warning(
+            """Method 'set_am_internalFreq()' is deprecated. 
+            Please use 'set_am_internal_freq()' instead."""
+        )
+        return self.set_am_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'set_correction_commands' instead")
+    def set_correctionCommands(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_correction_commands()"""
+        self.logger.warning(
+            """Method 'set_correctionCommands()' is deprecated. 
+            Please use 'set_correction_commands()' instead."""
+        )
+        return self.set_correction_commands(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_internal_wave' instead")
+    def set_fm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_fm_internal_wave()"""
+        self.logger.warning(
+            """Method 'set_fm_internalWave()' is deprecated. 
+            Please use 'set_fm_internal_wave()' instead."""
+        )
+        return self.set_fm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_internal_freq' instead")
+    def set_fm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_fm_internal_freq()"""
+        self.logger.warning(
+            """Method 'set_fm_internalFreq()' is deprecated. 
+            Please use 'set_fm_internal_freq()' instead."""
+        )
+        return self.set_fm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_bwidth' instead")
+    def set_fm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_fm_bwidth()"""
+        self.logger.warning(
+            "Method 'set_fm_Bwidth()' is deprecated. Please use 'set_fm_bwidth()' instead."
+        )
+        return self.set_fm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'set_fm_state' instead")
+    def set_fm_steta(self, *args, **kwargs):
+        """Deprecated alias for set_fm_state()"""
+        self.logger.warning(
+            "Method 'set_fm_steta()' is deprecated. Please use 'set_fm_state()' instead."
+        )
+        return self.set_fm_state(*args, **kwargs)
+
+    @deprecated("Use 'set_freq_cw' instead")
+    def set_freq_CW(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_freq_cw()"""
+        self.logger.warning(
+            "Method 'set_freq_CW()' is deprecated. Please use 'set_freq_cw()' instead."
+        )
+        return self.set_freq_cw(*args, **kwargs)
+
+    @deprecated("Use 'set_pm_bwidth' instead")
+    def set_pm_Bwidth(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_pm_bwidth()"""
+        self.logger.warning(
+            "Method 'set_pm_Bwidth()' is deprecated. Please use 'set_pm_bwidth()' instead."
+        )
+        return self.set_pm_bwidth(*args, **kwargs)
+
+    @deprecated("Use 'set_pm_internal_wave' instead")
+    def set_pm_internalWave(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_pm_internal_wave()"""
+        self.logger.warning(
+            """Method 'set_pm_internalWave()' is deprecated. 
+            Please use 'set_pm_internal_wave()' instead."""
+        )
+        return self.set_pm_internal_wave(*args, **kwargs)
+
+    @deprecated("Use 'set_pm_internal_freq' instead")
+    def set_pm_internalFreq(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_pm_internal_freq()"""
+        self.logger.warning(
+            """Method 'set_pm_internalFreq()' is deprecated. 
+            Please use 'set_pm_internal_freq()' instead."""
+        )
+        return self.set_pm_internal_freq(*args, **kwargs)
+
+    @deprecated("Use 'get_data' instead")
+    def get_Data(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for get_data()"""
+        self.logger.warning("Method 'get_Data()' is deprecated. Please use 'get_data()' instead.")
+        return self.get_data(*args, **kwargs)

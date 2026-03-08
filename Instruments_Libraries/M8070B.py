@@ -1,92 +1,90 @@
-# -*- coding: utf-8 -*-
 """
 Created on Mon Jul  21 18:56:32 2025
 
 @author: Maxim Weizel
 """
 
+from typing import Any
 
 import numpy as np
-import pyvisa as visa
-import matlab
+
+from .BaseInstrument import BaseInstrument
+
+try:
+    from typing import deprecated  # type: ignore
+except ImportError:
+    from typing_extensions import deprecated
 
 
-class M8070B:
+# Try to import matlab engine
+try:
+    import matlab
+
+    MATLAB_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as e:
+    MATLAB_AVAILABLE = False
+    print("!" * 80)
+    print("WARNING: MATLAB Engine for Python is not installed or not working correctly.")
+    print("Generic functions will work, but IQTools-related functions will silently fail.")
+    print("To install, use pip with the version matching your MATLAB installation:")
+    print("  - R2024b: pip install matlabengine==24.2.*")
+    print("  - R2025a: pip install matlabengine==25.1.*")
+    print("  - R2025b: pip install matlabengine==25.2.*")
+    print("  - Other : pip install matlabengine")
+    print(f"Detailed Error: {e}")
+    print("!" * 80)
+
+
+class M8070B(BaseInstrument):
     """
     Start the M8070B Software. Go to Utilities-> SCPI Server Information.
     Copy the VISA resource string (usually localhost).
     """
 
-    def __init__(self, resource_str="TCPIP0::localhost::hislip0::INSTR"):
-        self._resource = visa.ResourceManager().open_resource(str(resource_str), query_delay=0.5)
+    def __init__(
+        self, resource_str="TCPIP0::localhost::hislip0::INSTR", visa_library="@py", **kwargs
+    ):
+        kwargs.setdefault("write_termination", "\n")
+        kwargs.setdefault("timeout", 2000)  # 2s
+
+        super().__init__(resource_str, visa_library=visa_library, **kwargs)
         self._channelLS = [1, 2]  #
-        self._StateLS_mapping = {"on": 1, "off": 0, 1: 1, 0: 0, "1": 1, "0": 0, True: 1, False: 0}
-        print(self.getIdn())
-
-    def query(self, command):
-        return self._resource.query(command)
-
-    def write(self, command):
-        return self._resource.write(command)
-
-    def Close(self):
-        self._resource.close()
-
-    def getIdn(self):
-        return self.query("*IDN?").strip()
+        print(self.get_idn())
 
     # =============================================================================
     # Check functions
     # =============================================================================
 
-    def _validate_channel(self, channel: int) -> int:
+    def validate_channel(self, channel: int) -> int:
         channel = int(channel)
         if channel not in self._channelLS:
             raise ValueError("Channel must be 1 or 2")
         return channel
-
-    def _validate_state(self, state: int | str) -> int:
-        state_normalized = self._StateLS_mapping.get(
-            state.lower() if isinstance(state, str) else int(state)
-        )
-        if state_normalized is None:
-            raise ValueError("Invalid state given! State can be [on,off,1,0,True,False].")
-        return state_normalized
 
     # =============================================================================
     # M8199B - Get Values and Modes
     # =============================================================================
 
     def get_amplitude(self, channel: int = 1) -> float:
-        """Returns the differential amplitude setting for the selected channel.
+        """Returns the differential amplitude setting for the selected channel in Volts.
 
         Parameters
         ----------
         channel : int, optional
             1 or 2, by default 1
-
-        Returns
-        -------
-        float
-            Differential amplitude setting.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f":SOURce:VOLTage:AMPLitude? 'M2.DataOut{channel}'"))
 
     def get_output_state(self, channel: int) -> int:
-        """Returns the output state for the selected channel.
+        """Returns the output state (0 or 1) for the selected channel.
 
         Parameters
         ----------
         channel : int
             Channel 1 or 2
-
-        Returns
-        -------
-        int
-            Output state. 0 or 1.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return int(self.query(f":OUTPut:STATe? 'M2.DataOut{channel}'"))
 
     def get_delay(self, channel: int) -> float:
@@ -96,13 +94,8 @@ class M8070B:
         ----------
         channel : int
             Channel 1 or 2
-
-        Returns
-        -------
-        float
-            Delay in seconds.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f":ARM:DELay? 'M2.DataOut{channel}'"))
 
     # =============================================================================
@@ -119,30 +112,30 @@ class M8070B:
         amplitude : int/float
             Amplitude setting in V. Must be between 0.1 and 2.7 V
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if 0.1 <= amplitude <= 2.7:
             self.write(f":SOURce:VOLTage:AMPLitude 'M2.DataOut{channel}', {amplitude}")
         else:
             raise ValueError(f"Value must be between 0.1 and 2.7 V. You entered: {amplitude} V")
 
-    def set_rf_power(self, channel: int, powerdBm: int | float) -> None:
-        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and 
+    def set_rf_power(self, channel: int, power_dBm: int | float) -> None:  # noqa: N803
+        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and
         uses ``set_amplitude()`` internally.
 
         Parameters
         ----------
         channel : int
             Channel 1 or 2
-        power : int/float
+        power_dBm : int/float
             Output Power in dBm
         """
-        power_watt = 10 ** (powerdBm / 10) * 1e-3
-        V_rms = (50 * power_watt) ** 0.5  # 50 Ohm System
-        amplitude = V_rms * np.sqrt(2)
+        power_watt = 10 ** (power_dBm / 10) * 1e-3
+        v_rms = (50 * power_watt) ** 0.5  # 50 Ohm System
+        amplitude = v_rms * np.sqrt(2)
         self.set_amplitude(channel, amplitude)
 
-    def set_OutputPowerLevel(self, channel: int, powerdBm: int | float) -> None:
-        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and 
+    def set_output_power_level(self, channel: int, power_dBm: int | float) -> None:  # noqa: N803
+        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and
         uses ``set_amplitude()`` internally. Alias for set_rf_power().
 
         Parameters
@@ -152,7 +145,7 @@ class M8070B:
         value : int/float
             Output Power in dBm
         """
-        self.set_rf_power(channel, powerdBm)
+        self.set_rf_power(channel, power_dBm)
 
     def set_output(self, channel: int, state: int | str) -> None:
         """Activate or deactivate the selected channel output.
@@ -170,8 +163,8 @@ class M8070B:
             Channel must be 1 or 2.
             State must be 0 or 1.
         """
-        channel = self._validate_channel(channel)
-        state_normalized = self._validate_state(state)
+        channel = self.validate_channel(channel)
+        state_normalized = self._parse_state(state)
         self.write(f":OUTPut:STATe 'M2.DataOut{channel}', {state_normalized}")
 
     def set_rf_output(self, channel: int, state: int | str) -> None:
@@ -190,7 +183,7 @@ class M8070B:
         delay : float
             Delay in seconds.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         if not (-25e-9 <= delay <= 25e-9):
             raise ValueError(f"Delay must be between -25 and 25ns. You entered: {delay} s")
         self.write(f":ARM:DELay 'M2.DataOut{channel}',{delay}")
@@ -201,43 +194,27 @@ class M8070B:
 
     def get_sample_clk_out_frequency(self, channel: int = 1) -> float:
         """Returns the sample clock OUT1 or OUT2 frequency from the M8008A CLK module.
-        Both frequencies are the same.
+        Both frequencies are the same (in Hz).
 
         Parameters
         ----------
         channel : int, optional
             1 or 2, by default 1
-
-        Returns
-        -------
-        float
-            Sample clock output frequency in Hz.
         """
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
         return float(self.query(f":OUTPut:FREQuency? 'M1.SampleClkOut{channel}'"))
 
     def get_sample_clk_out2_state(self) -> int:
-        """Returns the sample clock OUT2 state from the M8008A CLK module.
+        """Returns the sample clock OUT2 state (0 or 1) from the M8008A CLK module.
         Sample clock OUT1 cannot be turned off.
-
-        Returns
-        -------
-        int
-            Sample clock output state. 0 or 1.
         """
-        channel = self._validate_channel(channel)
-        return int(self.query(f":OUTPut:STATe? 'M1.SampleClkOut2'"))
+        return int(self.query(":OUTPut:STATe? 'M1.SampleClkOut2'"))
 
     def get_sample_clk_out2_power(self) -> float:
         """Returns the sample clock OUT2 Power in dBm from the M8008A CLK module.
         Sample clock OUT1 cannot be influenced.
-
-        Returns
-        -------
-        float
-            Sample Clock OUT2 Power in dBm.
         """
-        return float(self.query(f":OUTPut:POWer? 'M1.SampleClkOut2'"))
+        return float(self.query(":OUTPut:POWer? 'M1.SampleClkOut2'"))
 
     # =============================================================================
     # M8008A Clock Module - Set Values and Modes
@@ -252,7 +229,7 @@ class M8070B:
         state : int | str
             One of: 0, 1, "off", "on"
         """
-        state_normalized = self._validate_state(state)
+        state_normalized = self._parse_state(state)
         self.write(f":OUTPut:STATe 'M1.SampleClkOut2', {state_normalized}")
 
     def set_sample_clk_out2_power(self, power: int | float) -> None:
@@ -273,7 +250,7 @@ class M8070B:
     # M8199B Calling IQTools Functions
     # =============================================================================
 
-    def set_freq_CW(
+    def set_freq_cw(
         self,
         matlab_engine,
         channel: int,
@@ -300,7 +277,11 @@ class M8070B:
             AWG sample rate (default 256e9).
         """
         # 1) Validate channel
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
+
+        if not MATLAB_AVAILABLE:
+            self.logger.warning("MATLAB not available. Skipping set_freq_CW.")
+            return
 
         # 2) Define constants
         # magnitude is zeros(1,1) in MATLAB; make it a 1×1 double
@@ -319,7 +300,7 @@ class M8070B:
 
         # 4) Call iqtone to generate the IQ vector
         #    We ask for 5 outputs so that the last one is chMap.
-        iqdata, _, _, _, chMap = matlab_engine.iqtone(
+        iqdata, _, _, _, chMap = matlab_engine.iqtone(  # noqa: N806
             'sampleRate',       fs,
             'numSamples',       0,
             'tone',             frequency,
@@ -362,7 +343,7 @@ class M8070B:
         lo_f_center=None,
         segm_name=None,
         rms=None,
-    ) -> any:
+    ) -> Any:
         """
         Download a pre-generated IQ waveform to the AWG.
 
@@ -371,7 +352,8 @@ class M8070B:
         matlab_engine : matlab.engine
             Active MATLAB engine session.
         iqdata : array-like
-            Real or complex samples (each column = one waveform).  Can be empty for a connection check.
+            Real or complex samples (each column = one waveform).
+            Can be empty for a connection check.
         fs : float
             Sample rate in Hz.
         segment_number : int, optional
@@ -399,6 +381,10 @@ class M8070B:
             The output of the MATLAB `iqdownload` call (empty or status).
         """
         # fmt: off
+        if not MATLAB_AVAILABLE:
+            self.logger.warning("MATLAB not available. Skipping iqdownload.")
+            return
+
         # Build the var/val list
         args = [
             'segmentNumber', int(segment_number),
@@ -438,8 +424,8 @@ class M8070B:
         *,
         channel: int,
         tones: np.ndarray,
-        magnitudes_dB: np.ndarray = None,
-        phases: np.ndarray | str = 'Random',
+        magnitudes_dBm: np.ndarray | None = None,  # noqa: N803
+        phases: np.ndarray | str = "Random",
         correction: int = 0,
         run: int = 1,
         fs: float = 256e9,
@@ -454,7 +440,7 @@ class M8070B:
             AWG channel (1 or 2).
         tones : ndarray
             Tone frequency in Hz.
-        magnitude : ndarray, optional
+        magnitudes_dBm : ndarray, optional
             Tone magnitude in dBm (default None).
         correction : int, optional
             Enable correction (default 0).
@@ -464,14 +450,18 @@ class M8070B:
             AWG sample rate (default 256e9).
         """
         # 1) Validate channel
-        channel = self._validate_channel(channel)
+        channel = self.validate_channel(channel)
+
+        if not MATLAB_AVAILABLE:
+            self.logger.warning("MATLAB not available. Skipping generate_multitone.")
+            return
 
         # 2) Prepare arrays
-        frequency = np.asarray(tones, dtype=np.float64)      # 1-D
-        if magnitudes_dB is None:
-            magnitudes_dB = np.zeros_like(frequency, dtype=np.float64)   # dBm
+        frequency = np.asarray(tones, dtype=np.float64)  # 1-D
+        if magnitudes_dBm is None:
+            magnitudes_dBm = np.zeros_like(frequency, dtype=np.float64)  # dBm  # noqa: N806
         else:
-            magnitudes_dB = np.asarray(magnitudes_dB, dtype=np.float64)
+            magnitudes_dBm = np.asarray(magnitudes_dBm, dtype=np.float64)  # noqa: N806
 
         # phase: either the literal 'Random' or a numeric vector
         if isinstance(phases, str):
@@ -487,29 +477,66 @@ class M8070B:
 
         # If iqtone wants row vectors for tone/magnitude too:
         tone_arg = frequency
-        magnitude_arg = magnitudes_dB
+        magnitude_arg = magnitudes_dBm
 
         # channelMapping already fine
         channel_mapping = matlab.double([[1, 0], [0, 0]] if channel == 1 else [[0, 0], [1, 0]])
 
-        iqdata, _, _, _, chMap = matlab_engine.iqtone(
-            'sampleRate',       fs,
-            'numSamples',       0,
-            'tone',             tone_arg,         # explicit column vector
-            'phase',            phase_arg,        # string or column vector
-            'normalize',        1,
-            'magnitude',        magnitude_arg,    # explicit column vector
-            'correction',       correction,
-            'channelMapping',   channel_mapping,
-            nargout=5
+        iqdata, _, _, _, chMap = matlab_engine.iqtone(  # noqa: N806
+            "sampleRate",
+            fs,
+            "numSamples",
+            0,
+            "tone",
+            tone_arg,  # explicit column vector
+            "phase",
+            phase_arg,  # string or column vector
+            "normalize",
+            1,
+            "magnitude",
+            magnitude_arg,  # explicit column vector
+            "correction",
+            correction,
+            "channelMapping",
+            channel_mapping,
+            nargout=5,
         )
 
         # 6) Push the generated IQ out to the AWG
         matlab_engine.iqdownload(
-            iqdata,
-            fs,
-            'channelMapping', chMap,
-            'segmentNumber',  1,
-            'run',            run,
-            nargout=0
+            iqdata, fs, "channelMapping", chMap, "segmentNumber", 1, "run", run, nargout=0
         )
+
+    # =============================================================================
+    # Aliases for backward compatibility
+    # =============================================================================
+    @deprecated("Use 'close' instead")
+    def Close(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for close()"""
+        self.logger.warning("Method 'Close()' is deprecated. Please use 'close()' instead.")
+        return self.close(*args, **kwargs)
+
+    @deprecated("Use 'set_freq_cw' instead")
+    def set_freq_CW(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_freq_cw()"""
+        self.logger.warning(
+            "Method 'set_freq_CW()' is deprecated. Please use 'set_freq_cw()' instead."
+        )
+        return self.set_freq_cw(*args, **kwargs)
+
+    @deprecated("Use 'validate_channel' instead")
+    def _validate_channel(self, *args, **kwargs):
+        """Deprecated alias for validate_channel()"""
+        self.logger.warning(
+            "Method '_validate_channel()' is deprecated. Please use 'validate_channel()' instead."
+        )
+        return self.validate_channel(*args, **kwargs)
+
+    @deprecated("Use 'set_output_power_level' instead")
+    def set_OutputPowerLevel(self, *args, **kwargs):  # noqa: N802
+        """Deprecated alias for set_output_power_level()"""
+        self.logger.warning(
+            """Method 'set_OutputPowerLevel()' is deprecated. 
+            Please use 'set_output_power_level()' instead."""
+        )
+        return self.set_output_power_level(*args, **kwargs)
