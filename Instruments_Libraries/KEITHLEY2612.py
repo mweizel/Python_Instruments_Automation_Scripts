@@ -110,40 +110,10 @@ class KEITHLEY2612(BaseInstrument):
         -------
         str
             Normalized state string (e.g., 'ON', 'OFF', 'HIGH_Z').
-
-        Raises
-        ------
-        ValueError
-            If the state is invalid.
         """
-        if output:
-            state_mapping = {
-                "on": "ON",
-                "off": "OFF",
-                "high_z": "HIGH_Z",
-                1: "ON",
-                0: "OFF",
-                2: "HIGH_Z",
-                "1": "ON",
-                "0": "OFF",
-                "2": "HIGH_Z",
-            }
-        else:
-            state_mapping = {
-                "on": "ON",
-                "off": "OFF",
-                1: "ON",
-                0: "OFF",
-                "1": "ON",
-                "0": "OFF",
-            }
-
-        normalized = state_mapping.get(
-            state if isinstance(state, (int, bool)) else str(state).lower()
-        )
-        if normalized is None:
-            raise ValueError(f"Invalid state '{state}'. Valid options: on/off/high_z or 1/0/2")
-        return normalized
+        if output and str(state).upper() in ["2", "HIGH_Z"]:
+            return "HIGH_Z"
+        return self._parse_state(state)
 
     def format_scientific(self, value: int | float, precision: int = 4) -> str:
         """
@@ -244,17 +214,14 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         type_ : str
             Type of measurement (e.g., 'voltage', 'current', 'power', 'resistance').
-
-        Raises
-        ------
-        ValueError
-            If the measurement type is unknown.
         """
         channel = self.validate_channel(channel)
-        meas_type = self._Measurement_Types.get(type_.lower())
-        if meas_type is None:
-            raise ValueError("Unknown input! See function description for more info.")
-        return float(self.query(f"print(smu{channel}.measure.{meas_type}())"))
+        meas_type = self._check_scpi_param(
+            type_,
+            ["VOLTage", "CURRent", "POWer", "RESistance", "V", "I", "P", "R", "AMP", "OHM", "WATT"],
+        )
+        meas_code = self._Measurement_Types.get(meas_type.lower())
+        return float(self.query(f"print(smu{channel}.measure.{meas_code}())"))
 
     def get_voltage_range_measure(self, channel: str) -> float:
         """
@@ -690,21 +657,16 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         function : str
             Source function ('volt', 'voltage', 'amp', 'current').
-
-        Raises
-        ------
-        ValueError
-            If function is invalid.
         """
         channel = self.validate_channel(channel)
-        function = function.lower()
+        func_type = self._check_scpi_param(function, ["VOLTage", "CURRent", "V", "I", "AMP"])
 
-        if function in ["volt", "voltage"]:
-            self.write(f"smu{channel}.source.func = smu{channel}.OUTPUT_DCVOLTS")
-        elif function in ["amp", "current"]:
-            self.write(f"smu{channel}.source.func = smu{channel}.OUTPUT_DCAMPS")
-        else:
-            raise ValueError("Function must be 'volt'/'voltage' or 'amp'/'current'")
+        func_target = (
+            "OUTPUT_DCVOLTS"
+            if func_type.startswith("VOLT") or func_type == "V"
+            else "OUTPUT_DCAMPS"
+        )
+        self.write(f"smu{channel}.source.func = smu{channel}.{func_target}")
 
     def set_pulse_measured(
         self, channel: str, value: Any, ton: int | float, toff: int | float
@@ -736,26 +698,14 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         mode : str | int
             Off mode ('normal'/0, 'zero'/1, 'high_z'/2).
-
-        Raises
-        ------
-        ValueError
-            If mode is invalid.
         """
         channel = self.validate_channel(channel)
 
-        mode_mapping = {
-            0: "NORMAL",
-            1: "ZERO",
-            2: "HIGH_Z",
-            "normal": "NORMAL",
-            "zero": "ZERO",
-            "high_z": "HIGH_Z",
-        }
-        mode_normalized = mode_mapping.get(mode if isinstance(mode, int) else str(mode).lower())
-        if mode_normalized is None:
-            raise ValueError("Mode must be 0/1/2 or 'normal'/'zero'/'high_z'")
+        mode_str = str(mode).upper().replace("HIGHZ", "HIGH_Z")
+        mode_mapping = {"0": "NORMal", "1": "ZERO", "2": "HIGH_Z"}
+        mode_to_check = mode_mapping.get(mode_str, mode_str)
 
+        mode_normalized = self._check_scpi_param(mode_to_check, ["NORMal", "ZERO", "HIGH_Z"])
         self.write(f"smu{channel}.source.offmode = smu{channel}.OUTPUT_{mode_normalized}")
 
     # =============================================================================
@@ -824,22 +774,17 @@ class KEITHLEY2612(BaseInstrument):
             Type ('volt', 'voltage', 'amp', 'current').
         range_value : int | float
             Range value.
-
-        Raises
-        ------
-        ValueError
-            If measurement type is invalid.
         """
         channel = self.validate_channel(channel)
-        measurement_type = measurement_type.lower()
+        meas_type = self._check_scpi_param(
+            measurement_type, ["VOLTage", "CURRent", "V", "I", "AMP"]
+        )
         range_str = self.format_scientific(range_value, precision=0)
 
-        if measurement_type in ["volt", "voltage"]:
+        if meas_type.startswith("VOLT") or meas_type == "V":
             self.write(f"smu{channel}.measure.rangev = {range_str}")
-        elif measurement_type in ["amp", "current"]:
-            self.write(f"smu{channel}.measure.rangei = {range_str}")
         else:
-            raise ValueError("Measurement type must be 'volt'/'voltage' or 'amp'/'current'")
+            self.write(f"smu{channel}.measure.rangei = {range_str}")
 
     # =============================================================================
     # Display Control
@@ -870,14 +815,13 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         measurement_type : str
             Measurement type ('v', 'i', 'r', 'p', etc.).
-
-        Raises
-        ------
-        ValueError
-            If measurement type is invalid.
         """
         channel = self.validate_channel(channel)
-        meas_code = self._Measurement_Types.get(measurement_type.lower())
+        meas_type = self._check_scpi_param(
+            measurement_type,
+            ["VOLTage", "CURRent", "POWer", "RESistance", "V", "I", "P", "R", "AMP", "OHM", "WATT"],
+        )
+        meas_code = self._Measurement_Types.get(meas_type.lower())
 
         display_mapping = {
             "v": "_DCVOLTS",
@@ -885,18 +829,7 @@ class KEITHLEY2612(BaseInstrument):
             "r": "_OHMS",
             "p": "_WATTS",
         }
-
-        if meas_code is None:
-            raise ValueError(
-                f"""Invalid measurement type '{measurement_type}'. 
-                Valid options: {list(display_mapping.keys())}"""
-            )
-
         display_func = display_mapping.get(meas_code)
-        if display_func is None:
-            raise ValueError(
-                f"Invalid measurement type. Valid options: {list(display_mapping.keys())}"
-            )
 
         self.write(f"display.smu{channel}.measure.func = display.MEASURE{display_func}")
 

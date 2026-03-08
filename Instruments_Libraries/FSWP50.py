@@ -93,33 +93,20 @@ class FSWP50(BaseInstrument):
         RuntimeError
             If instrument command fails.
         """
-        available_types = {
-            "PNOISE": "Phase Noise",
-            "PNO": "Phase Noise",
-            "SMONITOR": "Spectrum Monitor",
-            "SMON": "Spectrum Monitor",
-            "SANALYZER": "Spectrum (R&S FSWP-B1)",
-            "SAN": "Spectrum (R&S FSWP-B1)",
-            "IQ": "I/Q Analyzer",
-            "PULSE": "Pulse Measurement",
-            "PULS": "Pulse Measurement",
-            "ADEMOD": "Analog modulation analysis",
-            "ADEM": "Analog modulation analysis",
-            "NOISE": "Noise Figure Measurements",
-            "NOIS": "Noise Figure Measurements",
-            "SPUR": "Fast Spur Search",
-            "TA": "Transient Analysis",
-            "DDEM": "VSA - Vector Signal Analysis",
-        }
-
-        channel_type = channel_type.strip().upper()
-        if channel_type not in available_types:
-            raise ValueError(
-                f"""Invalid channel type '{channel_type}'. 
-                Valid types: {list(available_types.keys())}"""
-            )
-
-        self.write(f"INSTrument:CREate {channel_type}, '{channel_name}'")
+        available_types = [
+            "PNOise",
+            "SMONitor",
+            "SANalyzer",
+            "IQ",
+            "PULSe",
+            "ADEMod",
+            "NOISe",
+            "SPUR",
+            "TA",
+            "DDEM",
+        ]
+        valid_type = self._check_scpi_param(channel_type, available_types)
+        self.write(f"INSTrument:CREate {valid_type}, '{channel_name}'")
 
     def delete_channel(self, channel_name: str) -> None:
         """
@@ -555,23 +542,15 @@ class FSWP50(BaseInstrument):
     ) -> None:
         """Selects the trace mode (WRITE, AVERAGE, MAXHOLD, etc)."""
         trace_mode_list = [
-            "WRITE",
-            "WRIT",
-            "AVERAGE",
-            "AVER",
-            "MAXHOLD",
-            "MAXH",
-            "MINHOLD",
-            "MINH",
+            "WRITe",
+            "AVERage",
+            "MAXHold",
+            "MINHold",
             "VIEW",
-            "BLANK",
-            "BLAN",
+            "BLANk",
         ]
-        trace_mode = trace_mode.upper()
-        if trace_mode in trace_mode_list:
-            self.write(f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {trace_mode}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_mode = self._check_scpi_param(trace_mode, trace_mode_list)
+        self.write(f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {valid_mode}")
 
     def set_detection_function(
         self, det_func: str, trace_number: int = 1, window_number: int = 1
@@ -589,23 +568,15 @@ class FSWP50(BaseInstrument):
             Window number, by default 1.
         """
         det_func_list = [
-            "APEAK",
-            "APE",
-            "NEGATIVE",
-            "NEG",
-            "POSITIVE",
-            "POS",
+            "APEak",
+            "NEGative",
+            "POSitive",
             "RMS",
-            "AVERAGE",
-            "AVER",
-            "SAMPLE",
-            "SAMP",
+            "AVERage",
+            "SAMPle",
         ]
-        det_func = det_func.upper()
-        if det_func in det_func_list:
-            self.write(f":SENS:WIND{window_number}:DET{trace_number}:FUNC {det_func}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_det = self._check_scpi_param(det_func, det_func_list)
+        self.write(f":SENS:WIND{window_number}:DET{trace_number}:FUNC {valid_det}")
 
     def set_trace_smoothing(self, window: int = 1, trace: int = 1, state: str | int = "ON") -> None:
         """

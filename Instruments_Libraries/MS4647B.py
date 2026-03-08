@@ -401,10 +401,8 @@ class MS4647B(BaseInstrument):
             ON/OFF or 1/0.
         """
         self._validate_channel_number(channel_num)
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SENS" + str(channel_num) + ":TS3739 " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":SENS" + str(channel_num) + ":TS3739 " + parsed_state)
 
     def set_clear_error(self) -> None:
         """
@@ -501,11 +499,8 @@ class MS4647B(BaseInstrument):
         state : str/int
                 ON/OFF or 1/0.
         """
-
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":DISP:ACT:CHAN:SWE:STAT  " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":DISP:ACT:CHAN:SWE:STAT  " + parsed_state)
 
     def set_assignet_data_port(self, channel_num: int, value1: int, value2: int) -> None:
         """
@@ -550,11 +545,8 @@ class MS4647B(BaseInstrument):
             - LOGPH = Log and Phase
             - REIM = Real and Imaginary Numbers
         """
-
-        if unit in ["LINPH", "LOGPH", "REIM"]:
-            self.write(":FORM:SNP:PAR " + str(unit))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        unit_parsed = self._check_scpi_param(unit, ["LINPH", "LOGPH", "REIM"])
+        self.write(":FORM:SNP:PAR " + unit_parsed)
 
     def set_rf_state(self, state: str | int) -> None:
         """
@@ -565,11 +557,8 @@ class MS4647B(BaseInstrument):
         state : str/int
             Sets the RF on/off state in Hold.
         """
-
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SYST:HOLD:RF " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":SYST:HOLD:RF " + parsed_state)
 
     def set_set_average_state(self, channel_num: int, state: str | int) -> None:
         """
@@ -583,12 +572,9 @@ class MS4647B(BaseInstrument):
         state : int/str
                 ON/OFF or 1/0.
         """
-
         self._validate_channel_number(channel_num)
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SENS" + str(channel_num) + ":AVER " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":SENS" + str(channel_num) + ":AVER " + parsed_state)
 
     def set_average_function_type(self, channel_num: int, state: str) -> None:
         """
@@ -603,12 +589,9 @@ class MS4647B(BaseInstrument):
             POIN | SWE
             Default Value: POIN
         """
-
         self._validate_channel_number(channel_num)
-        if state in ["SWE", "POIN"]:
-            self.write(":SENS" + str(channel_num) + ":AVER:TYP " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state_parsed = self._check_scpi_param(state, ["POINt", "SWEep"])
+        self.write(":SENS" + str(channel_num) + ":AVER:TYP " + state_parsed)
 
     def set_average_count(self, channel_num: int, value: int) -> None:
         """
@@ -677,10 +660,8 @@ class MS4647B(BaseInstrument):
             can be int or str form the list ['ON','OFF',1,0]
         """
         self._validate_channel_number(channel_num)
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":CALC" + str(channel_num) + ":SMO " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":CALC" + str(channel_num) + ":SMO " + parsed_state)
 
     def set_smoothing_ape_rture(self, channel_num: int, value: int) -> None:
         """

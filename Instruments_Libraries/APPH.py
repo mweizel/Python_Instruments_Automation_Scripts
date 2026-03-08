@@ -46,26 +46,26 @@ class APPH(BaseInstrument):
         """
         Reads back the detected frequency from a frequency search.
         """
-        return float(self.query(":CALCulate:FREQuency?").split("\n")[0])
+        return float(self.query(":CALCulate:FREQuency?"))
 
     def get_calc_power(self) -> float:
         """
         Reads back the detected power level from a frequency search.
         """
-        return float(self.query(":CALCulate:POWer?").split("\n")[0])
+        return float(self.query(":CALCulate:POWer?"))
 
     def get_dut_port_voltage(self) -> float:
         """
         Sets/gets the voltage at the DUT TUNE port. Returns the configured value. If the output
         is turned off, it doesn't necessarily return 0, as an internal voltage may be configured.
         """
-        return float(self.query(":SOURce:TUNE:DUT:VOLT?").split("\n")[0])
+        return float(self.query(":SOURce:TUNE:DUT:VOLT?"))
 
     def get_dut_port_status(self) -> str:
         """
         Query the status of the DUT TUNE port.
         """
-        stat = self.query("SOURce:TUNE:DUT:STAT?").split("\n")[0]
+        stat = self.query("SOURce:TUNE:DUT:STAT?")
         if stat == "0":
             stat = "OFF"
         else:
@@ -81,9 +81,9 @@ class APPH(BaseInstrument):
     def get_system_error(self) -> str:
         """
         Return parameters: List of integer error numbers. This query is a request for all
-        entries in the instrument’s error queue. Error messages in the queue contain an
+        entries in the instrument's error queue. Error messages in the queue contain an
         integer in the range [-32768,32768] denoting an error code and associated descriptive
-        text. This query clears the instrument’s error queue.
+        text. This query clears the instrument's error queue.
         """
         return self.query(":SYSTem:ERRor:ALL?")
 
@@ -114,13 +114,13 @@ class APPH(BaseInstrument):
         """
         Query the start offset frequency
         """
-        return float(self.query(":SENSe:PN:FREQuency:STARt?").split("\n")[0])
+        return float(self.query(":SENSe:PN:FREQuency:STARt?"))
 
     def get_pn_stop_freq(self) -> float:
         """
         Query the stop offset frequency
         """
-        return float(self.query(":SENSe:PN:FREQuency:STOP?").split("\n")[0])
+        return float(self.query(":SENSe:PN:FREQuency:STOP?"))
 
     def get_pn_spot(self, value: float) -> str:
         """
@@ -370,7 +370,7 @@ class APPH(BaseInstrument):
     # SET
     # =============================================================================
 
-    def set_output(self, status: str) -> None:
+    def set_output(self, status: str | int | float | bool) -> None:
         """
         Parameters
         ----------
@@ -382,11 +382,8 @@ class APPH(BaseInstrument):
         ValueError
             Error massage
         """
-        status_list = ["ON", "OFF"]
-        if status in status_list:
-            self.write(":OUTput " + status)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_status = self._parse_state(status)
+        self.write(":OUTput " + valid_status)
 
     def set_sys_meas_mode(self, state: str) -> None:
         """
@@ -406,11 +403,8 @@ class APPH(BaseInstrument):
         ValueError
             Error massage
         """
-        state_list = ["PN", "AN", "FN", "BB", "TRAN", "VCO"]
-        if state in state_list:
-            self.write("SENSe:MODE " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["PN", "AN", "FN", "BB", "TRAN", "VCO"])
+        self.write("SENSe:MODE " + valid_state)
 
     def set_freq_execute(self) -> None:
         """
@@ -444,35 +438,32 @@ class APPH(BaseInstrument):
     def set_dut_port_voltage(self, value: float) -> None:
         """
         Sets the voltage at the DUT TUNE port. Returns the configured value.
-        If the output is turned off, it doesn’t necessarily return 0, as an internal
+        If the output is turned off, it doesn't necessarily return 0, as an internal
         voltage may be configured
 
         Parameters
         ----------
         value : float
             Sets the voltage at the DUT TUNE port. Returns the configured value.
-            If the output is turned off, it doesn’t necessarily return 0, as an internal
+            If the output is turned off, it doesn't necessarily return 0, as an internal
             voltage may be configured
         """
         self.write(":SOURce:TUNE:DUT:VOLT " + str(value))
 
-    def set_dut_port_status(self, state: str) -> None:
+    def set_dut_port_status(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
-            Enables/disables the DUT TUNE port. Can be ['ON','OFF']
+        state : str | int | float | bool
+            Enables/disables the DUT TUNE port. Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SOURce:TUNE:DUT:STAT " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SOURce:TUNE:DUT:STAT " + valid_state)
 
     # =============================================================================
     # Set Phase Noise
@@ -536,67 +527,56 @@ class APPH(BaseInstrument):
             preliminary result. It will produce an error. This error can be queried with
             SYST:ERR? or SYST:ERR:ALL?.
         """
-        state_list = ["ALL", "NEXT"]
-        if state in state_list:
-            return self.query("CALCulate:VCO:WAIT " + str(state) + " " + str(value))
-        return None
+        valid_state = self._check_scpi_param(state, ["ALL", "NEXT"])
+        return self.query("CALCulate:VCO:WAIT " + valid_state + " " + str(value))
 
-    def set_vco_test_freq(self, state: str) -> None:
+    def set_vco_test_freq(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the frequency parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:FREQuency " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:FREQuency " + valid_state)
 
-    def set_vco_test_noise(self, state: str) -> None:
+    def set_vco_test_noise(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the phase noise parameter for the measurement.
-            Can be  ['ON','OFF']
+            Can be  ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:PNoise " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:PNoise " + valid_state)
 
-    def set_vco_test_power(self, state: str) -> None:
+    def set_vco_test_power(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the power parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:POWer " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:POWer " + valid_state)
 
     def set_vco_test_start(self, value: float) -> None:
         """
@@ -618,62 +598,53 @@ class APPH(BaseInstrument):
         """
         self.write(":SENSe:VCO:VOLTage:STOP " + str(value))
 
-    def set_vco_test_i_supply(self, state: str) -> None:
+    def set_vco_test_i_supply(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/disables the supply current parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:ISUPply " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:ISUPply " + valid_state)
 
-    def set_vcok_pu_shing(self, state: str) -> None:
+    def set_vcok_pu_shing(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/disables the pushing parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:KPUShing " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:KPUShing " + valid_state)
 
-    def set_vcokvco(self, state: str) -> None:
+    def set_vcokvco(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
            Enables/disables the tune sensitivity parameter for the measurement
-           Can be ['ON','OFF']
+           Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:KVCO " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:KVCO " + valid_state)
 
     def set_vcotype(self, typ: str) -> None:
         """
@@ -688,30 +659,24 @@ class APPH(BaseInstrument):
         ValueError
             Error massage
         """
-        typ_list = ["VCO", "VCXO"]
-        if typ in typ_list:
-            self.write(":SENSe:VCO:TYPE " + str(typ))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_typ = self._check_scpi_param(typ, ["VCO", "VCXO"])
+        self.write(":SENSe:VCO:TYPE " + valid_typ)
 
-    def set_vco_test_p_noise(self, state: str) -> None:
+    def set_vco_test_p_noise(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the phase noise parameter for the measurement.
-            Can be set to ['ON','OFF']
+            Can be set to ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:PNoise " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:PNoise " + valid_state)
 
     def set_vco_test_pnoise_off_set(
         self, value1: float = 0, value2: float = 0, value3: float = 0, value4: float = 0

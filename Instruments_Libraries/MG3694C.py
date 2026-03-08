@@ -536,11 +536,9 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in state_list:
-            self.write(":SOURce:AM:INTernal:WAVE " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        valid_state = self._check_scpi_param(state, valid_list)
+        self.write(":SOURce:AM:INTernal:WAVE " + valid_state)
 
     def set_am_internal_freq(self, value, unit):
         """
@@ -616,10 +614,8 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        if state in ["LINear", "LOGarithmic"]:
-            self.write(":SOURce:AM:TYPE " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["LINear", "LOGarithmic"])
+        self.write(":SOURce:AM:TYPE " + valid_state)
 
     # =============================================================================
     #     Correction Commands
@@ -672,11 +668,9 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in state_list:
-            self.write(":SOURce:FM:INTernal:WAVE " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        valid_state = self._check_scpi_param(state, valid_list)
+        self.write(":SOURce:FM:INTernal:WAVE " + valid_state)
 
     def set_fm_internal_freq(self, value, unit):
         """
@@ -736,11 +730,8 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        mod_list = ["LOCKed[1]", "LOCKed2", "UNLocked"]
-        if state in mod_list:
-            self.write(":SOURce:FM:MODE " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["LOCKed[1]", "LOCKed2", "UNLocked"])
+        self.write(":SOURce:FM:MODE " + valid_state)
 
     def set_fm_bwidth(self, state):
         """
@@ -764,10 +755,8 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        if state in ["MIN", "MAX"]:
-            self.write(":SOURce:FM:BWIDth " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["MIN", "MAX"])
+        self.write(":SOURce:FM:BWIDth " + valid_state)
 
     def set_fm_state(self, state):
         """
@@ -901,11 +890,19 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        s_list = ["CW", "FIXed", "SWEep[1]", "SWCW", "ALSW", "LIST[1]", "LIST2", "LIST3", "LIST4"]
-        if state in s_list:
-            self.write(":SOURce:FREQuency:MODE " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_list = [
+            "CW",
+            "FIXed",
+            "SWEep[1]",
+            "SWCW",
+            "ALSW",
+            "LIST[1]",
+            "LIST2",
+            "LIST3",
+            "LIST4",
+        ]
+        valid_state = self._check_scpi_param(state, valid_list)
+        self.write(":SOURce:FREQuency:MODE " + valid_state)
 
     def set_freq_span(self, value, unit):
         """
@@ -1013,11 +1010,8 @@ class MG3694C(BaseInstrument):
             Error message
         """
 
-        state_list = ["MIN", "MAX"]
-        if state in state_list:
-            self.write(":SOURce:PM:BWIDth " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["MIN", "MAX"])
+        self.write(":SOURce:PM:BWIDth " + valid_state)
 
     def set_pm_internal_wave(self, state):
         """
@@ -1044,11 +1038,9 @@ class MG3694C(BaseInstrument):
              Error message
         """
 
-        state_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
-        if state in state_list:
-            self.write(":SOURce:PM:INTernal:WAVE " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_list = ["SINE", "GAUSsian", "RDOWn", "RUP", "SQUare", "TRIangle", "UNIForm"]
+        valid_state = self._check_scpi_param(state, valid_list)
+        self.write(":SOURce:PM:INTernal:WAVE " + valid_state)
 
     def set_pm_internal_freq(self, value, unit):
         """

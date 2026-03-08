@@ -148,11 +148,8 @@ class PM100D(BaseInstrument):
                 Allow senor types are: ['PHOTodiode','THERmal','PYRo']
         """
 
-        state_list = ["PHOTodiode", "THERmal", "PYRo"]
-        if state in state_list:
-            self.write("INPut:ADAPter:TYPE " + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["PHOTodiode", "THERmal", "PYRo"])
+        self.write("INPut:ADAPter:TYPE " + valid_state)
 
     # =============================================================================
     # Photodiode parameters
@@ -226,7 +223,7 @@ class PM100D(BaseInstrument):
         """
         return self.query("CURRent:DC:AUTO?")
 
-    def get_freq_range(self, state: str) -> str:
+    def get_freq_range(self, state: str) -> str | None:
         """Queries the frequency range.
 
 
@@ -235,16 +232,12 @@ class PM100D(BaseInstrument):
         state : str
             Can be  ['MAX','MIN']
         """
-        state_list = ["MAX", "MIN"]
-        if state in state_list:
-            if state == "MAX":
-                state = "UPPer?"
-                return self.query("SENSe:FREQuency:Range:" + state)
-            else:
-                state = "LOWer?"
-                return self.query("SENSe:FREQuency:Range:" + state)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["MAXimum", "MINimum"])
+        if valid_state == "MAXimum":
+            return self.query("SENSe:FREQuency:Range:UPPer?")
+        elif valid_state == "MINimum":
+            return self.query("SENSe:FREQuency:Range:LOWer?")
+
 
     def get_power_units(self) -> str:
         """
@@ -316,13 +309,8 @@ class PM100D(BaseInstrument):
             Sets the power unit W or dBm. Can be ['W','dBm'].
         """
 
-        state_list = ["W", "dBm"]
-        if state in state_list:
-            self.write("POWer:DC:UNIT " + str(state))
-        else:
-            raise ValueError(
-                f"Unknown input! You selected {state}. Allowed inputs are {state_list}"
-            )
+        valid_state = self._check_scpi_param(state, ["W", "DBM"])
+        self.write("POWer:DC:UNIT " + valid_state)
 
     def set_auto_power_range(self, state: str | int) -> None:
         """Switches the auto-ranging function on and off.

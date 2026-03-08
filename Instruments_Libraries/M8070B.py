@@ -25,12 +25,13 @@ except (ImportError, ModuleNotFoundError) as e:
     MATLAB_AVAILABLE = False
     print("!" * 80)
     print("WARNING: MATLAB Engine for Python is not installed or not working correctly.")
-    print("Generic functions will work, but IQTools-related functions will silently fail.")
+    print("""Generic functions will work, but calling IQTools-related functions will 
+    raise a RuntimeError.""")
     print("To install, use pip with the version matching your MATLAB installation:")
     print("  - R2024b: pip install matlabengine==24.2.*")
     print("  - R2025a: pip install matlabengine==25.1.*")
     print("  - R2025b: pip install matlabengine==25.2.*")
-    print("  - Other : pip install matlabengine")
+    print("  - Other : pip install matlabengine==<MATLAB_VERSION>.<MATLAB_VERSION_MINOR>.*")
     print(f"Detailed Error: {e}")
     print("!" * 80)
 
@@ -280,8 +281,11 @@ class M8070B(BaseInstrument):
         channel = self.validate_channel(channel)
 
         if not MATLAB_AVAILABLE:
-            self.logger.warning("MATLAB not available. Skipping set_freq_CW.")
-            return
+            raise RuntimeError(
+                "MATLAB Engine is not installed. Cannot use IQTools-related "
+                "functions. Please check the startup warning for installation "
+                "instructions."
+            )
 
         # 2) Define constants
         # magnitude is zeros(1,1) in MATLAB; make it a 1×1 double
@@ -382,8 +386,11 @@ class M8070B(BaseInstrument):
         """
         # fmt: off
         if not MATLAB_AVAILABLE:
-            self.logger.warning("MATLAB not available. Skipping iqdownload.")
-            return
+            raise RuntimeError(
+                "MATLAB Engine is not installed. Cannot use IQTools-related "
+                "functions. Please check the startup warning for installation "
+                "instructions."
+            )
 
         # Build the var/val list
         args = [
@@ -453,8 +460,11 @@ class M8070B(BaseInstrument):
         channel = self.validate_channel(channel)
 
         if not MATLAB_AVAILABLE:
-            self.logger.warning("MATLAB not available. Skipping generate_multitone.")
-            return
+            raise RuntimeError(
+                "MATLAB Engine is not installed. Cannot use IQTools-related "
+                "functions. Please check the startup warning for installation "
+                "instructions."
+            )
 
         # 2) Prepare arrays
         frequency = np.asarray(tones, dtype=np.float64)  # 1-D

@@ -226,7 +226,7 @@ class BaseInstrument:
     # Validate Variables
     # =============================================================================
 
-    def _parse_state(self, state) -> str:
+    def _parse_state(self, state: str | int | float | bool) -> str:
         """
         Helper to parse various input types into SCPI 'ON' or 'OFF' strings.
         Supports bool (True/False), numeric (1/0, 1.0/0.0), and strings ('ON'/'OFF', '1'/'0').
@@ -247,6 +247,34 @@ class BaseInstrument:
             return "OFF"
         else:
             raise ValueError(f"Invalid state: '{state}'. Use True/False, 1/0, or 'ON'/'OFF'.")
+
+    def _check_scpi_param(self, user_input: str, allowed_params: list[str]) -> str:
+        """
+        Validates user input against a list of allowed SCPI parameters.
+        Supports SCPI short forms (e.g., 'PHOT' for 'PHOTodiode') and is case-insensitive.
+        Returns the exact parameter string as provided in allowed_params.
+        """
+        user_input_upper = str(user_input).strip().upper()
+
+        for param in allowed_params:
+            # Handle optional characters like [] if they exist
+            clean_param = param.replace("[", "").replace("]", "")
+
+            # Extract the mandatory short form, represented by uppercase letters
+            short_form = "".join(c for c in param if c.isupper())
+            if not short_form:
+                short_form = clean_param.upper()
+
+            long_form = clean_param.upper()
+
+            # Input must be at least the short form length, and match the long form's prefix
+            if len(user_input_upper) >= len(short_form) and long_form.startswith(user_input_upper):
+                return param
+
+        raise ValueError(
+            f"Invalid input '{user_input}'. Allowed parameters are: {allowed_params} "
+            "(case-insensitive, abbreviation allowed up to the capital letters)."
+        )
 
     # =============================================================================
     # Common aliases

@@ -595,13 +595,9 @@ class MS2760A(BaseInstrument):
 
         """
 
-        format_list = ["ASCII", "INTEGER", "REAL"]
-        state = state.upper() if isinstance(state, str) else state
-        if state in format_list:
-            self.write(f":FORMat:TRACe:DATA {state}")
-            self.get_data_format()
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_format = self._check_scpi_param(state, ["ASCii", "INTeger", "REAL"])
+        self.write(f":FORMat:TRACe:DATA {valid_format}")
+        self.get_data_format()
 
     def set_marker_excursion_state(self, state: str | int) -> None:
         """
@@ -705,12 +701,12 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
-        trace_type = trace_type.upper() if isinstance(trace_type, str) else trace_type
-        if trace_type in state_list and trace_num in self._trace_List:
-            self.write(f":TRACe{trace_num}:TYPE {trace_type}")
+        valid_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
+        valid_trace_type = self._check_scpi_param(trace_type, valid_list)
+        if trace_num in self._trace_List:
+            self.write(f":TRACe{trace_num}:TYPE {valid_trace_type}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError("Number must be between 1 and 6")
 
     def set_trace_selected(self, trace_num: int = 1) -> None:
         """
@@ -799,12 +795,11 @@ class MS2760A(BaseInstrument):
 
         """
 
-        state_list = ["POSITIVE", "POS", "RMS", "NEGATIVE", "NEG"]
-        state = state.upper() if isinstance(state, str) else state
-        if trace_num in self._trace_List and state in state_list:
-            self.write(f":TRACe{trace_num}:DETector {state}")
+        valid_state = self._check_scpi_param(state, ["POSitive", "RMS", "NEGative"])
+        if trace_num in self._trace_List:
+            self.write(f":TRACe{trace_num}:DETector {valid_state}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError("Trace Number must be between 1 and 6.")
 
     def set_capture_time(self, capture_time: float = 0, unit: str = "ms") -> None:
         """
@@ -818,12 +813,8 @@ class MS2760A(BaseInstrument):
             default: 'ms'
 
         """
-        unit_list = ["PS", "NS", "US", "MS", "S", "MIN", "HR"]
-        unit = unit.upper() if isinstance(unit, str) else unit
-        if unit in unit_list:
-            self.write(f":CAPTure:TIMe {capture_time} {unit}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_unit = self._check_scpi_param(unit, ["PS", "NS", "US", "MS", "S", "MIN", "HR"])
+        self.write(f":CAPTure:TIMe {capture_time} {valid_unit}")
 
     # =============================================================================
     #   get/Save Data

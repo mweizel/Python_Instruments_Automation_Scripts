@@ -18,18 +18,15 @@ class CoBrite(BaseInstrument):
         This Class is using PyVisa to connect to CoBrite Laser, please install PyVisa.
         """
         kwargs.setdefault("query_delay", 0.5)
+        kwargs.setdefault("read_termination", "\n")
         super().__init__(str(resource_str), visa_library=visa_library, **kwargs)
         print(self.get_idn())
 
-    def read(self) -> bytes:  # type: ignore[override]
-        """
-        This function must be set after each set_() function. CoBrite
-        writes the set_() to register and returns ;/r/n to the user. The
-        ;/r/n command will mess up the next data sent to CoBrite from the user.
-        An empty read() is required to be sended after each set_() function to the
-        laser.
-        """
-        return self._resource.read_raw()
+    def _validate_channel(self, channel: int | float | str) -> int:
+        channel = int(float(channel))
+        if channel not in [1, 2]:
+            raise ValueError("Invalid channel number given! CoBrite has only 2 channels (1 or 2).")
+        return channel
 
     # =============================================================================
     # Identify
@@ -60,8 +57,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         freq = self.query(f"FREQ? 1,1,{chan}")
         return float(freq.split(";")[0])
@@ -81,8 +77,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         wav = self.query(f"WAV? 1,1,{chan}")
         return float(wav.split(";")[0])
@@ -102,8 +97,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         freq = self.query(f"OFF? 1,1,{chan}")
         return float(freq.split(";")[0])
@@ -122,8 +116,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         out = float(self.query(f"STATe? 1,1,{chan}").split(";")[0])
         return "ON" if out != 0 else "OFF"
@@ -143,8 +136,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         power = self.query(f"POW? 1,1,{chan}")
         return float(power.split(";")[0])
@@ -164,8 +156,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         apow = self.query(f"APOW? 1,1,{chan}")
         return float(apow.split(";")[0])
@@ -185,8 +176,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         lim = self.query(f"LIM? 1,1,{chan}")
         datasep = lim.split(";")[0].split(",")
@@ -217,8 +207,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
 
         config = self.query(f":SOURce:CONFiguration? 1,1,{chan}")
         datasep = config.split(";")[0].split(",")
@@ -263,8 +252,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
         self.write(f"POW 1,1,{chan},{value}")
 
     def set_wavelength(self, chan: int, value: float) -> None:
@@ -285,8 +273,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
         self.write(f"WAV 1,1,{chan},{value}")
 
     def set_freq_thz(self, chan: int, value: float) -> None:
@@ -307,8 +294,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
         self.write(f"FREQ 1,1,{chan},{value}")
 
     def set_laser_output(self, chan: int, state: str | int) -> None:
@@ -331,10 +317,8 @@ class CoBrite(BaseInstrument):
         parsed_state = self._parse_state(state)
         state_val = "1" if parsed_state == "ON" else "0"
 
-        if chan in [1, 2]:
-            self.write(f"STATe 1,1,{chan},{state_val}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
+        self.write(f"STATe 1,1,{chan},{state_val}")
 
     def set_offset(self, chan: int, value: float) -> None:
         """
@@ -354,8 +338,7 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan not in [1, 2]:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
         self.write(f"OFF 1,1,{chan},{value}")
 
     def set_configuration(self, chan: int, freq: float, power: float, offset: float) -> None:
@@ -379,12 +362,10 @@ class CoBrite(BaseInstrument):
         ValueError
             Error message.
         """
-        if chan in [1, 2]:
-            self.set_freq_thz(chan, freq)
-            self.set_power(chan, power)
-            self.set_offset(chan, offset)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        chan = self._validate_channel(chan)
+        self.set_freq_thz(chan, freq)
+        self.set_power(chan, power)
+        self.set_offset(chan, offset)
 
     # =============================================================================
     # Aliases for backward compatibility

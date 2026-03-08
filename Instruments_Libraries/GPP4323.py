@@ -65,7 +65,7 @@ class GPP4323(BaseInstrument):
     # =============================================================================
 
     def _validate_channel(self, channel: int, main_channel: bool = False) -> int:
-        channel = int(channel)
+        channel = int(float(channel))
         if main_channel and channel not in self._mainChannelLS:
             raise ValueError("Invalid channel number given! Channel Number can be [1,2].")
         if channel not in self._ChannelLS:
@@ -74,32 +74,31 @@ class GPP4323(BaseInstrument):
 
     def _validate_voltage(self, channel: int, voltage: int | float) -> str:
         if channel in self._mainChannelLS and (voltage < 0 or voltage > 32):
-            raise ValueError("Invalid voltage given! Voltage can be [0,32].")
+            raise ValueError("Invalid voltage given! Voltage can be 0V - 32V.")
         if channel == 3 and (voltage < 0 or voltage > 5):
-            raise ValueError("Invalid voltage given! Voltage on Channel 3 can be [0,5].")
+            raise ValueError("Invalid voltage given! Voltage on Channel 3 can be 0V - 5V.")
         if channel == 4 and (voltage < 0 or voltage > 15):
-            raise ValueError("Invalid voltage given! Voltage on Channel 4 can be [0,15].")
+            raise ValueError("Invalid voltage given! Voltage on Channel 4 can be 0V - 15V.")
         return f"{voltage:.3f}"
 
     def _validate_amp(self, channel: int, amp: int | float) -> str:
         if channel in self._mainChannelLS and (amp < 0 or amp > 3):
-            raise ValueError("Invalid current given! Current on Channels 1 and 2 can be [0,3].")
+            raise ValueError("Invalid current given! Current on Channels 1 and 2 can be 0A - 3A.")
         if (channel == 3 or channel == 4) and (amp < 0 or amp > 1):
-            raise ValueError("Invalid current given! Current on Channels 3 and 4 can be [0,1].")
+            raise ValueError("Invalid current given! Current on Channels 3 and 4 can be 0A - 1A.")
         return f"{amp:.4f}"
 
     def _validate_resistor(self, res: int | float) -> str:
         if res < 1 or res > 1000:
-            raise ValueError("Invalid resistance given! Resistance can be [1,1000].")
+            raise ValueError("Invalid resistance given! Resistance can be 1Ω - 1000Ω.")
         return f"{res:.3f}"
 
     def _validate_measurement_type(self, measurement_type: str) -> str:
-        type_normalized = self._measurement_type_mapping.get(
-            measurement_type.lower() if isinstance(measurement_type, str) else measurement_type
+        type_str = self._check_scpi_param(
+            str(measurement_type).strip().upper(),
+            ["VOLTage", "CURRent", "V", "A", "AMP", "POWer", "WATT", "P"],
         )
-        if type_normalized is None:
-            raise ValueError("Invalid measurement type given! Type can be [voltage,current,power].")
-        return type_normalized
+        return self._measurement_type_mapping.get(type_str.lower(), type_str.title())
 
     # =============================================================================
     # Set Values and Modes
@@ -181,12 +180,10 @@ class GPP4323(BaseInstrument):
         state : str
             Possible state ["ON", "OFF"].
         """
-        mode_list = ["CC", "CV", "CR"]
+        valid_mode = self._check_scpi_param(mode, ["CC", "CV", "CR"])
         channel = self._validate_channel(channel, main_channel=True)
         state_normalized = self._parse_state(state)
-        if mode not in mode_list:
-            raise ValueError(f"Invalid Mode. Select from {mode_list}.")
-        self.write(f":LOAD{channel}:{mode} {state_normalized}")
+        self.write(f":LOAD{channel}:{valid_mode} {state_normalized}")
 
     def set_load_resistor(self, channel: int, res: float) -> None:
         """Sets the Load CR level.

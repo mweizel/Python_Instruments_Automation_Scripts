@@ -696,11 +696,8 @@ class AQ6370D(BaseInstrument):
             Error message
         """
 
-        state_list = ["SINGle", "REPeat", "AUTO", "SEGMent"]
-        if state in state_list:
-            self.write("INITIATE:SMODE " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["SINGle", "REPeat", "AUTO", "SEGMent"])
+        self.write("INITIATE:SMODE " + valid_state)
 
     def set_trace_attribute(self, trace: str, state: str) -> None:
         """
@@ -729,13 +726,11 @@ class AQ6370D(BaseInstrument):
             Error message
         """
 
-        state_list = ["WRITe", "FIX", "MAX", "MIN", "RAVG", "CALC"]
-        trace_list = ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
-
-        if state in state_list and trace in trace_list:
-            self.write(":TRACE:ATTRIBUTE:" + str(trace) + " " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["WRITe", "FIX", "MAX", "MIN", "RAVG", "CALC"])
+        valid_trace = self._check_scpi_param(
+            trace, ["TRA", "TRB", "TRC", "TRD", "TRE", "TRF", "TRG"]
+        )
+        self.write(f":TRACE:ATTRIBUTE:{valid_trace} {valid_state}")
 
     # =============================================================================
     # get Data

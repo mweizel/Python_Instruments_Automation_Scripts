@@ -184,12 +184,8 @@ class SMA100B(BaseInstrument):
                 defined sweep steps.
         """
 
-        state_list = ["CW", "FIXed", "FIX", "SWEep", "SWE", "LIST", "COMBined", "COMB"]
-        mode = mode.upper()
-        if mode in state_list:
-            self.write(f":FREQuency:MODE {mode}")
-        else:
-            raise ValueError("Not a valid input. Valid: CW | FIXed | SWEep | LIST | COMBined !")
+        valid_mode = self._check_scpi_param(mode, ["CW", "FIXed", "SWEep", "LIST", "COMBined"])
+        self.write(f":FREQuency:MODE {valid_mode}")
 
     def set_freq_cw(self, value: int | float, unit: str | None = None) -> None:
         """
