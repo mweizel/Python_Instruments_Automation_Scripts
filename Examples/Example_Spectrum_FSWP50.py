@@ -53,9 +53,9 @@ mySpecAnalyser.set_sweep_points(datapoints) # Set Number of Data Points
 mySpecAnalyser.set_input_attenuation_auto("OFF") # Disable Auto Input Attenuation
 mySpecAnalyser.set_input_attenuation(0) # Set Input Attenuation
 # Trace 1: RMS
-mySpecAnalyser.set_detection_function("RMS", trace_number=SA_RMS_TraceNum)
+mySpecAnalyser.set_detector_mode("RMS", trace_number=SA_RMS_TraceNum)
 # Trace 2: Positive
-mySpecAnalyser.set_detection_function("POSITIVE", trace_number=SA_POS_TraceNum)
+mySpecAnalyser.set_detector_mode("POSITIVE", trace_number=SA_POS_TraceNum)
 mySpecAnalyser.set_trace_mode("WRITE", trace_number=SA_POS_TraceNum) # turn it on
 
 

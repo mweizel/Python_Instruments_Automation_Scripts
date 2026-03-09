@@ -12,11 +12,6 @@ import numpy as np
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class MS2760A(BaseInstrument):
     """
@@ -65,13 +60,12 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         delay : float, optional
-            DESCRIPTION. The default is 5s delay between write and read.
+            Delay between write and read in seconds. Default: 5.0.
 
         Returns
         -------
         int
-            1 if device operation is completed.
-            0 if device operation is not completed.
+            ``1`` if operation is completed, ``0`` otherwise.
         """
         if self._exeption_state >= 1:
             self.clear()
@@ -93,8 +87,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         int
-            256 if device operation is completed.
-            0 if device operation is not completed.
+            ``256`` if operation is completed, ``0`` otherwise.
         """
         return self.query_ascii_values(":STATus:OPERation?", converter="d")[0]
 
@@ -126,7 +119,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         trace_num : int, optional
-            DESCRIPTION. The default is 1.
+            Trace number to clear. Default: 1.
         """
 
         if trace_num in self._trace_List:
@@ -166,9 +159,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         int
-            1 if the instrument is in continuously sweeping/measuring.
-            0 if the instrument is in single sweep/measurement mode.
-
+            ``1`` for continuous sweep, ``0`` for single sweep.
         """
 
         return self.query_ascii_values(":INITiate:CONTinuous?", converter="d")[0]
@@ -190,9 +181,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         float
-            measured sweep time in milliseconds.
-            "nan" if no measured sweep time is available.
-
+            Measured sweep time in ms. Returns ``nan`` if not available.
         """
 
         return self.query_ascii_values(":DIAGnostic:SWEep:TIME?")[0]
@@ -225,9 +214,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         int
-            1 if in automatic mode ("ON")
-            0 if not in automatic mode ("OFF")
-
+            ``1`` if in automatic mode (ON), ``0`` if not (OFF).
         """
 
         return self.query_ascii_values(":SENSe:BANDwidth:RESolution:AUTO?", converter="d")[0]
@@ -262,7 +249,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         marker_num : int, optional
-            Marker Number between 1 - 12. The default is None.
+            Marker number (1 to 12). If omitted, returns all markers. Default: None.
         """
 
         s = self.query(":CALCulate:MARKer:DATA:ALL?")
@@ -294,10 +281,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        str
-            1 if State is ON.
-            0 if State is OFF
-
+        int
+            ``1`` if State is ON, ``0`` if OFF.
         """
 
         return self.query_ascii_values(":SENSe:CHPower:STATe?", converter="d")[0]
@@ -322,24 +307,23 @@ class MS2760A(BaseInstrument):
         """
         return self.query_ascii_values(":SENSe:FREQuency:SPAN?")[0]
 
-    def get_trace_type(self, trace_num: int = 1) -> str:
+    def get_trace_mode(self, trace_number: int = 1, **kwargs) -> str:
         """
-        Query the trace type for a given trace number.
+        Query the trace mode for a given trace number.
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace number (1 to 6).
 
         Returns
         -------
         str
-            Trace Type: NORM|MIN|MAX|AVER|RMAX|RMIN|RAV
-
+            Trace mode (e.g., NORM, MIN, MAX, AVER, RMAX, RMIN, RAV).
         """
 
-        if trace_num in self._trace_List:
-            return self.query(":TRACe" + str(trace_num) + ":TYPE?")
+        if trace_number in self._trace_List:
+            return self.query(":TRACe" + str(trace_number) + ":TYPE?")
         else:
             raise ValueError("Number must be between 1 and 6")
 
@@ -351,19 +335,19 @@ class MS2760A(BaseInstrument):
 
         return self.query_ascii_values(":TRACe:SELect?", converter="d")[0]
 
-    def get_trace_state(self, trace_num: int = 1) -> int:
+    def get_trace_state(self, trace_number: int = 1) -> int:
         """
         Query the display state of a given trace. If it is OFF, the :TRAC:DATA?
         command will return nan.
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace number (1 to 6).
         """
 
-        if trace_num in self._trace_List:
-            return self.query_ascii_values(f":TRACe{trace_num}:DISPlay:STATe?", converter="d")[0]
+        if trace_number in self._trace_List:
+            return self.query_ascii_values(f":TRACe{trace_number}:DISPlay:STATe?", converter="d")[0]
         else:
             raise ValueError("Number must be between 1 and 6")
 
@@ -379,23 +363,22 @@ class MS2760A(BaseInstrument):
         """
         return self.query_ascii_values(":POWer:IF:GAIN:STATe?", converter="d")[0]
 
-    def get_detector_type(self, trace_num: int = 1) -> str:
+    def get_detector_type(self, trace_number: int = 1) -> str:
         """
         Query the detector type.
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace number (1 to 6).
 
         Returns
         -------
         str
-            Detector Type: POS|RMS|NEG
-
+            Detector type (e.g., POS, RMS, NEG).
         """
-        if trace_num in self._trace_List:
-            return self.query(":TRACe" + str(trace_num) + ":DETector?")
+        if trace_number in self._trace_List:
+            return self.query(":TRACe" + str(trace_number) + ":DETector?")
         else:
             raise ValueError("Trace Number must be between 1 and 6")
 
@@ -409,7 +392,7 @@ class MS2760A(BaseInstrument):
     #  Write Functions
     # =============================================================================
 
-    def set_sweep_points(self, data_points: int = 501) -> None:
+    def set_sweep_points(self, datapoints: int = 501) -> None:
         """
         Changes the number of display points the instrument currently measures.
         Increasing the number of display points can improve the resolution of
@@ -417,16 +400,14 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        data_points : int
-               Default Value: 501
-               Range: 10 to 10001
-
+        datapoints : int
+            Number of points. Range: 10 to 10001. Default: 501.
         """
-        if isinstance(data_points, int):
-            if 10 <= data_points <= 10001:
-                self.write(f":DISPlay:POINtcount {data_points}")
+        if isinstance(datapoints, int):
+            if 10 <= datapoints <= 10001:
+                self.write(f":DISPlay:POINtcount {datapoints}")
             else:
-                raise ValueError(f"Value must be between 10 and 10001, not {data_points}")
+                raise ValueError(f"Value must be between 10 and 10001, not {datapoints}")
         else:
             raise ValueError("Unknown input! Value must be an integer.")
 
@@ -438,11 +419,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Sets the start frequency.
 
         unit : str
-            Parameters: <numeric_value> {HZ | KHZ | MHZ | GHZ}
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -460,11 +441,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
-                Sets the stop frequency.
+        value : int | float
+            Sets the stop frequency.
 
         unit : str
-            Parameters: <numeric_value> {HZ | KHZ | MHZ | GHZ}
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -474,7 +455,7 @@ class MS2760A(BaseInstrument):
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    def set_resolution_bandwidth(self, value: int | float, unit: str = "Hz") -> None:
+    def set_resolution_bandwidth(self, res_bw: int | float, unit: str = "Hz") -> None:
         """
         Sets the resolution bandwidth. Note that using this command turns
         the automatic resolution bandwidth setting OFF.
@@ -483,18 +464,17 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        res_bw : int | float
             Sets the resolution bandwidth.
 
         unit : str
-            Parameters: <numeric_value> {HZ | KHZ | MHZ | GHZ}
-            Default Unit: Hz
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
         unit = unit.upper() if isinstance(unit, str) else unit
         if unit in self._freq_Units_List:
-            self.write(f":SENSe:BANDwidth:RESolution {value} {unit}")
+            self.write(f":SENSe:BANDwidth:RESolution {res_bw} {unit}")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
@@ -502,18 +482,14 @@ class MS2760A(BaseInstrument):
         """
         Sets the automatic resolution bandwidth state. Setting the value to ON or 1 will
         result in the resolution bandwidth being coupled to the span. That is, when the
-        span changes, the resolution bandwidth changes. Setting the value to OFF or 0 will
-        result in the resolution bandwidth being decoupled from the span. That is, changing
-        the span will not change the resolution bandwidth. When this command is issued,
+        span changes, the resolution bandwidth changes. When this command is issued,
         the resolution bandwidth setting itself will not change.
 
         Parameters
         ----------
-        state : int/str
-            Sets the state of the coupling of the resolution bandwidth to the frequency span.
-            Parameters:<1 | 0 | ON | OFF>
-            Default Value: ON
-
+        state : int | str
+            Coupling state of resolution bandwidth to span. Default: ``ON``.
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
@@ -527,11 +503,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : float
+        value : int | float
             Sets the center frequency.
 
         unit : str
-            Unit value. Can be ['HZ','KHZ','MHZ','GHZ']
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -551,11 +527,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : float
+        value : int | float
             Sets the frequency span.
 
         unit : str
-            Unit value. Can be ['HZ','KHZ','MHZ','GHZ']
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -576,9 +552,8 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-             Sets the continuous measurement state. <1 | 0 | ON | OFF>
-
+        state : str | int
+            Sets the continuous measurement state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
@@ -591,17 +566,12 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str
-            Set Data Format =  ['ASCii','INTeger','REAL']
-
+            Set Data Format. Options: {``ASCii`` | ``INTeger`` | ``REAL``}
         """
 
-        format_list = ["ASCII", "INTEGER", "REAL"]
-        state = state.upper() if isinstance(state, str) else state
-        if state in format_list:
-            self.write(f":FORMat:TRACe:DATA {state}")
-            self.get_data_format()
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_format = self._check_scpi_param(state, ["ASCii", "INTeger", "REAL"])
+        self.write(f":FORMat:TRACe:DATA {valid_format}")
+        self.get_data_format()
 
     def set_marker_excursion_state(self, state: str | int) -> None:
         """
@@ -609,9 +579,8 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            Can be state = ['ON','OFF',1,0]
-
+        state : str | int
+            Marker excursion state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f":CALCulate:MARKer:PEAK:EXCursion:STATe {state}")
@@ -624,9 +593,8 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
-            Sets the excursion for a marker in dB. Range 0dB to 200 dB.
-
+        value : int | float
+            Excursion for a marker in dB. Range: 0.0 to 200.0.
         """
         if 0 <= value <= 200:
             self.write(f":CALCulate:MARKer:PEAK:EXCursion {value} DB")
@@ -640,8 +608,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         marker_num : int
-            Marker number. Can be 1 to 12.
-
+            Marker number (1 to 12). Default: 1.
         """
         if isinstance(marker_num, int) and marker_num in self._marker_List:
             self.write(f":CALCulate:MARKer{marker_num}:MAXimum:NEXT")
@@ -655,8 +622,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         marker_num : int
-            Marker number. Can be 1 to 12.
-
+            Marker number (1 to 12). Default: 1.
         """
 
         if isinstance(marker_num, int) and marker_num in self._marker_List:
@@ -676,78 +642,88 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state :str
-            state = ['ON','OFF',1,0]
-
+        state : str | int
+            Channel power measurement state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
         self.write(f":SENSe:CHPower:STATe {state}")
 
-    def set_trace_type(self, trace_type: str = "NORM", trace_num: int = 1) -> None:
+    def set_trace_mode(self, mode: str = "NORM", trace_number: int = 1, **kwargs) -> None:
         """
-        Sets the trace type.
+        Sets the trace mode.
 
         Parameters
         ----------
-        trace_type : str
-             Sets Trace Type:
-                            Normal - NORM
-                            Hold the Minimum - MIN
-                            Hold the Maximum - MAX
-                            Average - AVER
-                            Rolling Max Hold - RMAX
-                            Rolling Min Hold - RMIN
-                            Rolling Average - RAV
-        number : int
-            Trace number:
-                        Can be set to [1,2,3,4,5,6]
-
+        mode : str
+            * Normal - ``NORM`` or ``WRITE``
+            * Hold the Minimum - ``MIN`` or ``MINHOLD``
+            * Hold the Maximum - ``MAX`` or ``MAXHOLD``
+            * Average - ``AVER`` or ``AVERAGE``
+            * Rolling Max Hold - ``RMAX``
+            * Rolling Min Hold - ``RMIN``
+            * Rolling Average - ``RAV``
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
-
-        state_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
-        trace_type = trace_type.upper() if isinstance(trace_type, str) else trace_type
-        if trace_type in state_list and trace_num in self._trace_List:
-            self.write(f":TRACe{trace_num}:TYPE {trace_type}")
+        mode_map = {
+            "WRITE": "NORM",
+            "NORM": "NORM",
+            "MAXHOLD": "MAX",
+            "MAX": "MAX",
+            "MINHOLD": "MIN",
+            "MIN": "MIN",
+            "AVERAGE": "AVER",
+            "AVER": "AVER",
+            "RMAX": "RMAX",
+            "RMIN": "RMIN",
+            "RAV": "RAV",
+        }
+        
+        mode_upper = mode.strip().upper()
+        if mode_upper in mode_map:
+            valid_trace_type = mode_map[mode_upper]
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            valid_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
+            valid_trace_type = self._check_scpi_param(mode, valid_list)
+            
+        if trace_number in self._trace_List:
+            self.write(f":TRACe{trace_number}:TYPE {valid_trace_type}")
+        else:
+            raise ValueError("Number must be between 1 and 6")
 
-    def set_trace_selected(self, trace_num: int = 1) -> None:
+    def set_trace_selected(self, trace_number: int = 1) -> None:
         """
         The selected trace will be used by operations that use a single trace.
         The max number of traces available to select is model specific.
 
         Parameters
         ----------
-        trace_num : int
-            Trace number:
-                        Can be set to [1,2,3,4,5,6]
-
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
 
-        if trace_num in self._trace_List:
-            self.write(f":TRACe:SELect {trace_num}")
+        if trace_number in self._trace_List:
+            self.write(f":TRACe:SELect {trace_number}")
         else:
-            raise ValueError(f"Allowed range is 1 to 6. Current value is {trace_num}")
+            raise ValueError(f"Allowed range is 1 to 6. Current value is {trace_number}")
 
-    def set_trace_state(self, state: str | int = "ON", trace_num: int = 1) -> None:
+    def set_trace_state(self, state: str | int = "ON", trace_number: int = 1) -> None:
         """
         The trace visibility state status. If it is OFF, the :TRAC:DATA?
         command will return NaN.
 
         Parameters
         ----------
-        state : str
-            ['ON','OFF',0,1]
-        trace_num : int
-            Trace Number:
-                Can be set to  [1,2,3,4,5,6]
-
+        state : str | int
+            Trace visibility state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
 
         state = self._parse_state(state)
-        if trace_num in self._trace_List:
-            self.write(f":TRACe{trace_num}:DISPlay:STATe {state}")
+        if trace_number in self._trace_List:
+            self.write(f":TRACe{trace_number}:DISPlay:STATe {state}")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
@@ -773,38 +749,35 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state :str/int
-            state = ['ON','OFF',1,0]
-
+        state : str | int
+            IF gain state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
         self.write(f":POWer:IF:GAIN:STATe {state}")
 
-    def set_detector_type(
+    def set_detector_mode(
         self,
-        state: str = "POSitive",
-        trace_num: int = 1,
+        mode: str = "POSitive",
+        trace_number: int = 1,
+        **kwargs
     ) -> None:
         """
-        Sets the detector type.
+        Sets the detector mode.
 
         Parameters
         ----------
-        state : str
-            state = ['POSitive', 'RMS', 'NEGative']
-        trace_num : int
-            Trace Number:
-                Can be set to  [1,2,3,4,5,6]
-
+        mode : str
+            Detector mode. Options: {``POSitive`` | ``RMS`` | ``NEGative``}
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
 
-        state_list = ["POSITIVE", "POS", "RMS", "NEGATIVE", "NEG"]
-        state = state.upper() if isinstance(state, str) else state
-        if trace_num in self._trace_List and state in state_list:
-            self.write(f":TRACe{trace_num}:DETector {state}")
+        valid_state = self._check_scpi_param(mode, ["POSitive", "RMS", "NEGative"])
+        if trace_number in self._trace_List:
+            self.write(f":TRACe{trace_number}:DETector {valid_state}")
         else:
-            raise ValueError("Unknown input! See function description for more info.")
+            raise ValueError("Trace Number must be between 1 and 6.")
 
     def set_capture_time(self, capture_time: float = 0, unit: str = "ms") -> None:
         """
@@ -813,17 +786,12 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         capture_time : float, optional
-            default: 0 ms, Range: 0 ms to 10000 ms
+            Capture time. Range: 0.0 to 10000.0. Default: 0.0.
         unit : str, optional
-            default: 'ms'
-
+            Default: ``MS``. Options: {``PS`` | ``NS`` | ``US`` | ``MS`` | ``S`` | ``MIN`` | ``HR``}
         """
-        unit_list = ["PS", "NS", "US", "MS", "S", "MIN", "HR"]
-        unit = unit.upper() if isinstance(unit, str) else unit
-        if unit in unit_list:
-            self.write(f":CAPTure:TIMe {capture_time} {unit}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_unit = self._check_scpi_param(unit, ["PS", "NS", "US", "MS", "S", "MIN", "HR"])
+        self.write(f":CAPTure:TIMe {capture_time} {valid_unit}")
 
     # =============================================================================
     #   get/Save Data
@@ -836,9 +804,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        OutPut : dict/np.ndarray
-            Return a dictionary with the measured frequency in Hz and peak power in dBm.
-
+        dict | np.ndarray
+            Measured frequency in Hz and peak power in dBm.
         """
 
         self.set_continuous("OFF")
@@ -881,9 +848,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        Output : np.ndarray
-            Measured Spectrum on Trace {num}.
-
+        np.ndarray
+            Measured spectrum on the given trace.
         """
 
         self.set_continuous("OFF")
@@ -965,9 +931,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        Output : np.array
+        np.ndarray
             Amplitude data.
-
         """
 
         if trace_number not in self._trace_List:
@@ -1051,429 +1016,3 @@ class MS2760A(BaseInstrument):
 
         return x_array, y_array
 
-    # =============================================================================
-    # Aliases for backwards compatibility
-    # =============================================================================
-    @deprecated("Use 'get_operation_status' instead")
-    def StatusOperation(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_operation_status()"""
-        self.logger.warning(
-            "Method 'StatusOperation()' is deprecated. Please use 'get_operation_status()' instead."
-        )
-        return self.get_operation_status(*args, **kwargs)
-
-    @deprecated("Use 'init' instead")
-    def Init(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for init()"""
-        self.logger.warning("Method 'Init()' is deprecated. Please use 'init()' instead.")
-        return self.init(*args, **kwargs)
-
-    @deprecated("Use 'clear_trace' instead")
-    def ClearTrace(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for clear_trace()"""
-        self.logger.warning(
-            "Method 'ClearTrace()' is deprecated. Please use 'clear_trace()' instead."
-        )
-        return self.clear_trace(*args, **kwargs)
-
-    @deprecated("Use 'get_start_frequency' instead")
-    def ask_freq_Start(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_start_frequency()"""
-        self.logger.warning(
-            "Method 'ask_freq_Start()' is deprecated. Please use 'get_start_frequency()' instead."
-        )
-        return self.get_start_frequency(*args, **kwargs)
-
-    @deprecated("Use 'get_stop_frequency' instead")
-    def ask_freq_Stop(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_stop_frequency()"""
-        self.logger.warning(
-            "Method 'ask_freq_Stop()' is deprecated. Please use 'get_stop_frequency()' instead."
-        )
-        return self.get_stop_frequency(*args, **kwargs)
-
-    @deprecated("Use 'get_resolution_bandwidth' instead")
-    def ask_ResBwidth(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_resolution_bandwidth()"""
-        self.logger.warning(
-            """Method 'ask_ResBwidth()' is deprecated. 
-            Please use 'get_resolution_bandwidth()' instead."""
-        )
-        return self.get_resolution_bandwidth(*args, **kwargs)
-
-    @deprecated("Use 'get_continuous' instead")
-    def ask_SingleOrContinuesMeas(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_continuous()"""
-        self.logger.warning(
-            """Method 'ask_SingleOrContinuesMeas()' is deprecated. 
-            Please use 'get_continuous()' instead."""
-        )
-        return self.get_continuous(*args, **kwargs)
-
-    @deprecated("Use 'get_configuration' instead")
-    def ask_Configuration(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_configuration()"""
-        self.logger.warning(
-            "Method 'ask_Configuration()' is deprecated. Please use 'get_configuration()' instead."
-        )
-        return self.get_configuration(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_time' instead")
-    def ask_sweepTime(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_time()"""
-        self.logger.warning(
-            "Method 'ask_sweepTime()' is deprecated. Please use 'get_sweep_time()' instead."
-        )
-        return self.get_sweep_time(*args, **kwargs)
-
-    @deprecated("Use 'get_resolution_bandwidth_auto' instead")
-    def ask_ResBwidthAuto(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_resolution_bandwidth_auto()"""
-        self.logger.warning(
-            """Method 'ask_ResBwidthAuto()' is deprecated. 
-            Please use 'get_resolution_bandwidth_auto()' instead."""
-        )
-        return self.get_resolution_bandwidth_auto(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_points' instead")
-    def ask_DataPointCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_points()"""
-        self.logger.warning(
-            "Method 'ask_DataPointCount()' is deprecated. Please use 'get_sweep_points()' instead."
-        )
-        return self.get_sweep_points(*args, **kwargs)
-
-    @deprecated("Use 'get_marker_excursion_state' instead")
-    def ask_MarkerExcursionState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_marker_excursion_state()"""
-        self.logger.warning(
-            """Method 'ask_MarkerExcursionState()' is deprecated. 
-            Please use 'get_marker_excursion_state()' instead."""
-        )
-        return self.get_marker_excursion_state(*args, **kwargs)
-
-    @deprecated("Use 'get_marker_excursion' instead")
-    def ask_MarkerExcursion(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_marker_excursion()"""
-        self.logger.warning(
-            """Method 'ask_MarkerExcursion()' is deprecated. 
-            Please use 'get_marker_excursion()' instead."""
-        )
-        return self.get_marker_excursion(*args, **kwargs)
-
-    @deprecated("Use 'get_marker_values' instead")
-    def ask_MarkerValues(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_marker_values()"""
-        self.logger.warning(
-            "Method 'ask_MarkerValues()' is deprecated. Please use 'get_marker_values()' instead."
-        )
-        return self.get_marker_values(*args, **kwargs)
-
-    @deprecated("Use 'get_ch_power_state' instead")
-    def ask_CHPowerState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_ch_power_state()"""
-        self.logger.warning(
-            "Method 'ask_CHPowerState()' is deprecated. Please use 'get_ch_power_state()' instead."
-        )
-        return self.get_ch_power_state(*args, **kwargs)
-
-    @deprecated("Use 'get_data_format' instead")
-    def ask_DataFormat(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_data_format()"""
-        self.logger.warning(
-            "Method 'ask_DataFormat()' is deprecated. Please use 'get_data_format()' instead."
-        )
-        return self.get_data_format(*args, **kwargs)
-
-    @deprecated("Use 'get_center_frequency' instead")
-    def ask_CenterFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_center_frequency()"""
-        self.logger.warning(
-            "Method 'ask_CenterFreq()' is deprecated. Please use 'get_center_frequency()' instead."
-        )
-        return self.get_center_frequency(*args, **kwargs)
-
-    @deprecated("Use 'get_span' instead")
-    def ask_FreqSpan(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_span()"""
-        self.logger.warning(
-            "Method 'ask_FreqSpan()' is deprecated. Please use 'get_span()' instead."
-        )
-        return self.get_span(*args, **kwargs)
-
-    @deprecated("Use 'get_trace_type' instead")
-    def ask_TraceType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_trace_type()"""
-        self.logger.warning(
-            "Method 'ask_TraceType()' is deprecated. Please use 'get_trace_type()' instead."
-        )
-        return self.get_trace_type(*args, **kwargs)
-
-    @deprecated("Use 'get_trace_selected' instead")
-    def ask_TraceSelected(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_trace_selected()"""
-        self.logger.warning(
-            "Method 'ask_TraceSelected()' is deprecated. Please use 'get_trace_selected()' instead."
-        )
-        return self.get_trace_selected(*args, **kwargs)
-
-    @deprecated("Use 'get_trace_state' instead")
-    def ask_TraceState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_trace_state()"""
-        self.logger.warning(
-            "Method 'ask_TraceState()' is deprecated. Please use 'get_trace_state()' instead."
-        )
-        return self.get_trace_state(*args, **kwargs)
-
-    @deprecated("Use 'get_reference_level' instead")
-    def ask_RefLevel(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_reference_level()"""
-        self.logger.warning(
-            "Method 'ask_RefLevel()' is deprecated. Please use 'get_reference_level()' instead."
-        )
-        return self.get_reference_level(*args, **kwargs)
-
-    @deprecated("Use 'get_if_gain_state' instead")
-    def ask_IFGainState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_if_gain_state()"""
-        self.logger.warning(
-            "Method 'ask_IFGainState()' is deprecated. Please use 'get_if_gain_state()' instead."
-        )
-        return self.get_if_gain_state(*args, **kwargs)
-
-    @deprecated("Use 'get_detector_type' instead")
-    def ask_DetectorType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_detector_type()"""
-        self.logger.warning(
-            "Method 'ask_DetectorType()' is deprecated. Please use 'get_detector_type()' instead."
-        )
-        return self.get_detector_type(*args, **kwargs)
-
-    @deprecated("Use 'get_capture_time' instead")
-    def ask_CaptureTime(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_capture_time()"""
-        self.logger.warning(
-            "Method 'ask_CaptureTime()' is deprecated. Please use 'get_capture_time()' instead."
-        )
-        return self.get_capture_time(*args, **kwargs)
-
-    @deprecated("Use 'set_trace_type' instead")
-    def set_trace_mode(self, *args, **kwargs):
-        """Deprecated alias for set_trace_type()"""
-        self.logger.warning(
-            "Method 'set_trace_mode()' is deprecated. Please use 'set_trace_type()' instead."
-        )
-        return self.set_trace_type(*args, **kwargs)
-
-    @deprecated("Use 'set_detector_type' instead")
-    def set_detection_function(self, *args, **kwargs):
-        """Deprecated alias for set_detector_type()"""
-        self.logger.warning(
-            """Method 'set_detection_function()' is deprecated. 
-            Please use 'set_detector_type()' instead."""
-        )
-        return self.set_detector_type(*args, **kwargs)
-
-    @deprecated("Use 'set_sweep_points' instead")
-    def set_DataPointCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sweep_points()"""
-        self.logger.warning(
-            "Method 'set_DataPointCount()' is deprecated. Please use 'set_sweep_points()' instead."
-        )
-        return self.set_sweep_points(*args, **kwargs)
-
-    @deprecated("Use 'set_start_frequency' instead")
-    def set_freq_Start(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_start_frequency()"""
-        self.logger.warning(
-            "Method 'set_freq_Start()' is deprecated. Please use 'set_start_frequency()' instead."
-        )
-        return self.set_start_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_stop_frequency' instead")
-    def set_freq_Stop(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_stop_frequency()"""
-        self.logger.warning(
-            "Method 'set_freq_Stop()' is deprecated. Please use 'set_stop_frequency()' instead."
-        )
-        return self.set_stop_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_resolution_bandwidth' instead")
-    def set_ResBwidth(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_resolution_bandwidth()"""
-        self.logger.warning(
-            """Method 'set_ResBwidth()' is deprecated. 
-            Please use 'set_resolution_bandwidth()' instead."""
-        )
-        return self.set_resolution_bandwidth(*args, **kwargs)
-
-    @deprecated("Use 'set_resolution_bandwidth_auto' instead")
-    def set_ResBwidthAuto(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_resolution_bandwidth_auto()"""
-        self.logger.warning(
-            """Method 'set_ResBwidthAuto()' is deprecated. 
-            Please use 'set_resolution_bandwidth_auto()' instead."""
-        )
-        return self.set_resolution_bandwidth_auto(*args, **kwargs)
-
-    @deprecated("Use 'set_center_frequency' instead")
-    def set_CenterFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_center_frequency()"""
-        self.logger.warning(
-            "Method 'set_CenterFreq()' is deprecated. Please use 'set_center_frequency()' instead."
-        )
-        return self.set_center_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_span' instead")
-    def set_FreqSpan(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_span()"""
-        self.logger.warning(
-            "Method 'set_FreqSpan()' is deprecated. Please use 'set_span()' instead."
-        )
-        return self.set_span(*args, **kwargs)
-
-    @deprecated("Use 'set_continuous' instead")
-    def set_Continuous(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_continuous()"""
-        self.logger.warning(
-            "Method 'set_Continuous()' is deprecated. Please use 'set_continuous()' instead."
-        )
-        return self.set_continuous(*args, **kwargs)
-
-    @deprecated("Use 'set_data_format' instead")
-    def set_DataFormat(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_data_format()"""
-        self.logger.warning(
-            "Method 'set_DataFormat()' is deprecated. Please use 'set_data_format()' instead."
-        )
-        return self.set_data_format(*args, **kwargs)
-
-    @deprecated("Use 'set_marker_excursion_state' instead")
-    def set_MarkerExcursionState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_marker_excursion_state()"""
-        self.logger.warning(
-            """Method 'set_MarkerExcursionState()' is deprecated. 
-            Please use 'set_marker_excursion_state()' instead."""
-        )
-        return self.set_marker_excursion_state(*args, **kwargs)
-
-    @deprecated("Use 'set_marker_excursion' instead")
-    def set_MarkerExcursion(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_marker_excursion()"""
-        self.logger.warning(
-            """Method 'set_MarkerExcursion()' is deprecated. 
-            Please use 'set_marker_excursion()' instead."""
-        )
-        return self.set_marker_excursion(*args, **kwargs)
-
-    @deprecated("Use 'set_next_peak' instead")
-    def set_NextPeak(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_next_peak()"""
-        self.logger.warning(
-            "Method 'set_NextPeak()' is deprecated. Please use 'set_next_peak()' instead."
-        )
-        return self.set_next_peak(*args, **kwargs)
-
-    @deprecated("Use 'set_max_peak' instead")
-    def set_MaxPeak(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_max_peak()"""
-        self.logger.warning(
-            "Method 'set_MaxPeak()' is deprecated. Please use 'set_max_peak()' instead."
-        )
-        return self.set_max_peak(*args, **kwargs)
-
-    @deprecated("Use 'set_marker_preset' instead")
-    def set_MarkerPreset(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_marker_preset()"""
-        self.logger.warning(
-            "Method 'set_MarkerPreset()' is deprecated. Please use 'set_marker_preset()' instead."
-        )
-        return self.set_marker_preset(*args, **kwargs)
-
-    @deprecated("Use 'set_ch_power_state' instead")
-    def set_CHPowerState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_ch_power_state()"""
-        self.logger.warning(
-            "Method 'set_CHPowerState()' is deprecated. Please use 'set_ch_power_state()' instead."
-        )
-        return self.set_ch_power_state(*args, **kwargs)
-
-    @deprecated("Use 'set_trace_type' instead")
-    def set_TraceType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_trace_type()"""
-        self.logger.warning(
-            "Method 'set_TraceType()' is deprecated. Please use 'set_trace_type()' instead."
-        )
-        return self.set_trace_type(*args, **kwargs)
-
-    @deprecated("Use 'set_trace_selected' instead")
-    def set_TraceSelected(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_trace_selected()"""
-        self.logger.warning(
-            "Method 'set_TraceSelected()' is deprecated. Please use 'set_trace_selected()' instead."
-        )
-        return self.set_trace_selected(*args, **kwargs)
-
-    @deprecated("Use 'set_trace_state' instead")
-    def set_TraceState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_trace_state()"""
-        self.logger.warning(
-            "Method 'set_TraceState()' is deprecated. Please use 'set_trace_state()' instead."
-        )
-        return self.set_trace_state(*args, **kwargs)
-
-    @deprecated("Use 'set_reference_level' instead")
-    def set_RefLevel(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_reference_level()"""
-        self.logger.warning(
-            "Method 'set_RefLevel()' is deprecated. Please use 'set_reference_level()' instead."
-        )
-        return self.set_reference_level(*args, **kwargs)
-
-    @deprecated("Use 'set_if_gain_state' instead")
-    def set_IFGainState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_if_gain_state()"""
-        self.logger.warning(
-            "Method 'set_IFGainState()' is deprecated. Please use 'set_if_gain_state()' instead."
-        )
-        return self.set_if_gain_state(*args, **kwargs)
-
-    @deprecated("Use 'set_detector_type' instead")
-    def set_DetectorType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_detector_type()"""
-        self.logger.warning(
-            "Method 'set_DetectorType()' is deprecated. Please use 'set_detector_type()' instead."
-        )
-        return self.set_detector_type(*args, **kwargs)
-
-    @deprecated("Use 'set_capture_time' instead")
-    def set_CaptureTime(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_capture_time()"""
-        self.logger.warning(
-            "Method 'set_CaptureTime()' is deprecated. Please use 'set_capture_time()' instead."
-        )
-        return self.set_capture_time(*args, **kwargs)
-
-    @deprecated("Use 'get_data' instead")
-    def get_Data(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_data()"""
-        self.logger.warning("Method 'get_Data()' is deprecated. Please use 'get_data()' instead.")
-        return self.get_data(*args, **kwargs)
-
-    @deprecated("Use 'extract_trace_data_legacy' instead")
-    def ExtractTtraceData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for extract_trace_data_legacy()"""
-        self.logger.warning(
-            """Method 'ExtractTtraceData()' is deprecated. 
-            Please use 'extract_trace_data_legacy()' instead."""
-        )
-        return self.extract_trace_data_legacy(*args, **kwargs)
-
-    @deprecated("Use 'measure_and_get_trace' instead")
-    def ExtractTraceData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_and_get_trace()"""
-        self.logger.warning(
-            """Method 'ExtractTraceData()' is deprecated. 
-            Please use 'measure_and_get_trace()' instead."""
-        )
-        return self.measure_and_get_trace(*args, **kwargs)

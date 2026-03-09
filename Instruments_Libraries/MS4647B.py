@@ -8,11 +8,6 @@ import numpy as np
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class MS4647B(BaseInstrument):
     """
@@ -401,10 +396,8 @@ class MS4647B(BaseInstrument):
             ON/OFF or 1/0.
         """
         self._validate_channel_number(channel_num)
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SENS" + str(channel_num) + ":TS3739 " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":SENS" + str(channel_num) + ":TS3739 " + parsed_state)
 
     def set_clear_error(self) -> None:
         """
@@ -501,11 +494,8 @@ class MS4647B(BaseInstrument):
         state : str/int
                 ON/OFF or 1/0.
         """
-
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":DISP:ACT:CHAN:SWE:STAT  " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":DISP:ACT:CHAN:SWE:STAT  " + parsed_state)
 
     def set_assignet_data_port(self, channel_num: int, value1: int, value2: int) -> None:
         """
@@ -550,11 +540,8 @@ class MS4647B(BaseInstrument):
             - LOGPH = Log and Phase
             - REIM = Real and Imaginary Numbers
         """
-
-        if unit in ["LINPH", "LOGPH", "REIM"]:
-            self.write(":FORM:SNP:PAR " + str(unit))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        unit_parsed = self._check_scpi_param(unit, ["LINPH", "LOGPH", "REIM"])
+        self.write(":FORM:SNP:PAR " + unit_parsed)
 
     def set_rf_state(self, state: str | int) -> None:
         """
@@ -565,11 +552,8 @@ class MS4647B(BaseInstrument):
         state : str/int
             Sets the RF on/off state in Hold.
         """
-
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SYST:HOLD:RF " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":SYST:HOLD:RF " + parsed_state)
 
     def set_set_average_state(self, channel_num: int, state: str | int) -> None:
         """
@@ -583,12 +567,9 @@ class MS4647B(BaseInstrument):
         state : int/str
                 ON/OFF or 1/0.
         """
-
         self._validate_channel_number(channel_num)
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":SENS" + str(channel_num) + ":AVER " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":SENS" + str(channel_num) + ":AVER " + parsed_state)
 
     def set_average_function_type(self, channel_num: int, state: str) -> None:
         """
@@ -603,12 +584,9 @@ class MS4647B(BaseInstrument):
             POIN | SWE
             Default Value: POIN
         """
-
         self._validate_channel_number(channel_num)
-        if state in ["SWE", "POIN"]:
-            self.write(":SENS" + str(channel_num) + ":AVER:TYP " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        state_parsed = self._check_scpi_param(state, ["POINt", "SWEep"])
+        self.write(":SENS" + str(channel_num) + ":AVER:TYP " + state_parsed)
 
     def set_average_count(self, channel_num: int, value: int) -> None:
         """
@@ -677,10 +655,8 @@ class MS4647B(BaseInstrument):
             can be int or str form the list ['ON','OFF',1,0]
         """
         self._validate_channel_number(channel_num)
-        if state in ["ON", "OFF", 1, 0]:
-            self.write(":CALC" + str(channel_num) + ":SMO " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        parsed_state = self._parse_state(state)
+        self.write(":CALC" + str(channel_num) + ":SMO " + parsed_state)
 
     def set_smoothing_ape_rture(self, channel_num: int, value: int) -> None:
         """
@@ -910,533 +886,3 @@ class MS4647B(BaseInstrument):
                 f.write(line)
                 f.write("\n")
 
-    # =============================================================================
-    # Aliases for backward compatibility
-    # =============================================================================
-
-    @deprecated("Use 'get_idn' instead")
-    def getIdn(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_idn()"""
-        self.logger.warning("Method 'getIdn()' is deprecated. Please use 'get_idn()' instead.")
-        return self.get_idn(*args, **kwargs)
-
-    @deprecated("Use 'get_sub_system' instead")
-    def ask_SubSystem(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sub_system()"""
-        self.logger.warning(
-            "Method 'ask_SubSystem()' is deprecated. Please use 'get_sub_system()' instead."
-        )
-        return self.get_sub_system(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_count' instead")
-    def ask_SweepCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_count()"""
-        self.logger.warning(
-            "Method 'ask_SweepCount()' is deprecated. Please use 'get_sweep_count()' instead."
-        )
-        return self.get_sweep_count(*args, **kwargs)
-
-    @deprecated("Use 'get_test_set' instead")
-    def ask_TestSet(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_test_set()"""
-        self.logger.warning(
-            "Method 'ask_TestSet()' is deprecated. Please use 'get_test_set()' instead."
-        )
-        return self.get_test_set(*args, **kwargs)
-
-    @deprecated("Use 'get_sys_errors' instead")
-    def ask_SysErrors(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sys_errors()"""
-        self.logger.warning(
-            "Method 'ask_SysErrors()' is deprecated. Please use 'get_sys_errors()' instead."
-        )
-        return self.get_sys_errors(*args, **kwargs)
-
-    @deprecated("Use 'get_stat_operation' instead")
-    def ask_StatOperation(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_stat_operation()"""
-        self.logger.warning(
-            "Method 'ask_StatOperation()' is deprecated. Please use 'get_stat_operation()' instead."
-        )
-        return self.get_stat_operation(*args, **kwargs)
-
-    @deprecated("Use 'get_stat_operation_register' instead")
-    def ask_StatOperationRegister(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_stat_operation_register()"""
-        self.logger.warning(
-            """Method 'ask_StatOperationRegister()' is deprecated. 
-            Please use 'get_stat_operation_register()' instead."""
-        )
-        return self.get_stat_operation_register(*args, **kwargs)
-
-    @deprecated("Use 'get_freq_span' instead")
-    def ask_FreqSpan(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_freq_span()"""
-        self.logger.warning(
-            "Method 'ask_FreqSpan()' is deprecated. Please use 'get_freq_span()' instead."
-        )
-        return self.get_freq_span(*args, **kwargs)
-
-    @deprecated("Use 'get_center_freq' instead")
-    def ask_CenterFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_center_freq()"""
-        self.logger.warning(
-            "Method 'ask_CenterFreq()' is deprecated. Please use 'get_center_freq()' instead."
-        )
-        return self.get_center_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_cw_freq' instead")
-    def ask_CWFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_cw_freq()"""
-        self.logger.warning(
-            "Method 'ask_CWFreq()' is deprecated. Please use 'get_cw_freq()' instead."
-        )
-        return self.get_cw_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_data_freq' instead")
-    def ask_DataFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_data_freq()"""
-        self.logger.warning(
-            "Method 'ask_DataFreq()' is deprecated. Please use 'get_data_freq()' instead."
-        )
-        return self.get_data_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_channel_status' instead")
-    def ask_SweepChannelStatus(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_channel_status()"""
-        self.logger.warning(
-            """Method 'ask_SweepChannelStatus()' is deprecated. 
-            Please use 'get_sweep_channel_status()' instead."""
-        )
-        return self.get_sweep_channel_status(*args, **kwargs)
-
-    @deprecated("Use 'get_assignet_data_port' instead")
-    def ask_AssignetDataPort(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_assignet_data_port()"""
-        self.logger.warning(
-            """Method 'ask_AssignetDataPort()' is deprecated. 
-            Please use 'get_assignet_data_port()' instead."""
-        )
-        return self.get_assignet_data_port(*args, **kwargs)
-
-    @deprecated("Use 'get_param_form_in_file' instead")
-    def ask_ParamFormInFile(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_param_form_in_file()"""
-        self.logger.warning(
-            """Method 'ask_ParamFormInFile()' is deprecated. 
-            Please use 'get_param_form_in_file()' instead."""
-        )
-        return self.get_param_form_in_file(*args, **kwargs)
-
-    @deprecated("Use 'get_rf_state' instead")
-    def ask_RFState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_rf_state()"""
-        self.logger.warning(
-            "Method 'ask_RFState()' is deprecated. Please use 'get_rf_state()' instead."
-        )
-        return self.get_rf_state(*args, **kwargs)
-
-    @deprecated("Use 'get_set_average_state' instead")
-    def ask_SetAverageState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_set_average_state()"""
-        self.logger.warning(
-            """Method 'ask_SetAverageState()' is deprecated. 
-            Please use 'get_set_average_state()' instead."""
-        )
-        return self.get_set_average_state(*args, **kwargs)
-
-    @deprecated("Use 'get_average_function_type' instead")
-    def ask_AverageFunctionType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_average_function_type()"""
-        self.logger.warning(
-            """Method 'ask_AverageFunctionType()' is deprecated. 
-            Please use 'get_average_function_type()' instead."""
-        )
-        return self.get_average_function_type(*args, **kwargs)
-
-    @deprecated("Use 'get_average_count' instead")
-    def ask_AverageCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_average_count()"""
-        self.logger.warning(
-            "Method 'ask_AverageCount()' is deprecated. Please use 'get_average_count()' instead."
-        )
-        return self.get_average_count(*args, **kwargs)
-
-    @deprecated("Use 'get_transfer_data' instead")
-    def ask_TransferData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_transfer_data()"""
-        self.logger.warning(
-            "Method 'ask_TransferData()' is deprecated. Please use 'get_transfer_data()' instead."
-        )
-        return self.get_transfer_data(*args, **kwargs)
-
-    @deprecated("Use 'get_transfer_data_csv' instead")
-    def ask_TransferDataCSV(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_transfer_data_csv()"""
-        self.logger.warning(
-            """Method 'ask_TransferDataCSV()' is deprecated. 
-            Please use 'get_transfer_data_csv()' instead."""
-        )
-        return self.get_transfer_data_csv(*args, **kwargs)
-
-    @deprecated("Use 'get_resolution_bw' instead")
-    def ask_ResolutionBW(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_resolution_bw()"""
-        self.logger.warning(
-            "Method 'ask_ResolutionBW()' is deprecated. Please use 'get_resolution_bw()' instead."
-        )
-        return self.get_resolution_bw(*args, **kwargs)
-
-    @deprecated("Use 'get_power_on_port' instead")
-    def ask_PowerOnPort(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_power_on_port()"""
-        self.logger.warning(
-            "Method 'ask_PowerOnPort()' is deprecated. Please use 'get_power_on_port()' instead."
-        )
-        return self.get_power_on_port(*args, **kwargs)
-
-    @deprecated("Use 'get_smoothing_state' instead")
-    def ask_SmoothingState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_smoothing_state()"""
-        self.logger.warning(
-            """Method 'ask_SmoothingState()' is deprecated. 
-            Please use 'get_smoothing_state()' instead."""
-        )
-        return self.get_smoothing_state(*args, **kwargs)
-
-    @deprecated("Use 'get_display_trace' instead")
-    def ask_DisplayTrace(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_display_trace()"""
-        self.logger.warning(
-            "Method 'ask_DisplayTrace()' is deprecated. Please use 'get_display_trace()' instead."
-        )
-        return self.get_display_trace(*args, **kwargs)
-
-    @deprecated("Use 'get_display_count' instead")
-    def ask_DisplayCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_display_count()"""
-        self.logger.warning(
-            "Method 'ask_DisplayCount()' is deprecated. Please use 'get_display_count()' instead."
-        )
-        return self.get_display_count(*args, **kwargs)
-
-    @deprecated("Use 'get_display_title' instead")
-    def ask_DisplayTitle(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_display_title()"""
-        self.logger.warning(
-            "Method 'ask_DisplayTitle()' is deprecated. Please use 'get_display_title()' instead."
-        )
-        return self.get_display_title(*args, **kwargs)
-
-    @deprecated("Use 'get_select_parameter' instead")
-    def ask_SelectParameter(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_select_parameter()"""
-        self.logger.warning(
-            """Method 'ask_SelectParameter()' is deprecated. 
-            Please use 'get_select_parameter()' instead."""
-        )
-        return self.get_select_parameter(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_delay' instead")
-    def ask_SweepDelay(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_delay()"""
-        self.logger.warning(
-            "Method 'ask_SweepDelay()' is deprecated. Please use 'get_sweep_delay()' instead."
-        )
-        return self.get_sweep_delay(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_time' instead")
-    def ask_SweepTime(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_time()"""
-        self.logger.warning(
-            "Method 'ask_SweepTime()' is deprecated. Please use 'get_sweep_time()' instead."
-        )
-        return self.get_sweep_time(*args, **kwargs)
-
-    @deprecated("Use 'save_data_csv' instead")
-    def SaveDataCSV(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for save_data_csv()"""
-        self.logger.warning(
-            "Method 'SaveDataCSV()' is deprecated. Please use 'save_data_csv()' instead."
-        )
-        return self.save_data_csv(*args, **kwargs)
-
-    @deprecated("Use 'save_image' instead")
-    def SaveImage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for save_image()"""
-        self.logger.warning(
-            "Method 'SaveImage()' is deprecated. Please use 'save_image()' instead."
-        )
-        return self.save_image(*args, **kwargs)
-
-    @deprecated("Use 'rtl' instead")
-    def RTL(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for rtl()"""
-        self.logger.warning("Method 'RTL()' is deprecated. Please use 'rtl()' instead.")
-        return self.rtl(*args, **kwargs)
-
-    @deprecated("Use 'save_data' instead")
-    def SaveData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for save_data()"""
-        self.logger.warning("Method 'SaveData()' is deprecated. Please use 'save_data()' instead.")
-        return self.save_data(*args, **kwargs)
-
-    @deprecated("Use 'set_set_average_state' instead")
-    def set_SetAverageState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_set_average_state()"""
-        self.logger.warning(
-            """Method 'set_SetAverageState()' is deprecated. 
-            Please use 'set_set_average_state()' instead."""
-        )
-        return self.set_set_average_state(*args, **kwargs)
-
-    @deprecated("Use 'set_param_form_in_file' instead")
-    def set_ParamFormInFile(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_param_form_in_file()"""
-        self.logger.warning(
-            """Method 'set_ParamFormInFile()' is deprecated. 
-            Please use 'set_param_form_in_file()' instead."""
-        )
-        return self.set_param_form_in_file(*args, **kwargs)
-
-    @deprecated("Use 'set_sweep_delay' instead")
-    def set_SweepDelay(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sweep_delay()"""
-        self.logger.warning(
-            "Method 'set_SweepDelay()' is deprecated. Please use 'set_sweep_delay()' instead."
-        )
-        return self.set_sweep_delay(*args, **kwargs)
-
-    @deprecated("Use 'set_smoothing_ape_rture' instead")
-    def set_SmoothingAPERture(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_smoothing_ape_rture()"""
-        self.logger.warning(
-            """Method 'set_SmoothingAPERture()' is deprecated. 
-            Please use 'set_smoothing_ape_rture()' instead."""
-        )
-        return self.set_smoothing_ape_rture(*args, **kwargs)
-
-    @deprecated("Use 'delete_data_csv' instead")
-    def DeleteDataCSV(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for delete_data_csv()"""
-        self.logger.warning(
-            "Method 'DeleteDataCSV()' is deprecated. Please use 'delete_data_csv()' instead."
-        )
-        return self.delete_data_csv(*args, **kwargs)
-
-    @deprecated("Use 'set_center_freq' instead")
-    def set_CenterFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_center_freq()"""
-        self.logger.warning(
-            "Method 'set_CenterFreq()' is deprecated. Please use 'set_center_freq()' instead."
-        )
-        return self.set_center_freq(*args, **kwargs)
-
-    @deprecated("Use 'set_power_on_port' instead")
-    def set_PowerOnPort(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_power_on_port()"""
-        self.logger.warning(
-            "Method 'set_PowerOnPort()' is deprecated. Please use 'set_power_on_port()' instead."
-        )
-        return self.set_power_on_port(*args, **kwargs)
-
-    @deprecated("Use 'save_transfer_data' instead")
-    def SaveTransferData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for save_transfer_data()"""
-        self.logger.warning(
-            "Method 'SaveTransferData()' is deprecated. Please use 'save_transfer_data()' instead."
-        )
-        return self.save_transfer_data(*args, **kwargs)
-
-    @deprecated("Use 'set_stop_freq' instead")
-    def set_StopFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_stop_freq()"""
-        self.logger.warning(
-            "Method 'set_StopFreq()' is deprecated. Please use 'set_stop_freq()' instead."
-        )
-        return self.set_stop_freq(*args, **kwargs)
-
-    @deprecated("Use 'set_display_scale' instead")
-    def set_DisplayScale(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_display_scale()"""
-        self.logger.warning(
-            "Method 'set_DisplayScale()' is deprecated. Please use 'set_display_scale()' instead."
-        )
-        return self.set_display_scale(*args, **kwargs)
-
-    @deprecated("Use 'set_rf_state' instead")
-    def set_RFState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_rf_state()"""
-        self.logger.warning(
-            "Method 'set_RFState()' is deprecated. Please use 'set_rf_state()' instead."
-        )
-        return self.set_rf_state(*args, **kwargs)
-
-    @deprecated("Use 'set_clear_error' instead")
-    def set_ClearError(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_clear_error()"""
-        self.logger.warning(
-            "Method 'set_ClearError()' is deprecated. Please use 'set_clear_error()' instead."
-        )
-        return self.set_clear_error(*args, **kwargs)
-
-    @deprecated("Use 'set_smoothing_state' instead")
-    def set_SmoothingState(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_smoothing_state()"""
-        self.logger.warning(
-            """Method 'set_SmoothingState()' is deprecated. 
-            Please use 'set_smoothing_state()' instead."""
-        )
-        return self.set_smoothing_state(*args, **kwargs)
-
-    @deprecated("Use 'set_average_count' instead")
-    def set_AverageCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_average_count()"""
-        self.logger.warning(
-            "Method 'set_AverageCount()' is deprecated. Please use 'set_average_count()' instead."
-        )
-        return self.set_average_count(*args, **kwargs)
-
-    @deprecated("Use 'set_display_trace' instead")
-    def set_DisplayTrace(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_display_trace()"""
-        self.logger.warning(
-            "Method 'set_DisplayTrace()' is deprecated. Please use 'set_display_trace()' instead."
-        )
-        return self.set_display_trace(*args, **kwargs)
-
-    @deprecated("Use 'set_assignet_data_port' instead")
-    def set_AssignetDataPort(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_assignet_data_port()"""
-        self.logger.warning(
-            """Method 'set_AssignetDataPort()' is deprecated. 
-            Please use 'set_assignet_data_port()' instead."""
-        )
-        return self.set_assignet_data_port(*args, **kwargs)
-
-    @deprecated("Use 'set_cw_freq' instead")
-    def set_CWFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_cw_freq()"""
-        self.logger.warning(
-            "Method 'set_CWFreq()' is deprecated. Please use 'set_cw_freq()' instead."
-        )
-        return self.set_cw_freq(*args, **kwargs)
-
-    @deprecated("Use 'set_average_function_type' instead")
-    def set_AverageFunctionType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_average_function_type()"""
-        self.logger.warning(
-            """Method 'set_AverageFunctionType()' is deprecated. 
-            Please use 'set_average_function_type()' instead."""
-        )
-        return self.set_average_function_type(*args, **kwargs)
-
-    @deprecated("Use 'set_resolution_bw' instead")
-    def set_ResolutionBW(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_resolution_bw()"""
-        self.logger.warning(
-            "Method 'set_ResolutionBW()' is deprecated. Please use 'set_resolution_bw()' instead."
-        )
-        return self.set_resolution_bw(*args, **kwargs)
-
-    @deprecated("Use 'save_transfer_data_csv' instead")
-    def SaveTransferDataCSV(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for save_transfer_data_csv()"""
-        self.logger.warning(
-            """Method 'SaveTransferDataCSV()' is deprecated. 
-            Please use 'save_transfer_data_csv()' instead."""
-        )
-        return self.save_transfer_data_csv(*args, **kwargs)
-
-    @deprecated("Use 'set_sweep_channel_status' instead")
-    def set_SweepChannelStatus(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sweep_channel_status()"""
-        self.logger.warning(
-            """Method 'set_SweepChannelStatus()' is deprecated. 
-            Please use 'set_sweep_channel_status()' instead."""
-        )
-        return self.set_sweep_channel_status(*args, **kwargs)
-
-    @deprecated("Use 'delete_data' instead")
-    def DeleteData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for delete_data()"""
-        self.logger.warning(
-            "Method 'DeleteData()' is deprecated. Please use 'delete_data()' instead."
-        )
-        return self.delete_data(*args, **kwargs)
-
-    @deprecated("Use 'set_sub_system_sing' instead")
-    def set_SubSystemSing(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sub_system_sing()"""
-        self.logger.warning(
-            """Method 'set_SubSystemSing()' is deprecated. 
-            Please use 'set_sub_system_sing()' instead."""
-        )
-        return self.set_sub_system_sing(*args, **kwargs)
-
-    @deprecated("Use 'set_select_parameter' instead")
-    def set_SelectParameter(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_select_parameter()"""
-        self.logger.warning(
-            """Method 'set_SelectParameter()' is deprecated. 
-            Please use 'set_select_parameter()' instead."""
-        )
-        return self.set_select_parameter(*args, **kwargs)
-
-    @deprecated("Use 'set_ts3739' instead")
-    def set_TS3739(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_ts3739()"""
-        self.logger.warning(
-            "Method 'set_TS3739()' is deprecated. Please use 'set_ts3739()' instead."
-        )
-        return self.set_ts3739(*args, **kwargs)
-
-    @deprecated("Use 'set_sweep_time' instead")
-    def set_SweepTime(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sweep_time()"""
-        self.logger.warning(
-            "Method 'set_SweepTime()' is deprecated. Please use 'set_sweep_time()' instead."
-        )
-        return self.set_sweep_time(*args, **kwargs)
-
-    @deprecated("Use 'set_display_title' instead")
-    def set_DisplayTitle(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_display_title()"""
-        self.logger.warning(
-            "Method 'set_DisplayTitle()' is deprecated. Please use 'set_display_title()' instead."
-        )
-        return self.set_display_title(*args, **kwargs)
-
-    @deprecated("Use 'set_sub_system_cont' instead")
-    def set_SubSystemCont(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sub_system_cont()"""
-        self.logger.warning(
-            """Method 'set_SubSystemCont()' is deprecated. 
-            Please use 'set_sub_system_cont()' instead."""
-        )
-        return self.set_sub_system_cont(*args, **kwargs)
-
-    @deprecated("Use 'set_sub_system_hold' instead")
-    def set_SubSystemHold(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sub_system_hold()"""
-        self.logger.warning(
-            """Method 'set_SubSystemHold()' is deprecated. 
-            Please use 'set_sub_system_hold()' instead."""
-        )
-        return self.set_sub_system_hold(*args, **kwargs)
-
-    @deprecated("Use 'set_display_count' instead")
-    def set_DisplayCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_display_count()"""
-        self.logger.warning(
-            "Method 'set_DisplayCount()' is deprecated. Please use 'set_display_count()' instead."
-        )
-        return self.set_display_count(*args, **kwargs)
-
-    @deprecated("Use 'set_clear_average' instead")
-    def set_ClearAverage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_clear_average()"""
-        self.logger.warning(
-            "Method 'set_ClearAverage()' is deprecated. Please use 'set_clear_average()' instead."
-        )
-        return self.set_clear_average(*args, **kwargs)

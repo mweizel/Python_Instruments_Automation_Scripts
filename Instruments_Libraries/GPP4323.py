@@ -11,11 +11,6 @@ Install Driver:
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class GPP4323(BaseInstrument):
     """
@@ -65,7 +60,7 @@ class GPP4323(BaseInstrument):
     # =============================================================================
 
     def _validate_channel(self, channel: int, main_channel: bool = False) -> int:
-        channel = int(channel)
+        channel = int(float(channel))
         if main_channel and channel not in self._mainChannelLS:
             raise ValueError("Invalid channel number given! Channel Number can be [1,2].")
         if channel not in self._ChannelLS:
@@ -74,32 +69,31 @@ class GPP4323(BaseInstrument):
 
     def _validate_voltage(self, channel: int, voltage: int | float) -> str:
         if channel in self._mainChannelLS and (voltage < 0 or voltage > 32):
-            raise ValueError("Invalid voltage given! Voltage can be [0,32].")
+            raise ValueError("Invalid voltage given! Voltage can be 0V - 32V.")
         if channel == 3 and (voltage < 0 or voltage > 5):
-            raise ValueError("Invalid voltage given! Voltage on Channel 3 can be [0,5].")
+            raise ValueError("Invalid voltage given! Voltage on Channel 3 can be 0V - 5V.")
         if channel == 4 and (voltage < 0 or voltage > 15):
-            raise ValueError("Invalid voltage given! Voltage on Channel 4 can be [0,15].")
+            raise ValueError("Invalid voltage given! Voltage on Channel 4 can be 0V - 15V.")
         return f"{voltage:.3f}"
 
     def _validate_amp(self, channel: int, amp: int | float) -> str:
         if channel in self._mainChannelLS and (amp < 0 or amp > 3):
-            raise ValueError("Invalid current given! Current on Channels 1 and 2 can be [0,3].")
+            raise ValueError("Invalid current given! Current on Channels 1 and 2 can be 0A - 3A.")
         if (channel == 3 or channel == 4) and (amp < 0 or amp > 1):
-            raise ValueError("Invalid current given! Current on Channels 3 and 4 can be [0,1].")
+            raise ValueError("Invalid current given! Current on Channels 3 and 4 can be 0A - 1A.")
         return f"{amp:.4f}"
 
     def _validate_resistor(self, res: int | float) -> str:
         if res < 1 or res > 1000:
-            raise ValueError("Invalid resistance given! Resistance can be [1,1000].")
+            raise ValueError("Invalid resistance given! Resistance can be 1Ω - 1000Ω.")
         return f"{res:.3f}"
 
     def _validate_measurement_type(self, measurement_type: str) -> str:
-        type_normalized = self._measurement_type_mapping.get(
-            measurement_type.lower() if isinstance(measurement_type, str) else measurement_type
+        type_str = self._check_scpi_param(
+            str(measurement_type).strip().upper(),
+            ["VOLTage", "CURRent", "V", "A", "AMP", "POWer", "WATT", "P"],
         )
-        if type_normalized is None:
-            raise ValueError("Invalid measurement type given! Type can be [voltage,current,power].")
-        return type_normalized
+        return self._measurement_type_mapping.get(type_str.lower(), type_str.title())
 
     # =============================================================================
     # Set Values and Modes
@@ -181,12 +175,10 @@ class GPP4323(BaseInstrument):
         state : str
             Possible state ["ON", "OFF"].
         """
-        mode_list = ["CC", "CV", "CR"]
+        valid_mode = self._check_scpi_param(mode, ["CC", "CV", "CR"])
         channel = self._validate_channel(channel, main_channel=True)
         state_normalized = self._parse_state(state)
-        if mode not in mode_list:
-            raise ValueError(f"Invalid Mode. Select from {mode_list}.")
-        self.write(f":LOAD{channel}:{mode} {state_normalized}")
+        self.write(f":LOAD{channel}:{valid_mode} {state_normalized}")
 
     def set_load_resistor(self, channel: int, res: float) -> None:
         """Sets the Load CR level.
@@ -344,170 +336,3 @@ class GPP4323(BaseInstrument):
         result["Current/A"] = self.measure_current(channel)
         result["Power/W"] = self.measure_power(channel)
         return result
-
-    # =============================================================================
-    # Aliases for backwards compatibility
-    # =============================================================================
-
-    @deprecated("Use 'set_voltage' instead")
-    def set_Volt(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_voltage()"""
-        self.logger.warning(
-            "Method 'set_Volt()' is deprecated. Please use 'set_voltage()' instead."
-        )
-        return self.set_voltage(*args, **kwargs)
-
-    @deprecated("Use 'set_voltage' instead")
-    def set_Voltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_voltage()"""
-        self.logger.warning(
-            "Method 'set_Voltage()' is deprecated. Please use 'set_voltage()' instead."
-        )
-        return self.set_voltage(*args, **kwargs)
-
-    @deprecated("Use 'set_current' instead")
-    def set_Amp(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current()"""
-        self.logger.warning("Method 'set_Amp()' is deprecated. Please use 'set_current()' instead.")
-        return self.set_current(*args, **kwargs)
-
-    @deprecated("Use 'set_current' instead")
-    def set_Current(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current()"""
-        self.logger.warning(
-            "Method 'set_Current()' is deprecated. Please use 'set_current()' instead."
-        )
-        return self.set_current(*args, **kwargs)
-
-    @deprecated("Use 'set_current' instead")
-    def set_CurrentLimit(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current()"""
-        self.logger.warning(
-            "Method 'set_CurrentLimit()' is deprecated. Please use 'set_current()' instead."
-        )
-        return self.set_current(*args, **kwargs)
-
-    @deprecated("Use 'set_channel_tracking_series' instead")
-    def set_ChannelToSerial(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_channel_tracking_series()"""
-        self.logger.warning(
-            """Method 'set_ChannelToSerial()' is deprecated. 
-            Please use 'set_channel_tracking_series()' instead."""
-        )
-        return self.set_channel_tracking_series(*args, **kwargs)
-
-    @deprecated("Use 'set_channel_tracking_parallel' instead")
-    def set_ChannelToParallel(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_channel_tracking_parallel()"""
-        self.logger.warning(
-            """Method 'set_ChannelToParallel()' is deprecated. 
-            Please use 'set_channel_tracking_parallel()' instead."""
-        )
-        return self.set_channel_tracking_parallel(*args, **kwargs)
-
-    @deprecated("Use 'set_channel_tracking' instead")
-    def set_ChannelTracking(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_channel_tracking()"""
-        self.logger.warning(
-            """Method 'set_ChannelTracking()' is deprecated. 
-            Please use 'set_channel_tracking()' instead."""
-        )
-        return self.set_channel_tracking(*args, **kwargs)
-
-    @deprecated("Use 'set_channel_load_mode' instead")
-    def set_ChannelLoadMode(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_channel_load_mode()"""
-        self.logger.warning(
-            """Method 'set_ChannelLoadMode()' is deprecated. 
-            Please use 'set_channel_load_mode()' instead."""
-        )
-        return self.set_channel_load_mode(*args, **kwargs)
-
-    @deprecated("Use 'set_load_resistor' instead")
-    def set_LoadResistor(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_load_resistor()"""
-        self.logger.warning(
-            "Method 'set_LoadResistor()' is deprecated. Please use 'set_load_resistor()' instead."
-        )
-        return self.set_load_resistor(*args, **kwargs)
-
-    @deprecated("Use 'set_output' instead")
-    def set_Out(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_output()"""
-        self.logger.warning("Method 'set_Out()' is deprecated. Please use 'set_output()' instead.")
-        return self.set_output(*args, **kwargs)
-
-    @deprecated("Use 'set_all_outputs' instead")
-    def set_AllOut(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_all_outputs()"""
-        self.logger.warning(
-            "Method 'set_AllOut()' is deprecated. Please use 'set_all_outputs()' instead."
-        )
-        return self.set_all_outputs(*args, **kwargs)
-
-    @deprecated("Use 'get_voltage_setting' instead")
-    def ask_VoltageSetting(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_voltage_setting()"""
-        self.logger.warning(
-            """Method 'ask_VoltageSetting()' is deprecated. 
-            Please use 'get_voltage_setting()' instead."""
-        )
-        return self.get_voltage_setting(*args, **kwargs)
-
-    @deprecated("Use 'get_current_setting' instead")
-    def ask_CurrentSetting(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_current_setting()"""
-        self.logger.warning(
-            """Method 'ask_CurrentSetting()' is deprecated. 
-            Please use 'get_current_setting()' instead."""
-        )
-        return self.get_current_setting(*args, **kwargs)
-
-    @deprecated("Use 'measure' instead")
-    def read_Measurement(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure()"""
-        self.logger.warning(
-            "Method 'read_Measurement()' is deprecated. Please use 'measure()' instead."
-        )
-        return self.measure(*args, **kwargs)
-
-    @deprecated("Use 'measure_current' instead")
-    def ask_Current(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_current()"""
-        self.logger.warning(
-            "Method 'ask_Current()' is deprecated. Please use 'measure_current()' instead."
-        )
-        return self.measure_current(*args, **kwargs)
-
-    @deprecated("Use 'measure_voltage' instead")
-    def ask_Voltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_voltage()"""
-        self.logger.warning(
-            "Method 'ask_Voltage()' is deprecated. Please use 'measure_voltage()' instead."
-        )
-        return self.measure_voltage(*args, **kwargs)
-
-    @deprecated("Use 'measure_power' instead")
-    def ask_Power(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_power()"""
-        self.logger.warning(
-            "Method 'ask_Power()' is deprecated. Please use 'measure_power()' instead."
-        )
-        return self.measure_power(*args, **kwargs)
-
-    @deprecated("Use 'get_channel_load_mode' instead")
-    def ask_ChannelLoadMode(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_channel_load_mode()"""
-        self.logger.warning(
-            """Method 'ask_ChannelLoadMode()' is deprecated. 
-            Please use 'get_channel_load_mode()' instead."""
-        )
-        return self.get_channel_load_mode(*args, **kwargs)
-
-    @deprecated("Use 'get_load_resistor' instead")
-    def ask_LoadResistor(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_load_resistor()"""
-        self.logger.warning(
-            "Method 'ask_LoadResistor()' is deprecated. Please use 'get_load_resistor()' instead."
-        )
-        return self.get_load_resistor(*args, **kwargs)

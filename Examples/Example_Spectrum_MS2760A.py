@@ -40,7 +40,7 @@ datapoints = 4001
 # %% ==========================================================================
 # Configure the Instrument
 # =============================================================================
-mySpecAnalyser.set_Continuous('OFF')
+mySpecAnalyser.set_continuous('OFF')
 # time.sleep(0.5) # probably not needed
 mySpecAnalyser.set_sweep_points(datapoints)
 mySpecAnalyser.set_reference_level(SA_ref_level) # in dBm
@@ -48,9 +48,9 @@ mySpecAnalyser.set_if_gain_state('ON') # Enable IF Gain (need ref level <= -10dB
 mySpecAnalyser.set_resolution_bandwidth(SA_resBW, 'HZ')
 mySpecAnalyser.set_stop_frequency(SA_f_max, 'HZ')
 mySpecAnalyser.set_start_frequency(SA_f_min, 'HZ')
-mySpecAnalyser.set_trace_type('NORM', SA_TraceNum)
+mySpecAnalyser.set_trace_mode('NORM', trace_number=SA_TraceNum)
 # Detector Type: POS -> Peak (default), others are: RMS, NEG
-mySpecAnalyser.set_detector_type('POS', SA_TraceNum) 
+mySpecAnalyser.set_detector_mode('POS', trace_number=SA_TraceNum) 
 
 # %% ==========================================================================
 # Measurement

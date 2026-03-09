@@ -60,13 +60,8 @@ class UXR(BaseInstrument):
     # Checks and Validations
     # =============================================================================
 
-    def _validate_generic(self, value: Any, valid_list: list) -> Any:
-        if value not in valid_list:
-            raise ValueError(f"Invalid value given! Value can be one of {valid_list}.")
-        return value
-
     def _validate_channel(self, channel: int) -> int:
-        channel = int(channel)
+        channel = int(float(channel))
         if channel not in self._types_channel:
             raise ValueError(
                 f"Invalid channel number given! Channel Number can be one of {self._types_channel}."
@@ -124,9 +119,9 @@ class UXR(BaseInstrument):
         ValueError
             Expected one of: {ALL | DISP | DISPlayed }
         """
-        _types = ["ALL", "DISPLAYED", "DISP"]
+        _types = ["ALL", "DISPlayed"]
         if value is not None:
-            value = self._validate_generic(value.upper(), _types)
+            value = self._check_scpi_param(value, _types)
             self.write(f":AUToscale:CHANnels {value}")
         else:  # Query
             return self.query(":AUToscale:CHANnels?")
@@ -201,28 +196,20 @@ class UXR(BaseInstrument):
             Expected one of: CHANNEL, FUNCTION, HIST, ... etc.
         """
         _types_key = [
-            "CHAN",
-            "CHANNEL",
+            "CHANnel",
             "DIFF",
-            "COMM",
-            "COMMONMODE",
-            "FUNC",
-            "FUNCTION",
-            "HIST",
-            "HISTOGRAM",
-            "WMEM",
-            "WMEMORY",
-            "CLOC",
-            "CLOCKMTR",
-            "MTREND",
-            "MSP",
-            "MSPECTRUM",
-            "EQU",
-            "EQUALIZED",
+            "COMMonmode",
+            "FUNCtion",
+            "HISTogram",
+            "WMEMory",
+            "CLOCkmtr",
+            "MTRend",
+            "MSPectrum",
+            "EQUalized",
             "XT",
         ]
         if key is not None:
-            key = self._validate_generic(key.upper(), _types_key)
+            key = self._check_scpi_param(key, _types_key)
             if value is not None and int(value) <= 16:  # For CHAN <=2, for FUNC <=16, ... etc.
                 return int(self.query(f":STATus? {key}{value}"))
         else:
@@ -458,9 +445,9 @@ class UXR(BaseInstrument):
         ValueError
             Expected one of: MSBFIRST, LSBFIRST
         """
-        _types = ["MSBF", "MSBFIRST", "LSBF", "LSBFIRST"]
+        _types = ["MSBFirst", "LSBFirst"]
         if value is not None:
-            value = self._validate_generic(value.upper(), _types)
+            value = self._check_scpi_param(value, _types)
             self.write(f":WAVeform:BYTeorder {value}")
         else:  # Query
             return self.query(":WAVeform:BYTeorder?")
@@ -562,9 +549,9 @@ class UXR(BaseInstrument):
         ValueError
             Expected one of: {ASCii | BINary | BYTE | WORD}
         """
-        _types = ["ASC", "ASCII", "BIN", "BINARY", "BYTE", "WORD"]
+        _types = ["ASCii", "BINary", "BYTE", "WORD"]
         if value is not None:
-            value = self._validate_generic(value.upper(), _types)
+            value = self._check_scpi_param(value, _types)
             self.write(f":WAVeform:FORMat {value}")
             self._waveform_format = self.query(":WAVeform:FORMat?").upper()
         else:  # Query

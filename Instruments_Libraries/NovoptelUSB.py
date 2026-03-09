@@ -16,7 +16,7 @@ class NovoptelUSB:
     def __init__(self, instrument_str=None):
 
         self.isConnected = False
-        self.d = 0
+        self.d = None
 
         if isinstance(instrument_str, str):  # Code from mweizel
             pattern = rf"^{instrument_str}.*"
@@ -62,19 +62,25 @@ class NovoptelUSB:
         return
 
     def close(self):
-        self.d.close()
+        if self.d is not None:
+            self.d.close()
+            self.d = None
         self.isConnected = False
         print("Closed.")
         return
 
     def write(self, addr, data):
+        if self.d is None:
+            raise ConnectionError("USB device is not connected")
         sleep(0.01)
         txstring = f"W{addr:03X}{data:04X}{chr(13)}"
         tx = create_string_buffer(txstring.encode("utf-8"), 9)
-        self.d.write(tx)
+        self.d.write(tx.raw)
         return
 
     def read(self, addr):
+        if self.d is None:
+            raise ConnectionError("USB device is not connected")
 
         self.d.purge()  # clear buffers
         # sleep(0.01)
@@ -83,7 +89,7 @@ class NovoptelUSB:
         txstring = f"R{addr:03X}0000{chr(13)}"
         # print(txstring)
         tx = create_string_buffer(txstring.encode("utf-8"), 9)
-        self.d.write(tx)
+        self.d.write(tx.raw)
 
         # wait for RX
         bytesavailable = 0

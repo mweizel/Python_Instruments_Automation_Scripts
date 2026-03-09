@@ -20,6 +20,7 @@ class NovoptelTCP:
         self.ip = ip
         self.port = port
         self.debug = debug
+        self.isConnected = False
         self.connect()
 
     def connect(self):
@@ -29,17 +30,21 @@ class NovoptelTCP:
         self.s.settimeout(2)
         try:
             self.s.connect((self.ip, self.port))
+            self.isConnected = True
             # print("connected: ", self.s)
         except OSError as e:
-            print(f"Error during socket connect: {e}")
+            self.isConnected = False
+            raise ConnectionError(f"Error during socket connect: {e}") from e
 
     def close(self):
-        self.s.close()
-        self.s = None
+        if self.s is not None:
+            self.s.close()
+            self.s = None
+        self.isConnected = False
 
     def reconnect(self):
         print("Reconnecting!")
-        self.s.close()
+        self.close()
         time.sleep(0.5)
         self.connect()
 
@@ -48,6 +53,8 @@ class NovoptelTCP:
         tries = 0
         while (not rxok) and (tries < 10):
             try:
+                if self.s is None:
+                    raise ConnectionError("Socket is not connected")
                 self.s.send(data)
                 time.sleep(0.001)  # sleep 1 ms
                 rxok = True
@@ -63,6 +70,8 @@ class NovoptelTCP:
         while (not rxok) and (tries < 10):
             self.socket_write(data)
             try:
+                if self.s is None:
+                    raise ConnectionError("Socket is not connected")
                 ans = self.s.recv(2)
                 res = int.from_bytes(ans, byteorder="big")
                 rxok = True
@@ -127,6 +136,8 @@ class NovoptelTCP:
         while rx_len < packetsinthissequence:
             newbytes = b""
             try:
+                if self.s is None:
+                    raise ConnectionError("Socket is not connected")
                 newbytes = self.s.recv(2**14)
                 rxbytes += newbytes
                 if debug:

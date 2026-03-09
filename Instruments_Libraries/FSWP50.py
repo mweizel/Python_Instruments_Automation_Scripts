@@ -13,11 +13,6 @@ import pandas as pd
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class FSWP50(BaseInstrument):
     """
@@ -72,17 +67,17 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         channel_type : str
-            Channel type. Available types are:
-                'PNOISE': 'Phase Noise',
-                'SMONITOR': 'Spectrum Monitor',
-                'SANALYZER': 'Spectrum (R&S FSWP-B1)',
-                'IQ': 'I/Q Analyzer',
-                'PULSE': 'Pulse Measurement',
-                'ADEMOD': 'Analog modulation analysis',
-                'NOISE': 'Noise Figure Measurements',
-                'SPUR': 'Fast Spur Search',
-                'TA': 'Transient Analysis',
-                'DDEM': 'VSA - Vector Signal Analysis'
+            Available types are:
+            * ``PNOISE``: 'Phase Noise'
+            * ``SMONITOR``: 'Spectrum Monitor'
+            * ``SANALYZER``: 'Spectrum (R&S FSWP-B1)'
+            * ``IQ``: 'I/Q Analyzer'
+            * ``PULSE``: 'Pulse Measurement'
+            * ``ADEMOD``: 'Analog modulation analysis'
+            * ``NOISE``: 'Noise Figure Measurements'
+            * ``SPUR``: 'Fast Spur Search'
+            * ``TA``: 'Transient Analysis'
+            * ``DDEM``: 'VSA - Vector Signal Analysis'
         channel_name : str
             Unique name for the new channel.
 
@@ -93,33 +88,20 @@ class FSWP50(BaseInstrument):
         RuntimeError
             If instrument command fails.
         """
-        available_types = {
-            "PNOISE": "Phase Noise",
-            "PNO": "Phase Noise",
-            "SMONITOR": "Spectrum Monitor",
-            "SMON": "Spectrum Monitor",
-            "SANALYZER": "Spectrum (R&S FSWP-B1)",
-            "SAN": "Spectrum (R&S FSWP-B1)",
-            "IQ": "I/Q Analyzer",
-            "PULSE": "Pulse Measurement",
-            "PULS": "Pulse Measurement",
-            "ADEMOD": "Analog modulation analysis",
-            "ADEM": "Analog modulation analysis",
-            "NOISE": "Noise Figure Measurements",
-            "NOIS": "Noise Figure Measurements",
-            "SPUR": "Fast Spur Search",
-            "TA": "Transient Analysis",
-            "DDEM": "VSA - Vector Signal Analysis",
-        }
-
-        channel_type = channel_type.strip().upper()
-        if channel_type not in available_types:
-            raise ValueError(
-                f"""Invalid channel type '{channel_type}'. 
-                Valid types: {list(available_types.keys())}"""
-            )
-
-        self.write(f"INSTrument:CREate {channel_type}, '{channel_name}'")
+        available_types = [
+            "PNOise",
+            "SMONitor",
+            "SANalyzer",
+            "IQ",
+            "PULSe",
+            "ADEMod",
+            "NOISe",
+            "SPUR",
+            "TA",
+            "DDEM",
+        ]
+        valid_type = self._check_scpi_param(channel_type, available_types)
+        self.write(f"INSTrument:CREate {valid_type}, '{channel_name}'")
 
     def delete_channel(self, channel_name: str) -> None:
         """
@@ -139,8 +121,9 @@ class FSWP50(BaseInstrument):
 
         Parameters
         ----------
-        state : bool or int
+        state : bool | int
             True/1 to enable MultiView (ON), False/0 to disable (OFF).
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f"DISPlay:ATAB {state}")
@@ -171,7 +154,7 @@ class FSWP50(BaseInstrument):
         center_freq : int | float
             Frequency value (e.g., 1, 2.5) to be combined with unit.
         unit : str, optional
-            Unit of frequency: HZ, KHZ, MHZ, or GHZ. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -192,7 +175,7 @@ class FSWP50(BaseInstrument):
         start_freq : float
             Start frequency.
         unit : str, optional
-            Unit of frequency. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -213,7 +196,7 @@ class FSWP50(BaseInstrument):
         stop_freq : float
             Stop frequency.
         unit : str, optional
-            Unit of frequency. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -234,7 +217,7 @@ class FSWP50(BaseInstrument):
         span : int | float
             Span value.
         unit : str, optional
-            Frequency unit: HZ, KHZ, MHZ, or GHZ. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -259,7 +242,7 @@ class FSWP50(BaseInstrument):
         res_bw : int | float
             Sets the resolution bandwidth.
         unit : str, optional
-            Parameters: {HZ | KHZ | MHZ | GHZ}. Default Unit: Hz
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -307,7 +290,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Can be: [ON, 1, OFF, 0]
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f":INP:ATT:AUTO {state}")
@@ -341,8 +324,8 @@ class FSWP50(BaseInstrument):
 
         Parameters
         ----------
-        state : int or str
-            ``ON | OFF | 1 | 0``
+        state : int | str
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f"INITiate:CONT {state}")
@@ -364,8 +347,10 @@ class FSWP50(BaseInstrument):
         """
         This command defines the number of measurement points to analyze after a measurement.
 
-        Parameters:
-            datapoints (int): Number of data points (101 to 100001).
+        Parameters
+        ----------
+        datapoints : int
+            Number of data points. Range: 101 to 100001.
         """
         if 101 <= datapoints <= 100001:
             self.write(f":SENS:SWE:WIND:POIN {datapoints}")
@@ -555,57 +540,42 @@ class FSWP50(BaseInstrument):
     ) -> None:
         """Selects the trace mode (WRITE, AVERAGE, MAXHOLD, etc)."""
         trace_mode_list = [
-            "WRITE",
-            "WRIT",
-            "AVERAGE",
-            "AVER",
-            "MAXHOLD",
-            "MAXH",
-            "MINHOLD",
-            "MINH",
+            "WRITe",
+            "AVERage",
+            "MAXHold",
+            "MINHold",
             "VIEW",
-            "BLANK",
-            "BLAN",
+            "BLANk",
         ]
-        trace_mode = trace_mode.upper()
-        if trace_mode in trace_mode_list:
-            self.write(f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {trace_mode}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_mode = self._check_scpi_param(trace_mode, trace_mode_list)
+        self.write(f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {valid_mode}")
 
-    def set_detection_function(
-        self, det_func: str, trace_number: int = 1, window_number: int = 1
+    def set_detector_mode(
+        self, mode: str, trace_number: int = 1, window_number: int = 1, **kwargs
     ) -> None:
         """
         Defines the trace detector to be used for trace analysis
 
         Parameters
         ----------
-        det_func : str
-            detector function: APEAK|NEGATIVE|POSITIVE|RMS|AVERAGE|SAMPLE
+        mode : str
+            Detector mode. Options: {``APEAK`` | ``NEGATIVE`` | ``POSITIVE`` |
+            ``RMS`` | ``AVERAGE`` | ``SAMPLE``}
         trace_number : int, optional
             Trace number, by default 1.
         window_number : int, optional
             Window number, by default 1.
         """
         det_func_list = [
-            "APEAK",
-            "APE",
-            "NEGATIVE",
-            "NEG",
-            "POSITIVE",
-            "POS",
+            "APEak",
+            "NEGative",
+            "POSitive",
             "RMS",
-            "AVERAGE",
-            "AVER",
-            "SAMPLE",
-            "SAMP",
+            "AVERage",
+            "SAMPle",
         ]
-        det_func = det_func.upper()
-        if det_func in det_func_list:
-            self.write(f":SENS:WIND{window_number}:DET{trace_number}:FUNC {det_func}")
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_det = self._check_scpi_param(mode, det_func_list)
+        self.write(f":SENS:WIND{window_number}:DET{trace_number}:FUNC {valid_det}")
 
     def set_trace_smoothing(self, window: int = 1, trace: int = 1, state: str | int = "ON") -> None:
         """
@@ -655,7 +625,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         unit : str, optional
-            Output unit. Accepted values: 'Hz', 'kHz', 'MHz', 'GHz'. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit not in self._freq_Units_List:
@@ -690,7 +660,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         unit : str, optional
-            Output unit. One of 'Hz', 'kHz', 'MHz', 'GHz'. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit not in self._freq_Units_List:
@@ -715,7 +685,7 @@ class FSWP50(BaseInstrument):
         self.write("SWE:MODE NORM")
         self.write(f"LIST:BWID:RAT {percentage}")
 
-    def set_rbw_absolute(self, half_decade: int, bandwidth: float, unit: str) -> None:
+    def set_rbw_absolute(self, half_decade: int, bandwidth: float, unit: str = "Hz") -> None:
         """
         Set absolute RBW for a specific half-decade (manual mode).
 
@@ -725,8 +695,8 @@ class FSWP50(BaseInstrument):
             Half-decade index (1 ... N).
         bandwidth : float
             RBW value.
-        unit : str
-            One of: Hz, kHz, MHz
+        unit : str, optional
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ``}
         """
         unit = unit.strip().upper()
         if unit not in ["HZ", "KHZ", "MHZ"]:
@@ -806,7 +776,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         mode : str
-            Capture Range mode. Options: "Normal", "Wide", "40MHz".
+            Capture Range mode. Options: {``NORMAL`` | ``WIDE`` | ``40MHZ``}
         """
         mode_map = {
             "NORMAL": "NORM",
@@ -876,11 +846,11 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         state : str
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         trace : int, optional
             Trace number (1-6). Default is 1.
         display : str, optional
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         display = self._parse_state(display)
@@ -901,9 +871,9 @@ class FSWP50(BaseInstrument):
         offset : str
             Frequency offset with unit (e.g., "100kHz").
         enable : str, optional
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         display : str, optional
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         trace : int, optional
             Trace number (1-6).
         """
@@ -952,7 +922,7 @@ class FSWP50(BaseInstrument):
 
     def set_spur_filter_mode(self, mode: str = "OFF") -> None:
         """
-        Sets the spurious filter mode: OFF | SUPPress | SHOW.
+        Sets the spurious filter mode. Options: {``OFF`` | ``SUPPress`` | ``SHOW``}
         Reference: Page 177.
         """
         self.write("INST:SEL 'PNOISE'")
@@ -985,240 +955,3 @@ class FSWP50(BaseInstrument):
         """
         return self.query("SENS:SPUR:FILT:NAME?")
 
-    # =============================================================================
-    # Aliases for backwards compatibility
-    # =============================================================================
-
-    @deprecated("Use 'get_center_frequency' instead")
-    def ask_center_frequency(self, *args, **kwargs):
-        """Deprecated alias for get_center_frequency()"""
-        self.logger.warning(
-            """Method 'ask_center_frequency()' is deprecated. 
-            Please use 'get_center_frequency()' instead."""
-        )
-        return self.get_center_frequency(*args, **kwargs)
-
-    @deprecated("Use 'get_center_frequency' instead")
-    def ask_CenterFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_center_frequency()"""
-        self.logger.warning(
-            "Method 'ask_CenterFreq()' is deprecated. Please use 'get_center_frequency()' instead."
-        )
-        return self.get_center_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_center_frequency' instead")
-    def set_CenterFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_center_frequency()"""
-        self.logger.warning(
-            "Method 'set_CenterFreq()' is deprecated. Please use 'set_center_frequency()' instead."
-        )
-        return self.set_center_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_start_frequency' instead")
-    def set_freq_Start(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_start_frequency()"""
-        self.logger.warning(
-            "Method 'set_freq_Start()' is deprecated. Please use 'set_start_frequency()' instead."
-        )
-        return self.set_start_frequency(*args, **kwargs)
-
-    @deprecated("Use 'get_start_frequency' instead")
-    def ask_freq_Start(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_start_frequency()"""
-        self.logger.warning(
-            "Method 'ask_freq_Start()' is deprecated. Please use 'get_start_frequency()' instead."
-        )
-        return self.get_start_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_stop_frequency' instead")
-    def set_freq_Stop(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_stop_frequency()"""
-        self.logger.warning(
-            "Method 'set_freq_Stop()' is deprecated. Please use 'set_stop_frequency()' instead."
-        )
-        return self.set_stop_frequency(*args, **kwargs)
-
-    @deprecated("Use 'get_stop_frequency' instead")
-    def ask_freq_Stop(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_stop_frequency()"""
-        self.logger.warning(
-            "Method 'ask_freq_Stop()' is deprecated. Please use 'get_stop_frequency()' instead."
-        )
-        return self.get_stop_frequency(*args, **kwargs)
-
-    @deprecated("Use 'set_span' instead")
-    def set_FreqSpan(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_span()"""
-        self.logger.warning(
-            "Method 'set_FreqSpan()' is deprecated. Please use 'set_span()' instead."
-        )
-        return self.set_span(*args, **kwargs)
-
-    @deprecated("Use 'get_span' instead")
-    def ask_FreqSpan(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_span()"""
-        self.logger.warning(
-            "Method 'ask_FreqSpan()' is deprecated. Please use 'get_span()' instead."
-        )
-        return self.get_span(*args, **kwargs)
-
-    @deprecated("Use 'set_resolution_bandwidth' instead")
-    def set_ResBwidth(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_resolution_bandwidth()"""
-        self.logger.warning(
-            """Method 'set_ResBwidth()' is deprecated. 
-            Please use 'set_resolution_bandwidth()' instead."""
-        )
-        return self.set_resolution_bandwidth(*args, **kwargs)
-
-    @deprecated("Use 'get_resolution_bandwidth' instead")
-    def ask_ResBwidth(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_resolution_bandwidth()"""
-        self.logger.warning(
-            """Method 'ask_ResBwidth()' is deprecated. 
-            Please use 'get_resolution_bandwidth()' instead."""
-        )
-        return self.get_resolution_bandwidth(*args, **kwargs)
-
-    @deprecated("Use 'get_rbw_pn' instead")
-    def ask_rbw(self, *args, **kwargs):
-        """Deprecated alias for get_rbw_pn()"""
-        self.logger.warning("Method 'ask_rbw()' is deprecated. Please use 'get_rbw_pn()' instead.")
-        return self.get_rbw_pn(*args, **kwargs)
-
-    @deprecated("Use 'set_reference_level' instead")
-    def set_RefLevel(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_reference_level()"""
-        self.logger.warning(
-            "Method 'set_RefLevel()' is deprecated. Please use 'set_reference_level()' instead."
-        )
-        return self.set_reference_level(*args, **kwargs)
-
-    @deprecated("Use 'get_reference_level' instead")
-    def ask_RefLevel(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_reference_level()"""
-        self.logger.warning(
-            "Method 'ask_RefLevel()' is deprecated. Please use 'get_reference_level()' instead."
-        )
-        return self.get_reference_level(*args, **kwargs)
-
-    @deprecated("Use 'set_continuous' instead")
-    def set_Continuous(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_continuous()"""
-        self.logger.warning(
-            "Method 'set_Continuous()' is deprecated. Please use 'set_continuous()' instead."
-        )
-        return self.set_continuous(*args, **kwargs)
-
-    @deprecated("Use 'set_continuous' instead")
-    def set_ContinuousMeas(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_continuous()"""
-        self.logger.warning(
-            "Method 'set_ContinuousMeas()' is deprecated. Please use 'set_continuous()' instead."
-        )
-        return self.set_continuous(*args, **kwargs)
-
-    @deprecated("Use 'init' instead")
-    def Init(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for init()"""
-        self.logger.warning("Method 'Init()' is deprecated. Please use 'init()' instead.")
-        return self.init(*args, **kwargs)
-
-    @deprecated("Use 'set_sweep_points' instead")
-    def set_DataPointCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sweep_points()"""
-        self.logger.warning(
-            "Method 'set_DataPointCount()' is deprecated. Please use 'set_sweep_points()' instead."
-        )
-        return self.set_sweep_points(*args, **kwargs)
-
-    @deprecated("Use 'get_sweep_points' instead")
-    def ask_DataPointCount(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sweep_points()"""
-        self.logger.warning(
-            "Method 'ask_DataPointCount()' is deprecated. Please use 'get_sweep_points()' instead."
-        )
-        return self.get_sweep_points(*args, **kwargs)
-
-    @deprecated("Use 'set_trace_mode' instead")
-    def set_TraceType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_trace_mode()"""
-        self.logger.warning(
-            "Method 'set_TraceType()' is deprecated. Please use 'set_trace_mode()' instead."
-        )
-        return self.set_trace_mode(*args, **kwargs)
-
-    @deprecated("Use 'set_trace_mode' instead")
-    def set_trace_type(self, *args, **kwargs):
-        """Deprecated alias for set_trace_mode()"""
-        self.logger.warning(
-            "Method 'set_trace_type()' is deprecated. Please use 'set_trace_mode()' instead."
-        )
-        return self.set_trace_mode(*args, **kwargs)
-
-    @deprecated("Use 'set_detection_function' instead")
-    def set_detector_type(self, *args, **kwargs):
-        """Deprecated alias for set_detection_function()"""
-        self.logger.warning(
-            """Method 'set_detector_type()' is deprecated. 
-            Please use 'set_detection_function()' instead."""
-        )
-        return self.set_detection_function(*args, **kwargs)
-
-    @deprecated("Use 'set_detector_type' instead")
-    def set_DetectorType(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_detector_type()"""
-        self.logger.warning(
-            "Method 'set_DetectorType()' is deprecated. Please use 'set_detector_type()' instead."
-        )
-        return self.set_detector_type(*args, **kwargs)
-
-    @deprecated("Use 'get_trace_xy' instead")
-    def get_phase_noise_data(self, *args, **kwargs):
-        """Deprecated alias for get_trace_xy()"""
-        self.logger.warning(
-            "Method 'get_phase_noise_data()' is deprecated. Please use 'get_trace_xy()' instead."
-        )
-        return self.get_trace_xy(*args, **kwargs)
-
-    @deprecated("Use 'measure_and_get_trace' instead")
-    def ExtractTraceData(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_and_get_trace()"""
-        self.logger.warning(
-            """Method 'ExtractTraceData()' is deprecated. 
-            Please use 'measure_and_get_trace()' instead."""
-        )
-        return self.measure_and_get_trace(*args, **kwargs)
-
-    @deprecated("Use 'get_start_offset' instead")
-    def ask_start_offset(self, *args, **kwargs):
-        """Deprecated alias for get_start_offset()"""
-        self.logger.warning(
-            "Method 'ask_start_offset()' is deprecated. Please use 'get_start_offset()' instead."
-        )
-        return self.get_start_offset(*args, **kwargs)
-
-    @deprecated("Use 'get_stop_offset' instead")
-    def ask_stop_offset(self, *args, **kwargs):
-        """Deprecated alias for get_stop_offset()"""
-        self.logger.warning(
-            "Method 'ask_stop_offset()' is deprecated. Please use 'get_stop_offset()' instead."
-        )
-        return self.get_stop_offset(*args, **kwargs)
-
-    @deprecated("Use 'get_spur_filter_mode' instead")
-    def ask_spur_filter_mode(self, *args, **kwargs):
-        """Deprecated alias for get_spur_filter_mode()"""
-        self.logger.warning(
-            """Method 'ask_spur_filter_mode()' is deprecated. 
-            Please use 'get_spur_filter_mode()' instead."""
-        )
-        return self.get_spur_filter_mode(*args, **kwargs)
-
-    @deprecated("Use 'create_channel' instead")
-    def create_new_channel(self, *args, **kwargs):
-        """Deprecated alias for create_channel()"""
-        self.logger.warning(
-            "Method 'create_new_channel()' is deprecated. Please use 'create_channel()' instead."
-        )
-        return self.create_channel(*args, **kwargs)

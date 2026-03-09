@@ -54,9 +54,9 @@ def find_resource(
     Parameters
     ----------
     model_regex : str
-        Regular expression to match against the *IDN? string.
+        Regular expression to match against the ``*IDN?`` string.
     resource_filter : str
-        VISA resource filter string (default: "?*INSTR").
+        VISA resource filter string (default: ``?*INSTR``).
     specific_address : str, optional
         Specific VISA resource string to use.
 
@@ -148,7 +148,7 @@ def OSA(resource: str | None = None) -> AQ6370D:  # noqa: N802
         return AQ6370D("169.254.58.101")  # Keeping old default as last resort
 
 
-def CoBrite(resource: str | None = None) -> CoBrite:  # noqa: N802
+def Laser_CoBrite(resource: str | None = None) -> CoBrite:  # noqa: N802
     from Instruments_Libraries.CoBrite import CoBrite
 
     if resource is None:
@@ -267,7 +267,8 @@ def PowerMeter(index: int = 0, resource: str | None = None) -> PM100D:  # noqa: 
 
 def LU1000(resource: str | None = "USB") -> LU1000_Cband:  # noqa: N802
     from Instruments_Libraries.LU1000 import LU1000_Cband
-
+    if resource is None:
+        resource = "USB"
     return LU1000_Cband(resource)
 
 
@@ -310,7 +311,7 @@ def VNA(resource: str | None = None) -> MS4647B:  # noqa: N802
     return MS4647B(resource)
 
 
-def APPH(resource: str | None = None) -> APPH:  # noqa: N802
+def PhaseNoiseAnalyzer_APPH(resource: str | None = None) -> APPH:  # noqa: N802
     from Instruments_Libraries.APPH import APPH
 
     if resource is None:
@@ -381,7 +382,7 @@ def UXR_1002A(resource: str | None = None) -> UXR:  # noqa: N802
     return my_UXR
 
 
-def FSWP50(resource: str | None = None) -> FSWP50:  # noqa: N802
+def RnS_FSWP50(resource: str | None = None) -> FSWP50:  # noqa: N802
     from Instruments_Libraries.FSWP50 import FSWP50
 
     if resource is None:
@@ -409,12 +410,12 @@ def InstInit(num) -> typing.Any:  # noqa: N802
         " Yokogawa Optical Spectrum Analyzer AQ6370D  ": OSA,
         " KEITHLEY Source Meter 2612  ": SourceMeter,
         " Power Supply KA3005  ": PowerSupply,
-        " CoBrite Tunable Laser  ": CoBrite,
-        " AnaPico AG,APPH20G  ": APPH,
+        " CoBrite Tunable Laser  ": Laser_CoBrite,
+        " AnaPico AG,APPH20G  ": PhaseNoiseAnalyzer_APPH,
         " 4-Channels Power Suppy GPP4323 ": PowerSupply_GPP4323,
         " Rohde and Schwarz SMA100B  ": RnS_SMA100B,
         " Keysight UXR0702A  ": UXR_1002A,
-        " Rohde and Schwarz FSWP50  ": FSWP50,
+        " Rohde and Schwarz FSWP50  ": RnS_FSWP50,
     }
 
     func = map_func.get(num)

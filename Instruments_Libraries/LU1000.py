@@ -4,7 +4,7 @@
 try:
     from Instruments_Libraries.NovoptelTCP import NovoptelTCP
     from Instruments_Libraries.NovoptelUSB import NovoptelUSB
-except ImportError:
+except ImportError as err:
     raise ImportError(
         """
 #####################################################################################
@@ -14,7 +14,7 @@ except ImportError:
     Python Library needed: pip install ftd2xx 
 #####################################################################################
 """
-    )
+    ) from err
 
 import logging
 from time import sleep, time
@@ -24,26 +24,37 @@ from time import sleep, time
 # LU1000 Laser Base Class #
 ##################################
 class LU1000_Base:  # noqa: N801
-    def __init__(self, target="USB", port=None):
-        if target == "USB":
+    def __init__(self, target: str = "USB", port: int | None = None):
+        if target.upper() == "USB":
             self.n = NovoptelUSB("LU1000")
             if self.n.DEVNO < 0:
                 raise ConnectionError("Could not open USB connection")
         else:
+            # target is assumed to be an IP address
             port = int(port) if port is not None else 5025
-            self.n = NovoptelTCP(target, port=port)
+            self.n = NovoptelTCP(ip=target, port=port)
+            if not getattr(self.n, "isConnected", False):
+                raise ConnectionError(f"Could not open TCP connection to {target}:{port}")
+
         self._available_lasers = [1, 2]
         self._num_of_attempts = 5  # try to write 5 times
 
     def Close(self):  # noqa: N802
-        self.n.close()
-        self.n = None
+        if self.n is not None:
+            self.n.close()
+            self.n = None
 
     def _read(self, addr: int) -> int:
-        return self.n.read(addr)
+        if self.n is not None:
+            return self.n.read(addr)
+        else:
+            raise ConnectionError("No connection to the instrument")
 
     def _write(self, addr: int, data: int) -> None:
-        self.n.write(addr, data)
+        if self.n is not None:
+            self.n.write(addr, data)
+        else:
+            raise ConnectionError("No connection to the instrument")
 
     def _validate_laser(self, laser: int) -> None:
         if laser not in self._available_lasers:
@@ -66,10 +77,10 @@ class LU1000_Base:  # noqa: N801
         return float(raw / 16.0)
 
     def get_firmware(self):  # as string
-        return hex(self.n.read(64))  # 4 Digit BCD
+        return hex(self._read(64))  # 4 Digit BCD
 
     def get_serial_number(self):  # as integer
-        return self.n.read(65)
+        return self._read(65)
 
     def get_module_type(self) -> str:
         module_type = []
@@ -139,8 +150,8 @@ class LU1000_Base:  # noqa: N801
 # C-Band Tuable Laser Class #
 ##################################
 class LU1000_Cband(LU1000_Base):  # noqa: N801
-    def __init__(self, target="USB"):
-        super().__init__(target)
+    def __init__(self, target: str = "USB", port: int | None = None):
+        super().__init__(target, port)
         # implement LU1000_Cband specific initializations here
         self._default_max_freq = 196.25  # THz
         self._default_min_freq = 191.5  # THz

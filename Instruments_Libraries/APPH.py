@@ -6,11 +6,6 @@ Created on Tue Feb 15 10:57:49 2022
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class APPH(BaseInstrument):
     def __init__(self, resource_str: str, visa_library: str = "@py", **kwargs):
@@ -46,26 +41,26 @@ class APPH(BaseInstrument):
         """
         Reads back the detected frequency from a frequency search.
         """
-        return float(self.query(":CALCulate:FREQuency?").split("\n")[0])
+        return float(self.query(":CALCulate:FREQuency?"))
 
     def get_calc_power(self) -> float:
         """
         Reads back the detected power level from a frequency search.
         """
-        return float(self.query(":CALCulate:POWer?").split("\n")[0])
+        return float(self.query(":CALCulate:POWer?"))
 
     def get_dut_port_voltage(self) -> float:
         """
         Sets/gets the voltage at the DUT TUNE port. Returns the configured value. If the output
         is turned off, it doesn't necessarily return 0, as an internal voltage may be configured.
         """
-        return float(self.query(":SOURce:TUNE:DUT:VOLT?").split("\n")[0])
+        return float(self.query(":SOURce:TUNE:DUT:VOLT?"))
 
     def get_dut_port_status(self) -> str:
         """
         Query the status of the DUT TUNE port.
         """
-        stat = self.query("SOURce:TUNE:DUT:STAT?").split("\n")[0]
+        stat = self.query("SOURce:TUNE:DUT:STAT?")
         if stat == "0":
             stat = "OFF"
         else:
@@ -81,9 +76,9 @@ class APPH(BaseInstrument):
     def get_system_error(self) -> str:
         """
         Return parameters: List of integer error numbers. This query is a request for all
-        entries in the instrument’s error queue. Error messages in the queue contain an
+        entries in the instrument's error queue. Error messages in the queue contain an
         integer in the range [-32768,32768] denoting an error code and associated descriptive
-        text. This query clears the instrument’s error queue.
+        text. This query clears the instrument's error queue.
         """
         return self.query(":SYSTem:ERRor:ALL?")
 
@@ -114,13 +109,13 @@ class APPH(BaseInstrument):
         """
         Query the start offset frequency
         """
-        return float(self.query(":SENSe:PN:FREQuency:STARt?").split("\n")[0])
+        return float(self.query(":SENSe:PN:FREQuency:STARt?"))
 
     def get_pn_stop_freq(self) -> float:
         """
         Query the stop offset frequency
         """
-        return float(self.query(":SENSe:PN:FREQuency:STOP?").split("\n")[0])
+        return float(self.query(":SENSe:PN:FREQuency:STOP?"))
 
     def get_pn_spot(self, value: float) -> str:
         """
@@ -370,7 +365,7 @@ class APPH(BaseInstrument):
     # SET
     # =============================================================================
 
-    def set_output(self, status: str) -> None:
+    def set_output(self, status: str | int | float | bool) -> None:
         """
         Parameters
         ----------
@@ -382,11 +377,8 @@ class APPH(BaseInstrument):
         ValueError
             Error massage
         """
-        status_list = ["ON", "OFF"]
-        if status in status_list:
-            self.write(":OUTput " + status)
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_status = self._parse_state(status)
+        self.write(":OUTput " + valid_status)
 
     def set_sys_meas_mode(self, state: str) -> None:
         """
@@ -406,11 +398,8 @@ class APPH(BaseInstrument):
         ValueError
             Error massage
         """
-        state_list = ["PN", "AN", "FN", "BB", "TRAN", "VCO"]
-        if state in state_list:
-            self.write("SENSe:MODE " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._check_scpi_param(state, ["PN", "AN", "FN", "BB", "TRAN", "VCO"])
+        self.write("SENSe:MODE " + valid_state)
 
     def set_freq_execute(self) -> None:
         """
@@ -444,35 +433,32 @@ class APPH(BaseInstrument):
     def set_dut_port_voltage(self, value: float) -> None:
         """
         Sets the voltage at the DUT TUNE port. Returns the configured value.
-        If the output is turned off, it doesn’t necessarily return 0, as an internal
+        If the output is turned off, it doesn't necessarily return 0, as an internal
         voltage may be configured
 
         Parameters
         ----------
         value : float
             Sets the voltage at the DUT TUNE port. Returns the configured value.
-            If the output is turned off, it doesn’t necessarily return 0, as an internal
+            If the output is turned off, it doesn't necessarily return 0, as an internal
             voltage may be configured
         """
         self.write(":SOURce:TUNE:DUT:VOLT " + str(value))
 
-    def set_dut_port_status(self, state: str) -> None:
+    def set_dut_port_status(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
-            Enables/disables the DUT TUNE port. Can be ['ON','OFF']
+        state : str | int | float | bool
+            Enables/disables the DUT TUNE port. Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SOURce:TUNE:DUT:STAT " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SOURce:TUNE:DUT:STAT " + valid_state)
 
     # =============================================================================
     # Set Phase Noise
@@ -536,67 +522,56 @@ class APPH(BaseInstrument):
             preliminary result. It will produce an error. This error can be queried with
             SYST:ERR? or SYST:ERR:ALL?.
         """
-        state_list = ["ALL", "NEXT"]
-        if state in state_list:
-            return self.query("CALCulate:VCO:WAIT " + str(state) + " " + str(value))
-        return None
+        valid_state = self._check_scpi_param(state, ["ALL", "NEXT"])
+        return self.query("CALCulate:VCO:WAIT " + valid_state + " " + str(value))
 
-    def set_vco_test_freq(self, state: str) -> None:
+    def set_vco_test_freq(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the frequency parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:FREQuency " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:FREQuency " + valid_state)
 
-    def set_vco_test_noise(self, state: str) -> None:
+    def set_vco_test_noise(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the phase noise parameter for the measurement.
-            Can be  ['ON','OFF']
+            Can be  ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:PNoise " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:PNoise " + valid_state)
 
-    def set_vco_test_power(self, state: str) -> None:
+    def set_vco_test_power(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the power parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:POWer " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:POWer " + valid_state)
 
     def set_vco_test_start(self, value: float) -> None:
         """
@@ -618,62 +593,53 @@ class APPH(BaseInstrument):
         """
         self.write(":SENSe:VCO:VOLTage:STOP " + str(value))
 
-    def set_vco_test_i_supply(self, state: str) -> None:
+    def set_vco_test_i_supply(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/disables the supply current parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:ISUPply " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:ISUPply " + valid_state)
 
-    def set_vcok_pu_shing(self, state: str) -> None:
+    def set_vcok_pu_shing(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/disables the pushing parameter for the measurement.
-            Can be ['ON','OFF']
+            Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:KPUShing " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:KPUShing " + valid_state)
 
-    def set_vcokvco(self, state: str) -> None:
+    def set_vcokvco(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
            Enables/disables the tune sensitivity parameter for the measurement
-           Can be ['ON','OFF']
+           Can be ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:KVCO " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:KVCO " + valid_state)
 
     def set_vcotype(self, typ: str) -> None:
         """
@@ -688,30 +654,24 @@ class APPH(BaseInstrument):
         ValueError
             Error massage
         """
-        typ_list = ["VCO", "VCXO"]
-        if typ in typ_list:
-            self.write(":SENSe:VCO:TYPE " + str(typ))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_typ = self._check_scpi_param(typ, ["VCO", "VCXO"])
+        self.write(":SENSe:VCO:TYPE " + valid_typ)
 
-    def set_vco_test_p_noise(self, state: str) -> None:
+    def set_vco_test_p_noise(self, state: str | int | float | bool) -> None:
         """
         Parameters
         ----------
-        state : str
+        state : str | int | float | bool
             Enables/Disables the phase noise parameter for the measurement.
-            Can be set to ['ON','OFF']
+            Can be set to ['ON','OFF'] or [1,0] or [True,False].
 
         Raises
         ------
         ValueError
             Error massage
         """
-        state_list = ["ON", "OFF"]
-        if state in state_list:
-            self.write(":SENSe:VCO:TEST:PNoise " + str(state))
-        else:
-            raise ValueError("Unknown input! See function description for more info.")
+        valid_state = self._parse_state(state)
+        self.write(":SENSe:VCO:TEST:PNoise " + valid_state)
 
     def set_vco_test_pnoise_off_set(
         self, value1: float = 0, value2: float = 0, value3: float = 0, value4: float = 0
@@ -860,556 +820,3 @@ class APPH(BaseInstrument):
             1
         )  # Request spot noise data array @offset #1 (1.2kHz)
         result_dict["Error Value"] = err  # Write Error status if 0 no errors!
-
-    # =============================================================================
-    # Aliases for backward compatibility
-    # =============================================================================
-    @deprecated("Use 'init' instead")
-    def Init(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for init()"""
-        self.logger.warning("Method 'Init()' is deprecated. Please use 'init()' instead.")
-        return self.init(*args, **kwargs)
-
-    @deprecated("Use 'abort' instead")
-    def Abort(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for abort()"""
-        self.logger.warning("Method 'Abort()' is deprecated. Please use 'abort()' instead.")
-        return self.abort(*args, **kwargs)
-
-    @deprecated("Use 'get_calc_freq' instead")
-    def ask_CalcFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_calc_freq()"""
-        self.logger.warning(
-            "Method 'ask_CalcFreq()' is deprecated. Please use 'get_calc_freq()' instead."
-        )
-        return self.get_calc_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_calc_power' instead")
-    def ask_CalcPower(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_calc_power()"""
-        self.logger.warning(
-            "Method 'ask_CalcPower()' is deprecated. Please use 'get_calc_power()' instead."
-        )
-        return self.get_calc_power(*args, **kwargs)
-
-    @deprecated("Use 'get_dut_port_voltage' instead")
-    def ask_DUTPortVoltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_dut_port_voltage()"""
-        self.logger.warning(
-            """Method 'ask_DUTPortVoltage()' is deprecated. 
-            Please use 'get_dut_port_voltage()' instead."""
-        )
-        return self.get_dut_port_voltage(*args, **kwargs)
-
-    @deprecated("Use 'get_dut_port_status' instead")
-    def ask_DUTPortStatus(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_dut_port_status()"""
-        self.logger.warning(
-            """Method 'ask_DUTPortStatus()' is deprecated. 
-            Please use 'get_dut_port_status()' instead."""
-        )
-        return self.get_dut_port_status(*args, **kwargs)
-
-    @deprecated("Use 'get_sys_meas_mode' instead")
-    def ask_SysMeasMode(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_sys_meas_mode()"""
-        self.logger.warning(
-            "Method 'ask_SysMeasMode()' is deprecated. Please use 'get_sys_meas_mode()' instead."
-        )
-        return self.get_sys_meas_mode(*args, **kwargs)
-
-    @deprecated("Use 'get_system_error' instead")
-    def ask_SystemError(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_system_error()"""
-        self.logger.warning(
-            "Method 'ask_SystemError()' is deprecated. Please use 'get_system_error()' instead."
-        )
-        return self.get_system_error(*args, **kwargs)
-
-    @deprecated("Use 'get_pm_trace_jitter' instead")
-    def ask_PMTraceJitter(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_pm_trace_jitter()"""
-        self.logger.warning(
-            """Method 'ask_PMTraceJitter()' is deprecated. 
-            Please use 'get_pm_trace_jitter()' instead."""
-        )
-        return self.get_pm_trace_jitter(*args, **kwargs)
-
-    @deprecated("Use 'get_pm_trace_noise' instead")
-    def ask_PMTraceNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_pm_trace_noise()"""
-        self.logger.warning(
-            "Method 'ask_PMTraceNoise()' is deprecated. Please use 'get_pm_trace_noise()' instead."
-        )
-        return self.get_pm_trace_noise(*args, **kwargs)
-
-    @deprecated("Use 'get_pn_if_gain' instead")
-    def ask_PN_IFGain(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_pn_if_gain()"""
-        self.logger.warning(
-            "Method 'ask_PN_IFGain()' is deprecated. Please use 'get_pn_if_gain()' instead."
-        )
-        return self.get_pn_if_gain(*args, **kwargs)
-
-    @deprecated("Use 'get_pn_start_freq' instead")
-    def ask_PN_StartFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_pn_start_freq()"""
-        self.logger.warning(
-            "Method 'ask_PN_StartFreq()' is deprecated. Please use 'get_pn_start_freq()' instead."
-        )
-        return self.get_pn_start_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_pn_stop_freq' instead")
-    def ask_PN_StopFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_pn_stop_freq()"""
-        self.logger.warning(
-            "Method 'ask_PN_StopFreq()' is deprecated. Please use 'get_pn_stop_freq()' instead."
-        )
-        return self.get_pn_stop_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_pn_spot' instead")
-    def ask_PNSpot(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_pn_spot()"""
-        self.logger.warning(
-            "Method 'ask_PNSpot()' is deprecated. Please use 'get_pn_spot()' instead."
-        )
-        return self.get_pn_spot(*args, **kwargs)
-
-    @deprecated("Use 'get_an_trace_freq' instead")
-    def ask_ANTraceFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_an_trace_freq()"""
-        self.logger.warning(
-            "Method 'ask_ANTraceFreq()' is deprecated. Please use 'get_an_trace_freq()' instead."
-        )
-        return self.get_an_trace_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_an_trace_noise' instead")
-    def ask_ANTraceNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_an_trace_noise()"""
-        self.logger.warning(
-            "Method 'ask_ANTraceNoise()' is deprecated. Please use 'get_an_trace_noise()' instead."
-        )
-        return self.get_an_trace_noise(*args, **kwargs)
-
-    @deprecated("Use 'get_an_trace_spur_freq' instead")
-    def ask_ANTraceSpurFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_an_trace_spur_freq()"""
-        self.logger.warning(
-            """Method 'ask_ANTraceSpurFreq()' is deprecated. 
-            Please use 'get_an_trace_spur_freq()' instead."""
-        )
-        return self.get_an_trace_spur_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_an_trace_spur_power' instead")
-    def ask_ANTraceSpurPower(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_an_trace_spur_power()"""
-        self.logger.warning(
-            """Method 'ask_ANTraceSpurPower()' is deprecated. 
-            Please use 'get_an_trace_spur_power()' instead."""
-        )
-        return self.get_an_trace_spur_power(*args, **kwargs)
-
-    @deprecated("Use 'get_an_spot' instead")
-    def ask_ANSpot(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_an_spot()"""
-        self.logger.warning(
-            """Method 'ask_ANSpot()' is deprecated. 
-            Please use 'get_an_spot()' instead."""
-        )
-        return self.get_an_spot(*args, **kwargs)
-
-    @deprecated("Use 'get_fn_trace_freq' instead")
-    def ask_FNTraceFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_fn_trace_freq()"""
-        self.logger.warning(
-            """Method 'ask_FNTraceFreq()' is deprecated. 
-            Please use 'get_fn_trace_freq()' instead."""
-        )
-        return self.get_fn_trace_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_fn_trace_noise' instead")
-    def ask_FNTraceNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_fn_trace_noise()"""
-        self.logger.warning(
-            """Method 'ask_FNTraceNoise()' is deprecated. 
-            Please use 'get_fn_trace_noise()' instead."""
-        )
-        return self.get_fn_trace_noise(*args, **kwargs)
-
-    @deprecated("Use 'get_fn_trace_spur_freq' instead")
-    def ask_FNTraceSpurFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_fn_trace_spur_freq()"""
-        self.logger.warning(
-            """Method 'ask_FNTraceSpurFreq()' is deprecated. 
-            Please use 'get_fn_trace_spur_freq()' instead."""
-        )
-        return self.get_fn_trace_spur_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_fn_trace_spur_power' instead")
-    def ask_FNTraceSpurPower(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_fn_trace_spur_power()"""
-        self.logger.warning(
-            """Method 'ask_FNTraceSpurPower()' is deprecated. 
-            Please use 'get_fn_trace_spur_power()' instead."""
-        )
-        return self.get_fn_trace_spur_power(*args, **kwargs)
-
-    @deprecated("Use 'get_fn_spot' instead")
-    def ask_FNSpot(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_fn_spot()"""
-        self.logger.warning(
-            """Method 'ask_FNSpot()' is deprecated. 
-            Please use 'get_fn_spot()' instead."""
-        )
-        return self.get_fn_spot(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_trace_freq' instead")
-    def ask_VCOTraceFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_trace_freq()"""
-        self.logger.warning(
-            """Method 'ask_VCOTraceFreq()' is deprecated. 
-            Please use 'get_vco_trace_freq()' instead."""
-        )
-        return self.get_vco_trace_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_trace_p_noise' instead")
-    def ask_VCOTracePNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_trace_p_noise()"""
-        self.logger.warning(
-            """Method 'ask_VCOTracePNoise()' is deprecated. 
-            Please use 'get_vco_trace_p_noise()' instead."""
-        )
-        return self.get_vco_trace_p_noise(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_trace_power' instead")
-    def ask_VCOTracePower(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_trace_power()"""
-        self.logger.warning(
-            """Method 'ask_VCOTracePower()' is deprecated. 
-            Please use 'get_vco_trace_power()' instead."""
-        )
-        return self.get_vco_trace_power(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_trace_voltage' instead")
-    def ask_VCOTraceVoltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_trace_voltage()"""
-        self.logger.warning(
-            """Method 'ask_VCOTraceVoltage()' is deprecated. 
-            Please use 'get_vco_trace_voltage()' instead."""
-        )
-        return self.get_vco_trace_voltage(*args, **kwargs)
-
-    @deprecated("Use 'get_vso_test_freq' instead")
-    def ask_VSOTestFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vso_test_freq()"""
-        self.logger.warning(
-            """Method 'ask_VSOTestFreq()' is deprecated. 
-            Please use 'get_vso_test_freq()' instead."""
-        )
-        return self.get_vso_test_freq(*args, **kwargs)
-
-    @deprecated("Use 'get_vso_test_noise' instead")
-    def ask_VSOTestNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vso_test_noise()"""
-        self.logger.warning(
-            """Method 'ask_VSOTestNoise()' is deprecated. 
-            Please use 'get_vso_test_noise()' instead."""
-        )
-        return self.get_vso_test_noise(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_power' instead")
-    def ask_VCOTestPower(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_power()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestPower()' is deprecated. 
-            Please use 'get_vco_test_power()' instead."""
-        )
-        return self.get_vco_test_power(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_start' instead")
-    def ask_VCOTestStart(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_start()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestStart()' is deprecated. 
-            Please use 'get_vco_test_start()' instead."""
-        )
-        return self.get_vco_test_start(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_stop' instead")
-    def ask_VCOTestStop(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_stop()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestStop()' is deprecated. 
-            Please use 'get_vco_test_stop()' instead."""
-        )
-        return self.get_vco_test_stop(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_i_supply' instead")
-    def ask_VCOTestISupply(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_i_supply()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestISupply()' is deprecated. 
-            Please use 'get_vco_test_i_supply()' instead."""
-        )
-        return self.get_vco_test_i_supply(*args, **kwargs)
-
-    @deprecated("Use 'get_vcok_pu_shing' instead")
-    def ask_VCOKPuShing(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vcok_pu_shing()"""
-        self.logger.warning(
-            """Method 'ask_VCOKPuShing()' is deprecated. 
-            Please use 'get_vcok_pu_shing()' instead."""
-        )
-        return self.get_vcok_pu_shing(*args, **kwargs)
-
-    @deprecated("Use 'get_vcokvco' instead")
-    def ask_VCOKVCO(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vcokvco()"""
-        self.logger.warning(
-            """Method 'ask_VCOKVCO()' is deprecated. 
-            Please use 'get_vcokvco()' instead."""
-        )
-        return self.get_vcokvco(*args, **kwargs)
-
-    @deprecated("Use 'get_vcotype' instead")
-    def ask_VCOTYPE(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vcotype()"""
-        self.logger.warning(
-            """Method 'ask_VCOTYPE()' is deprecated. 
-            Please use 'get_vcotype()' instead."""
-        )
-        return self.get_vcotype(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_p_noise' instead")
-    def ask_VCOTestPNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_p_noise()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestPNoise()' is deprecated. 
-            Please use 'get_vco_test_p_noise()' instead."""
-        )
-        return self.get_vco_test_p_noise(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_pnoise_off_set' instead")
-    def ask_VCOTestPnoiseOFFSet(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_pnoise_off_set()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestPnoiseOFFSet()' is deprecated. 
-            Please use 'get_vco_test_pnoise_off_set()' instead."""
-        )
-        return self.get_vco_test_pnoise_off_set(*args, **kwargs)
-
-    @deprecated("Use 'get_vco_test_point' instead")
-    def ask_VCOTestPoint(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_vco_test_point()"""
-        self.logger.warning(
-            """Method 'ask_VCOTestPoint()' is deprecated. 
-            Please use 'get_vco_test_point()' instead."""
-        )
-        return self.get_vco_test_point(*args, **kwargs)
-
-    @deprecated("Use 'set_output' instead")
-    def set_Output(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_output()"""
-        self.logger.warning(
-            """Method 'set_Output()' is deprecated. 
-            Please use 'set_output()' instead."""
-        )
-        return self.set_output(*args, **kwargs)
-
-    @deprecated("Use 'set_sys_meas_mode' instead")
-    def set_SysMeasMode(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_sys_meas_mode()"""
-        self.logger.warning(
-            """Method 'set_SysMeasMode()' is deprecated. 
-            Please use 'set_sys_meas_mode()' instead."""
-        )
-        return self.set_sys_meas_mode(*args, **kwargs)
-
-    @deprecated("Use 'set_freq_execute' instead")
-    def set_FreqExecute(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_freq_execute()"""
-        self.logger.warning(
-            """Method 'set_FreqExecute()' is deprecated. 
-            Please use 'set_freq_execute()' instead."""
-        )
-        return self.set_freq_execute(*args, **kwargs)
-
-    @deprecated("Use 'set_power_execute' instead")
-    def set_PowerExecute(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_power_execute()"""
-        self.logger.warning(
-            """Method 'set_PowerExecute()' is deprecated. 
-            Please use 'set_power_execute()' instead."""
-        )
-        return self.set_power_execute(*args, **kwargs)
-
-    @deprecated("Use 'set_calc_average' instead")
-    def set_CalcAverage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_calc_average()"""
-        self.logger.warning(
-            """Method 'set_CalcAverage()' is deprecated. 
-            Please use 'set_calc_average()' instead."""
-        )
-        return self.set_calc_average(*args, **kwargs)
-
-    @deprecated("Use 'set_dut_port_voltage' instead")
-    def set_DUTPortVoltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_dut_port_voltage()"""
-        self.logger.warning(
-            """Method 'set_DUTPortVoltage()' is deprecated. 
-            Please use 'set_dut_port_voltage()' instead."""
-        )
-        return self.set_dut_port_voltage(*args, **kwargs)
-
-    @deprecated("Use 'set_dut_port_status' instead")
-    def set_DUTPortStatus(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_dut_port_status()"""
-        self.logger.warning(
-            """Method 'set_DUTPortStatus()' is deprecated. 
-            Please use 'set_dut_port_status()' instead."""
-        )
-        return self.set_dut_port_status(*args, **kwargs)
-
-    @deprecated("Use 'set_pnif_gain' instead")
-    def set_PNIFGain(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_pnif_gain()"""
-        self.logger.warning(
-            """Method 'set_PNIFGain()' is deprecated. 
-            Please use 'set_pnif_gain()' instead."""
-        )
-        return self.set_pnif_gain(*args, **kwargs)
-
-    @deprecated("Use 'set_pn_start_freq' instead")
-    def set_PNStartFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_pn_start_freq()"""
-        self.logger.warning(
-            """Method 'set_PNStartFreq()' is deprecated. 
-            Please use 'set_pn_start_freq()' instead."""
-        )
-        return self.set_pn_start_freq(*args, **kwargs)
-
-    @deprecated("Use 'set_pn_stop_freq' instead")
-    def set_PNStopFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_pn_stop_freq()"""
-        self.logger.warning(
-            """Method 'set_PNStopFreq()' is deprecated. 
-            Please use 'set_pn_stop_freq()' instead."""
-        )
-        return self.set_pn_stop_freq(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_wait' instead")
-    def set_VCOWait(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_wait()"""
-        self.logger.warning(
-            """Method 'set_VCOWait()' is deprecated. 
-            Please use 'set_vco_wait()' instead."""
-        )
-        return self.set_vco_wait(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_freq' instead")
-    def set_VCOTestFreq(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_freq()"""
-        self.logger.warning(
-            """Method 'set_VCOTestFreq()' is deprecated. 
-            Please use 'set_vco_test_freq()' instead."""
-        )
-        return self.set_vco_test_freq(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_noise' instead")
-    def set_VCOTestNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_noise()"""
-        self.logger.warning(
-            """Method 'set_VCOTestNoise()' is deprecated. 
-            Please use 'set_vco_test_noise()' instead."""
-        )
-        return self.set_vco_test_noise(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_power' instead")
-    def set_VCOTestPower(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_power()"""
-        self.logger.warning(
-            """Method 'set_VCOTestPower()' is deprecated. 
-            Please use 'set_vco_test_power()' instead."""
-        )
-        return self.set_vco_test_power(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_start' instead")
-    def set_VCOTestStart(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_start()"""
-        self.logger.warning(
-            """Method 'set_VCOTestStart()' is deprecated. 
-            Please use 'set_vco_test_start()' instead."""
-        )
-        return self.set_vco_test_start(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_stop' instead")
-    def set_VCOTestStop(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_stop()"""
-        self.logger.warning(
-            """Method 'set_VCOTestStop()' is deprecated. 
-            Please use 'set_vco_test_stop()' instead."""
-        )
-        return self.set_vco_test_stop(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_i_supply' instead")
-    def set_VCOTestISupply(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_i_supply()"""
-        self.logger.warning(
-            """Method 'set_VCOTestISupply()' is deprecated. 
-            Please use 'set_vco_test_i_supply()' instead."""
-        )
-        return self.set_vco_test_i_supply(*args, **kwargs)
-
-    @deprecated("Use 'set_vcok_pu_shing' instead")
-    def set_VCOKPuShing(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vcok_pu_shing()"""
-        self.logger.warning(
-            """Method 'set_VCOKPuShing()' is deprecated. 
-            Please use 'set_vcok_pu_shing()' instead."""
-        )
-        return self.set_vcok_pu_shing(*args, **kwargs)
-
-    @deprecated("Use 'set_vcokvco' instead")
-    def set_VCOKVCO(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vcokvco()"""
-        self.logger.warning(
-            """Method 'set_VCOKVCO()' is deprecated. 
-            Please use 'set_vcokvco()' instead."""
-        )
-        return self.set_vcokvco(*args, **kwargs)
-
-    @deprecated("Use 'set_vcotype' instead")
-    def set_VCOTYPE(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vcotype()"""
-        self.logger.warning(
-            """Method 'set_VCOTYPE()' is deprecated. 
-            Please use 'set_vcotype()' instead."""
-        )
-        return self.set_vcotype(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_p_noise' instead")
-    def set_VCOTestPNoise(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_p_noise()"""
-        self.logger.warning(
-            """Method 'set_VCOTestPNoise()' is deprecated. 
-            Please use 'set_vco_test_p_noise()' instead."""
-        )
-        return self.set_vco_test_p_noise(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_pnoise_off_set' instead")
-    def set_VCOTestPnoiseOFFSet(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_pnoise_off_set()"""
-        self.logger.warning(
-            """Method 'set_VCOTestPnoiseOFFSet()' is deprecated. 
-            Please use 'set_vco_test_pnoise_off_set()' instead."""
-        )
-        return self.set_vco_test_pnoise_off_set(*args, **kwargs)
-
-    @deprecated("Use 'set_vco_test_point' instead")
-    def set_VCOTestPoint(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_vco_test_point()"""
-        self.logger.warning(
-            """Method 'set_VCOTestPoint()' is deprecated. 
-            Please use 'set_vco_test_point()' instead."""
-        )
-        return self.set_vco_test_point(*args, **kwargs)

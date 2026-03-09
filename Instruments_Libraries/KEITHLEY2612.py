@@ -10,11 +10,6 @@ from typing import Any
 
 from .BaseInstrument import BaseInstrument
 
-try:
-    from typing import deprecated  # type: ignore
-except ImportError:
-    from typing_extensions import deprecated
-
 
 class KEITHLEY2612(BaseInstrument):
     """
@@ -110,40 +105,10 @@ class KEITHLEY2612(BaseInstrument):
         -------
         str
             Normalized state string (e.g., 'ON', 'OFF', 'HIGH_Z').
-
-        Raises
-        ------
-        ValueError
-            If the state is invalid.
         """
-        if output:
-            state_mapping = {
-                "on": "ON",
-                "off": "OFF",
-                "high_z": "HIGH_Z",
-                1: "ON",
-                0: "OFF",
-                2: "HIGH_Z",
-                "1": "ON",
-                "0": "OFF",
-                "2": "HIGH_Z",
-            }
-        else:
-            state_mapping = {
-                "on": "ON",
-                "off": "OFF",
-                1: "ON",
-                0: "OFF",
-                "1": "ON",
-                "0": "OFF",
-            }
-
-        normalized = state_mapping.get(
-            state if isinstance(state, (int, bool)) else str(state).lower()
-        )
-        if normalized is None:
-            raise ValueError(f"Invalid state '{state}'. Valid options: on/off/high_z or 1/0/2")
-        return normalized
+        if output and str(state).upper() in ["2", "HIGH_Z"]:
+            return "HIGH_Z"
+        return self._parse_state(state)
 
     def format_scientific(self, value: int | float, precision: int = 4) -> str:
         """
@@ -244,17 +209,14 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         type_ : str
             Type of measurement (e.g., 'voltage', 'current', 'power', 'resistance').
-
-        Raises
-        ------
-        ValueError
-            If the measurement type is unknown.
         """
         channel = self.validate_channel(channel)
-        meas_type = self._Measurement_Types.get(type_.lower())
-        if meas_type is None:
-            raise ValueError("Unknown input! See function description for more info.")
-        return float(self.query(f"print(smu{channel}.measure.{meas_type}())"))
+        meas_type = self._check_scpi_param(
+            type_,
+            ["VOLTage", "CURRent", "POWer", "RESistance", "V", "I", "P", "R", "AMP", "OHM", "WATT"],
+        )
+        meas_code = self._Measurement_Types.get(meas_type.lower())
+        return float(self.query(f"print(smu{channel}.measure.{meas_code}())"))
 
     def get_voltage_range_measure(self, channel: str) -> float:
         """
@@ -690,21 +652,16 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         function : str
             Source function ('volt', 'voltage', 'amp', 'current').
-
-        Raises
-        ------
-        ValueError
-            If function is invalid.
         """
         channel = self.validate_channel(channel)
-        function = function.lower()
+        func_type = self._check_scpi_param(function, ["VOLTage", "CURRent", "V", "I", "AMP"])
 
-        if function in ["volt", "voltage"]:
-            self.write(f"smu{channel}.source.func = smu{channel}.OUTPUT_DCVOLTS")
-        elif function in ["amp", "current"]:
-            self.write(f"smu{channel}.source.func = smu{channel}.OUTPUT_DCAMPS")
-        else:
-            raise ValueError("Function must be 'volt'/'voltage' or 'amp'/'current'")
+        func_target = (
+            "OUTPUT_DCVOLTS"
+            if func_type.startswith("VOLT") or func_type == "V"
+            else "OUTPUT_DCAMPS"
+        )
+        self.write(f"smu{channel}.source.func = smu{channel}.{func_target}")
 
     def set_pulse_measured(
         self, channel: str, value: Any, ton: int | float, toff: int | float
@@ -736,26 +693,14 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         mode : str | int
             Off mode ('normal'/0, 'zero'/1, 'high_z'/2).
-
-        Raises
-        ------
-        ValueError
-            If mode is invalid.
         """
         channel = self.validate_channel(channel)
 
-        mode_mapping = {
-            0: "NORMAL",
-            1: "ZERO",
-            2: "HIGH_Z",
-            "normal": "NORMAL",
-            "zero": "ZERO",
-            "high_z": "HIGH_Z",
-        }
-        mode_normalized = mode_mapping.get(mode if isinstance(mode, int) else str(mode).lower())
-        if mode_normalized is None:
-            raise ValueError("Mode must be 0/1/2 or 'normal'/'zero'/'high_z'")
+        mode_str = str(mode).upper().replace("HIGHZ", "HIGH_Z")
+        mode_mapping = {"0": "NORMal", "1": "ZERO", "2": "HIGH_Z"}
+        mode_to_check = mode_mapping.get(mode_str, mode_str)
 
+        mode_normalized = self._check_scpi_param(mode_to_check, ["NORMal", "ZERO", "HIGH_Z"])
         self.write(f"smu{channel}.source.offmode = smu{channel}.OUTPUT_{mode_normalized}")
 
     # =============================================================================
@@ -824,22 +769,17 @@ class KEITHLEY2612(BaseInstrument):
             Type ('volt', 'voltage', 'amp', 'current').
         range_value : int | float
             Range value.
-
-        Raises
-        ------
-        ValueError
-            If measurement type is invalid.
         """
         channel = self.validate_channel(channel)
-        measurement_type = measurement_type.lower()
+        meas_type = self._check_scpi_param(
+            measurement_type, ["VOLTage", "CURRent", "V", "I", "AMP"]
+        )
         range_str = self.format_scientific(range_value, precision=0)
 
-        if measurement_type in ["volt", "voltage"]:
+        if meas_type.startswith("VOLT") or meas_type == "V":
             self.write(f"smu{channel}.measure.rangev = {range_str}")
-        elif measurement_type in ["amp", "current"]:
-            self.write(f"smu{channel}.measure.rangei = {range_str}")
         else:
-            raise ValueError("Measurement type must be 'volt'/'voltage' or 'amp'/'current'")
+            self.write(f"smu{channel}.measure.rangei = {range_str}")
 
     # =============================================================================
     # Display Control
@@ -870,14 +810,13 @@ class KEITHLEY2612(BaseInstrument):
             Channel identifier ('a' or 'b').
         measurement_type : str
             Measurement type ('v', 'i', 'r', 'p', etc.).
-
-        Raises
-        ------
-        ValueError
-            If measurement type is invalid.
         """
         channel = self.validate_channel(channel)
-        meas_code = self._Measurement_Types.get(measurement_type.lower())
+        meas_type = self._check_scpi_param(
+            measurement_type,
+            ["VOLTage", "CURRent", "POWer", "RESistance", "V", "I", "P", "R", "AMP", "OHM", "WATT"],
+        )
+        meas_code = self._Measurement_Types.get(meas_type.lower())
 
         display_mapping = {
             "v": "_DCVOLTS",
@@ -885,18 +824,7 @@ class KEITHLEY2612(BaseInstrument):
             "r": "_OHMS",
             "p": "_WATTS",
         }
-
-        if meas_code is None:
-            raise ValueError(
-                f"""Invalid measurement type '{measurement_type}'. 
-                Valid options: {list(display_mapping.keys())}"""
-            )
-
         display_func = display_mapping.get(meas_code)
-        if display_func is None:
-            raise ValueError(
-                f"Invalid measurement type. Valid options: {list(display_mapping.keys())}"
-            )
 
         self.write(f"display.smu{channel}.measure.func = display.MEASURE{display_func}")
 
@@ -1145,331 +1073,3 @@ class KEITHLEY2612(BaseInstrument):
         except Exception as e:
             self.logger.error(f"Failed to read table {lua_table_name}: {e}")
             return []
-
-    # =============================================================================
-    # Aliases for backwards compatibility
-    # =============================================================================
-    @deprecated("Use 'measure_current' instead")
-    def ask_Current(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_current()"""
-        self.logger.warning(
-            "Method 'ask_Current()' is deprecated. Please use 'measure_current()' instead."
-        )
-        return self.measure_current(*args, **kwargs)
-
-    @deprecated("Use 'measure_voltage' instead")
-    def ask_Voltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_voltage()"""
-        self.logger.warning(
-            "Method 'ask_Voltage()' is deprecated. Please use 'measure_voltage()' instead."
-        )
-        return self.measure_voltage(*args, **kwargs)
-
-    @deprecated("Use 'measure_power' instead")
-    def ask_Power(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_power()"""
-        self.logger.warning(
-            "Method 'ask_Power()' is deprecated. Please use 'measure_power()' instead."
-        )
-        return self.measure_power(*args, **kwargs)
-
-    @deprecated("Use 'measure_resistance' instead")
-    def ask_Resistance(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for measure_resistance()"""
-        self.logger.warning(
-            "Method 'ask_Resistance()' is deprecated. Please use 'measure_resistance()' instead."
-        )
-        return self.measure_resistance(*args, **kwargs)
-
-    @deprecated("Use 'read_measurement' instead")
-    def read_Measurement(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for read_measurement()"""
-        self.logger.warning(
-            "Method 'read_Measurement()' is deprecated. Please use 'read_measurement()' instead."
-        )
-        return self.read_measurement(*args, **kwargs)
-
-    @deprecated("Use 'get_voltage_range_measure' instead")
-    def ask_VoltageRangeMeasure(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_voltage_range_measure()"""
-        self.logger.warning(
-            """Method 'ask_VoltageRangeMeasure()' is deprecated. 
-            Please use 'get_voltage_range_measure()' instead."""
-        )
-        return self.get_voltage_range_measure(*args, **kwargs)
-
-    @deprecated("Use 'get_current_range_measure' instead")
-    def ask_CurrentRangeMeasure(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_current_range_measure()"""
-        self.logger.warning(
-            """Method 'ask_CurrentRangeMeasure()' is deprecated. 
-            Please use 'get_current_range_measure()' instead."""
-        )
-        return self.get_current_range_measure(*args, **kwargs)
-
-    @deprecated("Use 'get_auto_voltage_range_measure' instead")
-    def ask_AutoVoltageRangeMeasure(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_auto_voltage_range_measure()"""
-        self.logger.warning(
-            """Method 'ask_AutoVoltageRangeMeasure()' is deprecated. 
-            Please use 'get_auto_voltage_range_measure()' instead."""
-        )
-        return self.get_auto_voltage_range_measure(*args, **kwargs)
-
-    @deprecated("Use 'get_auto_current_range_measure' instead")
-    def ask_AutoCurrentRangeMeasure(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_auto_current_range_measure()"""
-        self.logger.warning(
-            """Method 'ask_AutoCurrentRangeMeasure()' is deprecated. 
-            Please use 'get_auto_current_range_measure()' instead."""
-        )
-        return self.get_auto_current_range_measure(*args, **kwargs)
-
-    @deprecated("Use 'get_limit_reached' instead")
-    def ask_LimitReached(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_limit_reached()"""
-        self.logger.warning(
-            "Method 'ask_LimitReached()' is deprecated. Please use 'get_limit_reached()' instead."
-        )
-        return self.get_limit_reached(*args, **kwargs)
-
-    @deprecated("Use 'get_auto_voltage_range' instead")
-    def ask_AutoVoltageRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_auto_voltage_range()"""
-        self.logger.warning(
-            """Method 'ask_AutoVoltageRange()' is deprecated. 
-            Please use 'get_auto_voltage_range()' instead."""
-        )
-        return self.get_auto_voltage_range(*args, **kwargs)
-
-    @deprecated("Use 'get_auto_current_range' instead")
-    def ask_AutoCurrentRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_auto_current_range()"""
-        self.logger.warning(
-            """Method 'ask_AutoCurrentRange()' is deprecated. 
-            Please use 'get_auto_current_range()' instead."""
-        )
-        return self.get_auto_current_range(*args, **kwargs)
-
-    @deprecated("Use 'get_voltage_range' instead")
-    def ask_VoltageRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_voltage_range()"""
-        self.logger.warning(
-            "Method 'ask_VoltageRange()' is deprecated. Please use 'get_voltage_range()' instead."
-        )
-        return self.get_voltage_range(*args, **kwargs)
-
-    @deprecated("Use 'get_current_range' instead")
-    def ask_CurrentRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_current_range()"""
-        self.logger.warning(
-            "Method 'ask_CurrentRange()' is deprecated. Please use 'get_current_range()' instead."
-        )
-        return self.get_current_range(*args, **kwargs)
-
-    @deprecated("Use 'get_voltage_limit' instead")
-    def ask_VoltageLimit(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_voltage_limit()"""
-        self.logger.warning(
-            "Method 'ask_VoltageLimit()' is deprecated. Please use 'get_voltage_limit()' instead."
-        )
-        return self.get_voltage_limit(*args, **kwargs)
-
-    @deprecated("Use 'get_current_limit' instead")
-    def ask_CurrentLimit(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_current_limit()"""
-        self.logger.warning(
-            "Method 'ask_CurrentLimit()' is deprecated. Please use 'get_current_limit()' instead."
-        )
-        return self.get_current_limit(*args, **kwargs)
-
-    @deprecated("Use 'get_voltage_setting' instead")
-    def ask_VoltageSetting(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_voltage_setting()"""
-        self.logger.warning(
-            """Method 'ask_VoltageSetting()' is deprecated. 
-            Please use 'get_voltage_setting()' instead."""
-        )
-        return self.get_voltage_setting(*args, **kwargs)
-
-    @deprecated("Use 'get_current_setting' instead")
-    def ask_CurrentSetting(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_current_setting()"""
-        self.logger.warning(
-            """Method 'ask_CurrentSetting()' is deprecated. 
-            Please use 'get_current_setting()' instead."""
-        )
-        return self.get_current_setting(*args, **kwargs)
-
-    @deprecated("Use 'get_output_source_function' instead")
-    def ask_OutputSourceFunction(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_output_source_function()"""
-        self.logger.warning(
-            """Method 'ask_OutputSourceFunction()' is deprecated. 
-            Please use 'get_output_source_function()' instead."""
-        )
-        return self.get_output_source_function(*args, **kwargs)
-
-    @deprecated("Use 'get_read_buffer' instead")
-    def ask_readBuffer(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_read_buffer()"""
-        self.logger.warning(
-            "Method 'ask_readBuffer()' is deprecated. Please use 'get_read_buffer()' instead."
-        )
-        return self.get_read_buffer(*args, **kwargs)
-
-    @deprecated("Use 'set_output' instead")
-    def set_SourceOutput(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_output()"""
-        self.logger.warning(
-            "Method 'set_SourceOutput()' is deprecated. Please use 'set_output()' instead."
-        )
-        return self.set_output(*args, **kwargs)
-
-    @deprecated("Use 'set_output' instead")
-    def set_Out(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_output()"""
-        self.logger.warning("Method 'set_Out()' is deprecated. Please use 'set_output()' instead.")
-        return self.set_output(*args, **kwargs)
-
-    @deprecated("Use 'set_output' instead")
-    def set_MeasOutput(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_output()"""
-        self.logger.warning(
-            "Method 'set_MeasOutput()' is deprecated. Please use 'set_output()' instead."
-        )
-        return self.set_output(*args, **kwargs)
-
-    @deprecated("Use 'set_auto_voltage_range' instead")
-    def set_AutoVoltageRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_auto_voltage_range()"""
-        self.logger.warning(
-            """Method 'set_AutoVoltageRange()' is deprecated. 
-            Please use 'set_auto_voltage_range()' instead."""
-        )
-        return self.set_auto_voltage_range(*args, **kwargs)
-
-    @deprecated("Use 'set_auto_current_range' instead")
-    def set_AutoCurrentRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_auto_current_range()"""
-        self.logger.warning(
-            """Method 'set_AutoCurrentRange()' is deprecated. 
-            Please use 'set_auto_current_range()' instead."""
-        )
-        return self.set_auto_current_range(*args, **kwargs)
-
-    @deprecated("Use 'set_voltage_range' instead")
-    def set_VoltageRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_voltage_range()"""
-        self.logger.warning(
-            "Method 'set_VoltageRange()' is deprecated. Please use 'set_voltage_range()' instead."
-        )
-        return self.set_voltage_range(*args, **kwargs)
-
-    @deprecated("Use 'set_current_range' instead")
-    def set_CurrentRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current_range()"""
-        self.logger.warning(
-            "Method 'set_CurrentRange()' is deprecated. Please use 'set_current_range()' instead."
-        )
-        return self.set_current_range(*args, **kwargs)
-
-    @deprecated("Use 'set_voltage_limit' instead")
-    def set_VoltageLimit(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_voltage_limit()"""
-        self.logger.warning(
-            "Method 'set_VoltageLimit()' is deprecated. Please use 'set_voltage_limit()' instead."
-        )
-        return self.set_voltage_limit(*args, **kwargs)
-
-    @deprecated("Use 'set_current_limit' instead")
-    def set_CurrentLimit(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current_limit()"""
-        self.logger.warning(
-            "Method 'set_CurrentLimit()' is deprecated. Please use 'set_current_limit()' instead."
-        )
-        return self.set_current_limit(*args, **kwargs)
-
-    @deprecated("Use 'set_voltage' instead")
-    def set_Voltage(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_voltage()"""
-        self.logger.warning(
-            "Method 'set_Voltage()' is deprecated. Please use 'set_voltage()' instead."
-        )
-        return self.set_voltage(*args, **kwargs)
-
-    @deprecated("Use 'set_current' instead")
-    def set_Current(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current()"""
-        self.logger.warning(
-            "Method 'set_Current()' is deprecated. Please use 'set_current()' instead."
-        )
-        return self.set_current(*args, **kwargs)
-
-    @deprecated("Use 'set_output_source_function' instead")
-    def set_OutputSourceFunction(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_output_source_function()"""
-        self.logger.warning(
-            """Method 'set_OutputSourceFunction()' is deprecated. 
-            Please use 'set_output_source_function()' instead."""
-        )
-        return self.set_output_source_function(*args, **kwargs)
-
-    @deprecated("Use 'set_pulse_measured' instead")
-    def set_PulseMeasured(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_pulse_measured()"""
-        self.logger.warning(
-            "Method 'set_PulseMeasured()' is deprecated. Please use 'set_pulse_measured()' instead."
-        )
-        return self.set_pulse_measured(*args, **kwargs)
-
-    @deprecated("Use 'set_voltage_range_measure' instead")
-    def set_VoltageRangeMeasure(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_voltage_range_measure()"""
-        self.logger.warning(
-            """Method 'set_VoltageRangeMeasure()' is deprecated. 
-            Please use 'set_voltage_range_measure()' instead."""
-        )
-        return self.set_voltage_range_measure(*args, **kwargs)
-
-    @deprecated("Use 'set_current_range_measure' instead")
-    def set_CurrentRangeMeasure(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_current_range_measure()"""
-        self.logger.warning(
-            """Method 'set_CurrentRangeMeasure()' is deprecated. 
-            Please use 'set_current_range_measure()' instead."""
-        )
-        return self.set_current_range_measure(*args, **kwargs)
-
-    @deprecated("Use 'set_measurement_range' instead")
-    def set_MeasurementRange(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_measurement_range()"""
-        self.logger.warning(
-            """Method 'set_MeasurementRange()' is deprecated. 
-            Please use 'set_measurement_range()' instead."""
-        )
-        return self.set_measurement_range(*args, **kwargs)
-
-    @deprecated("Use 'set_channel_display' instead")
-    def set_ChannelDisplay(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_channel_display()"""
-        self.logger.warning(
-            """Method 'set_ChannelDisplay()' is deprecated. 
-            Please use 'set_channel_display()' instead."""
-        )
-        return self.set_channel_display(*args, **kwargs)
-
-    @deprecated("Use 'set_display_measurement_function' instead")
-    def set_DisplayMeasurementFunction(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for set_display_measurement_function()"""
-        self.logger.warning(
-            """Method 'set_DisplayMeasurementFunction()' is deprecated. 
-            Please use 'set_display_measurement_function()' instead."""
-        )
-        return self.set_display_measurement_function(*args, **kwargs)
-
-    @deprecated("Use 'get_data' instead")
-    def get_Data(self, *args, **kwargs):  # noqa: N802
-        """Deprecated alias for get_data()"""
-        self.logger.warning("Method 'get_Data()' is deprecated. Please use 'get_data()' instead.")
-        return self.get_data(*args, **kwargs)
