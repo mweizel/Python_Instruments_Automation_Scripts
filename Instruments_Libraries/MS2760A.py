@@ -60,13 +60,12 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         delay : float, optional
-            DESCRIPTION. The default is 5s delay between write and read.
+            Delay between write and read in seconds. Default: 5.0.
 
         Returns
         -------
         int
-            1 if device operation is completed.
-            0 if device operation is not completed.
+            ``1`` if operation is completed, ``0`` otherwise.
         """
         if self._exeption_state >= 1:
             self.clear()
@@ -88,8 +87,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         int
-            256 if device operation is completed.
-            0 if device operation is not completed.
+            ``256`` if operation is completed, ``0`` otherwise.
         """
         return self.query_ascii_values(":STATus:OPERation?", converter="d")[0]
 
@@ -121,7 +119,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         trace_num : int, optional
-            DESCRIPTION. The default is 1.
+            Trace number to clear. Default: 1.
         """
 
         if trace_num in self._trace_List:
@@ -161,9 +159,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         int
-            1 if the instrument is in continuously sweeping/measuring.
-            0 if the instrument is in single sweep/measurement mode.
-
+            ``1`` for continuous sweep, ``0`` for single sweep.
         """
 
         return self.query_ascii_values(":INITiate:CONTinuous?", converter="d")[0]
@@ -185,9 +181,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         float
-            measured sweep time in milliseconds.
-            "nan" if no measured sweep time is available.
-
+            Measured sweep time in ms. Returns ``nan`` if not available.
         """
 
         return self.query_ascii_values(":DIAGnostic:SWEep:TIME?")[0]
@@ -220,9 +214,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         int
-            1 if in automatic mode ("ON")
-            0 if not in automatic mode ("OFF")
-
+            ``1`` if in automatic mode (ON), ``0`` if not (OFF).
         """
 
         return self.query_ascii_values(":SENSe:BANDwidth:RESolution:AUTO?", converter="d")[0]
@@ -257,7 +249,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         marker_num : int, optional
-            Marker Number between 1 - 12. The default is None.
+            Marker number (1 to 12). If omitted, returns all markers. Default: None.
         """
 
         s = self.query(":CALCulate:MARKer:DATA:ALL?")
@@ -289,10 +281,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        str
-            1 if State is ON.
-            0 if State is OFF
-
+        int
+            ``1`` if State is ON, ``0`` if OFF.
         """
 
         return self.query_ascii_values(":SENSe:CHPower:STATe?", converter="d")[0]
@@ -317,24 +307,23 @@ class MS2760A(BaseInstrument):
         """
         return self.query_ascii_values(":SENSe:FREQuency:SPAN?")[0]
 
-    def get_trace_type(self, trace_num: int = 1) -> str:
+    def get_trace_mode(self, trace_number: int = 1, **kwargs) -> str:
         """
-        Query the trace type for a given trace number.
+        Query the trace mode for a given trace number.
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace number (1 to 6).
 
         Returns
         -------
         str
-            Trace Type: NORM|MIN|MAX|AVER|RMAX|RMIN|RAV
-
+            Trace mode (e.g., NORM, MIN, MAX, AVER, RMAX, RMIN, RAV).
         """
 
-        if trace_num in self._trace_List:
-            return self.query(":TRACe" + str(trace_num) + ":TYPE?")
+        if trace_number in self._trace_List:
+            return self.query(":TRACe" + str(trace_number) + ":TYPE?")
         else:
             raise ValueError("Number must be between 1 and 6")
 
@@ -346,19 +335,19 @@ class MS2760A(BaseInstrument):
 
         return self.query_ascii_values(":TRACe:SELect?", converter="d")[0]
 
-    def get_trace_state(self, trace_num: int = 1) -> int:
+    def get_trace_state(self, trace_number: int = 1) -> int:
         """
         Query the display state of a given trace. If it is OFF, the :TRAC:DATA?
         command will return nan.
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace number (1 to 6).
         """
 
-        if trace_num in self._trace_List:
-            return self.query_ascii_values(f":TRACe{trace_num}:DISPlay:STATe?", converter="d")[0]
+        if trace_number in self._trace_List:
+            return self.query_ascii_values(f":TRACe{trace_number}:DISPlay:STATe?", converter="d")[0]
         else:
             raise ValueError("Number must be between 1 and 6")
 
@@ -374,23 +363,22 @@ class MS2760A(BaseInstrument):
         """
         return self.query_ascii_values(":POWer:IF:GAIN:STATe?", converter="d")[0]
 
-    def get_detector_type(self, trace_num: int = 1) -> str:
+    def get_detector_type(self, trace_number: int = 1) -> str:
         """
         Query the detector type.
 
         Parameters
         ----------
-        trace_num : int
+        trace_number : int
             Trace number (1 to 6).
 
         Returns
         -------
         str
-            Detector Type: POS|RMS|NEG
-
+            Detector type (e.g., POS, RMS, NEG).
         """
-        if trace_num in self._trace_List:
-            return self.query(":TRACe" + str(trace_num) + ":DETector?")
+        if trace_number in self._trace_List:
+            return self.query(":TRACe" + str(trace_number) + ":DETector?")
         else:
             raise ValueError("Trace Number must be between 1 and 6")
 
@@ -404,7 +392,7 @@ class MS2760A(BaseInstrument):
     #  Write Functions
     # =============================================================================
 
-    def set_sweep_points(self, data_points: int = 501) -> None:
+    def set_sweep_points(self, datapoints: int = 501) -> None:
         """
         Changes the number of display points the instrument currently measures.
         Increasing the number of display points can improve the resolution of
@@ -412,16 +400,14 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        data_points : int
-               Default Value: 501
-               Range: 10 to 10001
-
+        datapoints : int
+            Number of points. Range: 10 to 10001. Default: 501.
         """
-        if isinstance(data_points, int):
-            if 10 <= data_points <= 10001:
-                self.write(f":DISPlay:POINtcount {data_points}")
+        if isinstance(datapoints, int):
+            if 10 <= datapoints <= 10001:
+                self.write(f":DISPlay:POINtcount {datapoints}")
             else:
-                raise ValueError(f"Value must be between 10 and 10001, not {data_points}")
+                raise ValueError(f"Value must be between 10 and 10001, not {datapoints}")
         else:
             raise ValueError("Unknown input! Value must be an integer.")
 
@@ -433,11 +419,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Sets the start frequency.
 
         unit : str
-            Parameters: <numeric_value> {HZ | KHZ | MHZ | GHZ}
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -455,11 +441,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
-                Sets the stop frequency.
+        value : int | float
+            Sets the stop frequency.
 
         unit : str
-            Parameters: <numeric_value> {HZ | KHZ | MHZ | GHZ}
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -469,7 +455,7 @@ class MS2760A(BaseInstrument):
         else:
             raise ValueError("Unknown unit! Should be HZ, KHZ, MHZ or GHZ")
 
-    def set_resolution_bandwidth(self, value: int | float, unit: str = "Hz") -> None:
+    def set_resolution_bandwidth(self, res_bw: int | float, unit: str = "Hz") -> None:
         """
         Sets the resolution bandwidth. Note that using this command turns
         the automatic resolution bandwidth setting OFF.
@@ -478,18 +464,17 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        res_bw : int | float
             Sets the resolution bandwidth.
 
         unit : str
-            Parameters: <numeric_value> {HZ | KHZ | MHZ | GHZ}
-            Default Unit: Hz
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
         unit = unit.upper() if isinstance(unit, str) else unit
         if unit in self._freq_Units_List:
-            self.write(f":SENSe:BANDwidth:RESolution {value} {unit}")
+            self.write(f":SENSe:BANDwidth:RESolution {res_bw} {unit}")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
@@ -497,18 +482,14 @@ class MS2760A(BaseInstrument):
         """
         Sets the automatic resolution bandwidth state. Setting the value to ON or 1 will
         result in the resolution bandwidth being coupled to the span. That is, when the
-        span changes, the resolution bandwidth changes. Setting the value to OFF or 0 will
-        result in the resolution bandwidth being decoupled from the span. That is, changing
-        the span will not change the resolution bandwidth. When this command is issued,
+        span changes, the resolution bandwidth changes. When this command is issued,
         the resolution bandwidth setting itself will not change.
 
         Parameters
         ----------
-        state : int/str
-            Sets the state of the coupling of the resolution bandwidth to the frequency span.
-            Parameters:<1 | 0 | ON | OFF>
-            Default Value: ON
-
+        state : int | str
+            Coupling state of resolution bandwidth to span. Default: ``ON``.
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
@@ -522,11 +503,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : float
+        value : int | float
             Sets the center frequency.
 
         unit : str
-            Unit value. Can be ['HZ','KHZ','MHZ','GHZ']
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -546,11 +527,11 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : float
+        value : int | float
             Sets the frequency span.
 
         unit : str
-            Unit value. Can be ['HZ','KHZ','MHZ','GHZ']
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
 
         """
 
@@ -571,9 +552,8 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-             Sets the continuous measurement state. <1 | 0 | ON | OFF>
-
+        state : str | int
+            Sets the continuous measurement state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
@@ -586,8 +566,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str
-            Set Data Format =  ['ASCii','INTeger','REAL']
-
+            Set Data Format. Options: {``ASCii`` | ``INTeger`` | ``REAL``}
         """
 
         valid_format = self._check_scpi_param(state, ["ASCii", "INTeger", "REAL"])
@@ -600,9 +579,8 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            Can be state = ['ON','OFF',1,0]
-
+        state : str | int
+            Marker excursion state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f":CALCulate:MARKer:PEAK:EXCursion:STATe {state}")
@@ -615,9 +593,8 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
-            Sets the excursion for a marker in dB. Range 0dB to 200 dB.
-
+        value : int | float
+            Excursion for a marker in dB. Range: 0.0 to 200.0.
         """
         if 0 <= value <= 200:
             self.write(f":CALCulate:MARKer:PEAK:EXCursion {value} DB")
@@ -631,8 +608,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         marker_num : int
-            Marker number. Can be 1 to 12.
-
+            Marker number (1 to 12). Default: 1.
         """
         if isinstance(marker_num, int) and marker_num in self._marker_List:
             self.write(f":CALCulate:MARKer{marker_num}:MAXimum:NEXT")
@@ -646,8 +622,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         marker_num : int
-            Marker number. Can be 1 to 12.
-
+            Marker number (1 to 12). Default: 1.
         """
 
         if isinstance(marker_num, int) and marker_num in self._marker_List:
@@ -667,78 +642,88 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state :str
-            state = ['ON','OFF',1,0]
-
+        state : str | int
+            Channel power measurement state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
         self.write(f":SENSe:CHPower:STATe {state}")
 
-    def set_trace_type(self, trace_type: str = "NORM", trace_num: int = 1) -> None:
+    def set_trace_mode(self, mode: str = "NORM", trace_number: int = 1, **kwargs) -> None:
         """
-        Sets the trace type.
+        Sets the trace mode.
 
         Parameters
         ----------
-        trace_type : str
-             Sets Trace Type:
-                            Normal - NORM
-                            Hold the Minimum - MIN
-                            Hold the Maximum - MAX
-                            Average - AVER
-                            Rolling Max Hold - RMAX
-                            Rolling Min Hold - RMIN
-                            Rolling Average - RAV
-        number : int
-            Trace number:
-                        Can be set to [1,2,3,4,5,6]
-
+        mode : str
+            * Normal - ``NORM`` or ``WRITE``
+            * Hold the Minimum - ``MIN`` or ``MINHOLD``
+            * Hold the Maximum - ``MAX`` or ``MAXHOLD``
+            * Average - ``AVER`` or ``AVERAGE``
+            * Rolling Max Hold - ``RMAX``
+            * Rolling Min Hold - ``RMIN``
+            * Rolling Average - ``RAV``
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
-
-        valid_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
-        valid_trace_type = self._check_scpi_param(trace_type, valid_list)
-        if trace_num in self._trace_List:
-            self.write(f":TRACe{trace_num}:TYPE {valid_trace_type}")
+        mode_map = {
+            "WRITE": "NORM",
+            "NORM": "NORM",
+            "MAXHOLD": "MAX",
+            "MAX": "MAX",
+            "MINHOLD": "MIN",
+            "MIN": "MIN",
+            "AVERAGE": "AVER",
+            "AVER": "AVER",
+            "RMAX": "RMAX",
+            "RMIN": "RMIN",
+            "RAV": "RAV",
+        }
+        
+        mode_upper = mode.strip().upper()
+        if mode_upper in mode_map:
+            valid_trace_type = mode_map[mode_upper]
+        else:
+            valid_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
+            valid_trace_type = self._check_scpi_param(mode, valid_list)
+            
+        if trace_number in self._trace_List:
+            self.write(f":TRACe{trace_number}:TYPE {valid_trace_type}")
         else:
             raise ValueError("Number must be between 1 and 6")
 
-    def set_trace_selected(self, trace_num: int = 1) -> None:
+    def set_trace_selected(self, trace_number: int = 1) -> None:
         """
         The selected trace will be used by operations that use a single trace.
         The max number of traces available to select is model specific.
 
         Parameters
         ----------
-        trace_num : int
-            Trace number:
-                        Can be set to [1,2,3,4,5,6]
-
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
 
-        if trace_num in self._trace_List:
-            self.write(f":TRACe:SELect {trace_num}")
+        if trace_number in self._trace_List:
+            self.write(f":TRACe:SELect {trace_number}")
         else:
-            raise ValueError(f"Allowed range is 1 to 6. Current value is {trace_num}")
+            raise ValueError(f"Allowed range is 1 to 6. Current value is {trace_number}")
 
-    def set_trace_state(self, state: str | int = "ON", trace_num: int = 1) -> None:
+    def set_trace_state(self, state: str | int = "ON", trace_number: int = 1) -> None:
         """
         The trace visibility state status. If it is OFF, the :TRAC:DATA?
         command will return NaN.
 
         Parameters
         ----------
-        state : str
-            ['ON','OFF',0,1]
-        trace_num : int
-            Trace Number:
-                Can be set to  [1,2,3,4,5,6]
-
+        state : str | int
+            Trace visibility state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
 
         state = self._parse_state(state)
-        if trace_num in self._trace_List:
-            self.write(f":TRACe{trace_num}:DISPlay:STATe {state}")
+        if trace_number in self._trace_List:
+            self.write(f":TRACe{trace_number}:DISPlay:STATe {state}")
         else:
             raise ValueError("Unknown input! See function description for more info.")
 
@@ -764,35 +749,33 @@ class MS2760A(BaseInstrument):
 
         Parameters
         ----------
-        state :str/int
-            state = ['ON','OFF',1,0]
-
+        state : str | int
+            IF gain state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
 
         state = self._parse_state(state)
         self.write(f":POWer:IF:GAIN:STATe {state}")
 
-    def set_detector_type(
+    def set_detector_mode(
         self,
-        state: str = "POSitive",
-        trace_num: int = 1,
+        mode: str = "POSitive",
+        trace_number: int = 1,
+        **kwargs
     ) -> None:
         """
-        Sets the detector type.
+        Sets the detector mode.
 
         Parameters
         ----------
-        state : str
-            state = ['POSitive', 'RMS', 'NEGative']
-        trace_num : int
-            Trace Number:
-                Can be set to  [1,2,3,4,5,6]
-
+        mode : str
+            Detector mode. Options: {``POSitive`` | ``RMS`` | ``NEGative``}
+        trace_number : int
+            Trace number (1 to 6). Default: 1.
         """
 
-        valid_state = self._check_scpi_param(state, ["POSitive", "RMS", "NEGative"])
-        if trace_num in self._trace_List:
-            self.write(f":TRACe{trace_num}:DETector {valid_state}")
+        valid_state = self._check_scpi_param(mode, ["POSitive", "RMS", "NEGative"])
+        if trace_number in self._trace_List:
+            self.write(f":TRACe{trace_number}:DETector {valid_state}")
         else:
             raise ValueError("Trace Number must be between 1 and 6.")
 
@@ -803,10 +786,9 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         capture_time : float, optional
-            default: 0 ms, Range: 0 ms to 10000 ms
+            Capture time. Range: 0.0 to 10000.0. Default: 0.0.
         unit : str, optional
-            default: 'ms'
-
+            Default: ``MS``. Options: {``PS`` | ``NS`` | ``US`` | ``MS`` | ``S`` | ``MIN`` | ``HR``}
         """
         valid_unit = self._check_scpi_param(unit, ["PS", "NS", "US", "MS", "S", "MIN", "HR"])
         self.write(f":CAPTure:TIMe {capture_time} {valid_unit}")
@@ -822,9 +804,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        OutPut : dict/np.ndarray
-            Return a dictionary with the measured frequency in Hz and peak power in dBm.
-
+        dict | np.ndarray
+            Measured frequency in Hz and peak power in dBm.
         """
 
         self.set_continuous("OFF")
@@ -867,9 +848,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        Output : np.ndarray
-            Measured Spectrum on Trace {num}.
-
+        np.ndarray
+            Measured spectrum on the given trace.
         """
 
         self.set_continuous("OFF")
@@ -951,9 +931,8 @@ class MS2760A(BaseInstrument):
 
         Returns
         -------
-        Output : np.array
+        np.ndarray
             Amplitude data.
-
         """
 
         if trace_number not in self._trace_List:

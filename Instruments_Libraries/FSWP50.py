@@ -67,17 +67,17 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         channel_type : str
-            Channel type. Available types are:
-                'PNOISE': 'Phase Noise',
-                'SMONITOR': 'Spectrum Monitor',
-                'SANALYZER': 'Spectrum (R&S FSWP-B1)',
-                'IQ': 'I/Q Analyzer',
-                'PULSE': 'Pulse Measurement',
-                'ADEMOD': 'Analog modulation analysis',
-                'NOISE': 'Noise Figure Measurements',
-                'SPUR': 'Fast Spur Search',
-                'TA': 'Transient Analysis',
-                'DDEM': 'VSA - Vector Signal Analysis'
+            Available types are:
+            * ``PNOISE``: 'Phase Noise'
+            * ``SMONITOR``: 'Spectrum Monitor'
+            * ``SANALYZER``: 'Spectrum (R&S FSWP-B1)'
+            * ``IQ``: 'I/Q Analyzer'
+            * ``PULSE``: 'Pulse Measurement'
+            * ``ADEMOD``: 'Analog modulation analysis'
+            * ``NOISE``: 'Noise Figure Measurements'
+            * ``SPUR``: 'Fast Spur Search'
+            * ``TA``: 'Transient Analysis'
+            * ``DDEM``: 'VSA - Vector Signal Analysis'
         channel_name : str
             Unique name for the new channel.
 
@@ -121,8 +121,9 @@ class FSWP50(BaseInstrument):
 
         Parameters
         ----------
-        state : bool or int
+        state : bool | int
             True/1 to enable MultiView (ON), False/0 to disable (OFF).
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f"DISPlay:ATAB {state}")
@@ -153,7 +154,7 @@ class FSWP50(BaseInstrument):
         center_freq : int | float
             Frequency value (e.g., 1, 2.5) to be combined with unit.
         unit : str, optional
-            Unit of frequency: HZ, KHZ, MHZ, or GHZ. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -174,7 +175,7 @@ class FSWP50(BaseInstrument):
         start_freq : float
             Start frequency.
         unit : str, optional
-            Unit of frequency. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -195,7 +196,7 @@ class FSWP50(BaseInstrument):
         stop_freq : float
             Stop frequency.
         unit : str, optional
-            Unit of frequency. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -216,7 +217,7 @@ class FSWP50(BaseInstrument):
         span : int | float
             Span value.
         unit : str, optional
-            Frequency unit: HZ, KHZ, MHZ, or GHZ. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -241,7 +242,7 @@ class FSWP50(BaseInstrument):
         res_bw : int | float
             Sets the resolution bandwidth.
         unit : str, optional
-            Parameters: {HZ | KHZ | MHZ | GHZ}. Default Unit: Hz
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -289,7 +290,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Can be: [ON, 1, OFF, 0]
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f":INP:ATT:AUTO {state}")
@@ -323,8 +324,8 @@ class FSWP50(BaseInstrument):
 
         Parameters
         ----------
-        state : int or str
-            ``ON | OFF | 1 | 0``
+        state : int | str
+            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         self.write(f"INITiate:CONT {state}")
@@ -346,8 +347,10 @@ class FSWP50(BaseInstrument):
         """
         This command defines the number of measurement points to analyze after a measurement.
 
-        Parameters:
-            datapoints (int): Number of data points (101 to 100001).
+        Parameters
+        ----------
+        datapoints : int
+            Number of data points. Range: 101 to 100001.
         """
         if 101 <= datapoints <= 100001:
             self.write(f":SENS:SWE:WIND:POIN {datapoints}")
@@ -547,16 +550,17 @@ class FSWP50(BaseInstrument):
         valid_mode = self._check_scpi_param(trace_mode, trace_mode_list)
         self.write(f"DISPlay:WINDOW{window_number}:TRACE{trace_number}:MODE {valid_mode}")
 
-    def set_detection_function(
-        self, det_func: str, trace_number: int = 1, window_number: int = 1
+    def set_detector_mode(
+        self, mode: str, trace_number: int = 1, window_number: int = 1, **kwargs
     ) -> None:
         """
         Defines the trace detector to be used for trace analysis
 
         Parameters
         ----------
-        det_func : str
-            detector function: APEAK|NEGATIVE|POSITIVE|RMS|AVERAGE|SAMPLE
+        mode : str
+            Detector mode. Options: {``APEAK`` | ``NEGATIVE`` | ``POSITIVE`` |
+            ``RMS`` | ``AVERAGE`` | ``SAMPLE``}
         trace_number : int, optional
             Trace number, by default 1.
         window_number : int, optional
@@ -570,7 +574,7 @@ class FSWP50(BaseInstrument):
             "AVERage",
             "SAMPle",
         ]
-        valid_det = self._check_scpi_param(det_func, det_func_list)
+        valid_det = self._check_scpi_param(mode, det_func_list)
         self.write(f":SENS:WIND{window_number}:DET{trace_number}:FUNC {valid_det}")
 
     def set_trace_smoothing(self, window: int = 1, trace: int = 1, state: str | int = "ON") -> None:
@@ -621,7 +625,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         unit : str, optional
-            Output unit. Accepted values: 'Hz', 'kHz', 'MHz', 'GHz'. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit not in self._freq_Units_List:
@@ -656,7 +660,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         unit : str, optional
-            Output unit. One of 'Hz', 'kHz', 'MHz', 'GHz'. Default is 'Hz'.
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
         """
         unit = unit.upper()
         if unit not in self._freq_Units_List:
@@ -681,7 +685,7 @@ class FSWP50(BaseInstrument):
         self.write("SWE:MODE NORM")
         self.write(f"LIST:BWID:RAT {percentage}")
 
-    def set_rbw_absolute(self, half_decade: int, bandwidth: float, unit: str) -> None:
+    def set_rbw_absolute(self, half_decade: int, bandwidth: float, unit: str = "Hz") -> None:
         """
         Set absolute RBW for a specific half-decade (manual mode).
 
@@ -691,8 +695,8 @@ class FSWP50(BaseInstrument):
             Half-decade index (1 ... N).
         bandwidth : float
             RBW value.
-        unit : str
-            One of: Hz, kHz, MHz
+        unit : str, optional
+            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ``}
         """
         unit = unit.strip().upper()
         if unit not in ["HZ", "KHZ", "MHZ"]:
@@ -772,7 +776,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         mode : str
-            Capture Range mode. Options: "Normal", "Wide", "40MHz".
+            Capture Range mode. Options: {``NORMAL`` | ``WIDE`` | ``40MHZ``}
         """
         mode_map = {
             "NORMAL": "NORM",
@@ -842,11 +846,11 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         state : str
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         trace : int, optional
             Trace number (1-6). Default is 1.
         display : str, optional
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         """
         state = self._parse_state(state)
         display = self._parse_state(display)
@@ -867,9 +871,9 @@ class FSWP50(BaseInstrument):
         offset : str
             Frequency offset with unit (e.g., "100kHz").
         enable : str, optional
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         display : str, optional
-            "ON" or "OFF".
+            Options: {``ON`` | ``OFF``}
         trace : int, optional
             Trace number (1-6).
         """
@@ -918,7 +922,7 @@ class FSWP50(BaseInstrument):
 
     def set_spur_filter_mode(self, mode: str = "OFF") -> None:
         """
-        Sets the spurious filter mode: OFF | SUPPress | SHOW.
+        Sets the spurious filter mode. Options: {``OFF`` | ``SUPPress`` | ``SHOW``}
         Reference: Page 177.
         """
         self.write("INST:SEL 'PNOISE'")
