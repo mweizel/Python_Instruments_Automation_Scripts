@@ -25,18 +25,19 @@ and heavily modified by:
 # Requirement: pyvisa (migrated from pyserial)
 #
 # get_idn() - Get instrument identification
-# set_volt(tal) - Set the voltage on the output
-# get_volt() - Get the 'set' voltage
-# read_volt() - Get a measurement of the voltage
-# set_amp(tal) - Set the current limit
-# get_amp() - Get the 'set' current limit
-# read_amp() - Get a measurement of the output current
-# set_out(bool) - Set the state of the output
+# set_voltage(voltage) - Set the voltage on the output
+# get_voltage_setting() - Get the 'set' voltage
+# measure_voltage() - Get a measurement of the voltage
+# set_current(current) - Set the current limit
+# get_current_setting() - Get the 'set' current limit
+# measure_current() - Get a measurement of the output current
+# set_output(state) - Set the state of the output
 # set_ocp(bool) - Set the state of the over current protection
 # get_status() - Get the state of the output and CC/CV
 """
 
 import time
+from typing import Any
 
 import pyvisa
 import pyvisa.constants
@@ -84,58 +85,104 @@ class RD3005(BaseInstrument):
         """
         return self.query("*IDN?", 0.3)
 
-    def set_volt(self, voltage: float, delay: float = 0.01) -> None:
+    def set_voltage(self, channel: Any = None, voltage: float = 0.0, **kwargs) -> None:
         """
         Parameters
         ----------
-        voltage : int/float
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
+            Included for interface compatibility.
+        voltage : float
             Set the voltage on the Display
-        delay : float
-            0.01s Delay
+        **kwargs : dict
+            Optional keyword arguments like 'delay'.
         """
+        delay = kwargs.get("delay", 0.01)
         self.write(f"VSET1:{voltage:1.2f}")
         time.sleep(delay)
 
-    def get_volt(self) -> float:
+    def get_voltage_setting(self, channel: Any = None) -> float:
         """
         Returns the set voltage.
+        
+        Parameters
+        ----------
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
         """
         return self._query_float("VSET1?")
 
-    def read_volt(self) -> float:
+    def measure_voltage(self, channel: Any = None) -> float:
         """
         Returns the measured voltage.
+
+        Parameters
+        ----------
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
         """
         return self._query_float("VOUT1?")
 
-    def set_amp(self, amp: float, delay: float = 0.01) -> None:
+    def set_current(self, channel: Any = None, current: float = 0.0, **kwargs) -> None:
         """
         Parameters
         ----------
-        amp : int/float
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
+            Included for interface compatibility.
+        current : float
             Set the current on the Display
-        delay : float
-            0.01s Delay
+        **kwargs : dict
+            Optional keyword arguments like 'delay'.
         """
-        self.write(f"ISET1:{amp:1.3f}")
+        delay = kwargs.get("delay", 0.01)
+        self.write(f"ISET1:{current:1.3f}")
         time.sleep(delay)
 
-    def get_amp(self) -> float:
+    set_current_limit = set_current
+
+    def get_current_setting(self, channel: Any = None) -> float:
         """
         Returns the set current.
+
+        Parameters
+        ----------
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
         """
         return self._query_float("ISET1?")
 
-    def read_amp(self) -> float:
+    def measure_current(self, channel: Any = None) -> float:
         """
         Returns the measured current.
+
+        Parameters
+        ----------
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
         """
         return self._query_float("IOUT1?")
 
-    def set_out(self, state: str) -> None:
+    def measure_power(self, channel: Any = None) -> float:
+        """
+        Returns the calculated measured power (voltage * current).
+
+        Parameters
+        ----------
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
+        """
+        voltage = self.measure_voltage()
+        current = self.measure_current()
+        return voltage * current
+
+    def set_output(self, channel: Any = None, state: str = "OFF") -> None:
         """
         Parameters
         ----------
+        channel : Any, optional
+            Ignored for RD3005 as it is a single-channel instrument.
+            Included for interface compatibility.
         state : str (ON/OFF)
             Turn Output ON and OFF
         """
@@ -180,10 +227,9 @@ class RD3005(BaseInstrument):
         Returns a dictionary with the measured voltage and current.
         """
         output = {}
-        voltage = self.read_volt()
-        current = self.read_amp()
+        voltage = self.measure_voltage()
+        current = self.measure_current()
         output["Voltage/V"] = voltage
         output["Current/A"] = current
 
         return output
-
