@@ -109,7 +109,10 @@ html_theme_options = {
     "includehidden": True,
     "sticky_navigation": True
 }
-html_static_path = []
+html_static_path = ["_static"]
+html_css_files = [
+    "custom.css",
+]
 
 # Generate .rst files
 # sphinx-apidoc -o _rst --separate --force --no-toc -t _templates\apidoc ..\Python_Instruments_Automation_Scripts\Instruments_Libraries

@@ -1,0 +1,17 @@
+/* Force Numpydoc field lists to render their direct paragraphs inline (handles single parameters) */
+dd.field-odd > p, dd.field-even > p {
+    display: inline;
+}
+
+/* When parameters are formatted as a bulleted list by napoleon, force the name and description paragraphs to display inline */
+dd.field-odd > ul.simple > li > p, 
+dd.field-even > ul.simple > li > p {
+    display: inline;
+}
+
+/* Ensure the nested bullet lists (the parameter options) start on a new line and look like blocks */
+dd.field-odd > ul.simple > li > ul, 
+dd.field-even > ul.simple > li > ul {
+    display: block;
+    margin-top: 8px; /* Adds a bit of breathing room before the options */
+}
