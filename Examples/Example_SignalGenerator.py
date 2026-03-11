@@ -21,25 +21,25 @@ from Instruments_Libraries.MG3694C import MG3694C  # Anritsu SigGen
 # =============================================================================
 # Anritsu MG3694C Signal Generator
 SignalGenerator = MG3694C("169.254.236.243")
-# Find the IP adress by running "arp -a" in a terminal and search for the 
-# MAC-Address of the MG3694C (written on top/back-side of the instrument). If 
-# it does not show up open NI-Max or Keysight Connection Expert and try to 
-# auto-discover the instrument. NI-Max works somewhat better. Do !!!NOT!!! 
-# change your Network Adapter to a static IP! As of 13.01.2026 the MG3694C is 
+# Find the IP adress by running "arp -a" in a terminal and search for the
+# MAC-Address of the MG3694C (written on top/back-side of the instrument). If
+# it does not show up open NI-Max or Keysight Connection Expert and try to
+# auto-discover the instrument. NI-Max works somewhat better. Do !!!NOT!!!
+# change your Network Adapter to a static IP! As of 13.01.2026 the MG3694C is
 # set up in dynamic DHCP mode.
 
 # Rhode und Schwarz SMA100B Signal Generator
 # SignalGenerator = SMA100B("169.254.2.20")
-# The SMA100B is in dynamic mode. It typically shows you its IP address on the 
+# The SMA100B is in dynamic mode. It typically shows you its IP address on the
 # instrument screen.
 
 SignalGenerator.reset()
 # %% ==========================================================================
 # Setup the Measurement
 # =============================================================================
-sleep_time = 1 # in seconds
-test_frequencies = np.linspace(1e9, 40e9, 10) # frequencies in Hz
-test_powerlevels = np.atleast_1d([-4,-2]) # powerlevels in dBm
+sleep_time = 1  # in seconds
+test_frequencies = np.linspace(1e9, 40e9, 10)  # frequencies in Hz
+test_powerlevels = np.atleast_1d([-4, -2])  # powerlevels in dBm
 
 SigGen_freq_init = test_frequencies[0]
 SigGen_power_init = test_powerlevels[0]
@@ -57,10 +57,10 @@ num_of_measurements = len(test_frequencies) * len(test_powerlevels) + 1  # 1 ref
 
 # SG_Anritsu.set_output("ON") # turn on the Signal Generator
 
-records = [] # Empty list to store data and meta data
+records = []  # Empty list to store data and meta data
 # Loop frequencies*powerlevels
 for idx in tqdm(range(num_of_measurements)):
-    rec = {} # single record
+    rec = {}  # single record
 
     if idx < num_of_measurements - 1:
         # Do some changes, like change input frequency and power
@@ -69,28 +69,28 @@ for idx in tqdm(range(num_of_measurements)):
         rec["Signal_Power"] = test_powerlevels[power_idx]
         rec["Signal_Frequency"] = test_frequencies[freq_idx]
 
-        SignalGenerator.set_rf_power(test_powerlevels[power_idx]) # Set Power
-        SignalGenerator.set_freq_cw(test_frequencies[freq_idx]) # Set Frequency
+        SignalGenerator.set_rf_power(test_powerlevels[power_idx])  # Set Power
+        SignalGenerator.set_freq_cw(test_frequencies[freq_idx])  # Set Frequency
     else:  # Capture a reference measurement with no signal applied
-        SignalGenerator.set_output(0) # turn OFF
+        SignalGenerator.set_output(0)  # turn OFF
         rec["Signal_Power"] = -100
         rec["Signal_Frequency"] = 0
 
     # Take the Measurement
     time.sleep(sleep_time)
     # rec["data_peak"] = mySpecAnalyser.ExtractTraceData(SA_TraceNum,True)
-    rec["data_peak"] = idx # measure something, this is just an example
+    rec["data_peak"] = idx  # measure something, this is just an example
 
     # Write Meta Data
-    rec["VCC"] = 4 # V
-    
+    rec["VCC"] = 4  # V
+
     # append the record
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
 
 ########################### Measurement Ends ###########################
-SignalGenerator.set_output("OFF") # turn off the Signal Generator
-    
+SignalGenerator.set_output("OFF")  # turn off the Signal Generator
+
 
 # %% ==========================================================================
 # Create Dataframe
@@ -102,7 +102,7 @@ meas_df = pd.DataFrame.from_records(records)
 # =============================================================================
 plt.figure(figsize=(10, 6))
 
-# 1. Optional: Filter out the "Reference" trace (where Freq was set to 0) 
+# 1. Optional: Filter out the "Reference" trace (where Freq was set to 0)
 # so it doesn't mess up the X-axis scaling.
 plot_df = meas_df[meas_df["Signal_Frequency"] > 0].copy()
 
@@ -114,17 +114,15 @@ grouped = plot_df.groupby("Signal_Power")
 for power, frame in grouped:
     # 'power' is the unique value (e.g., -4)
     # 'frame' is the dataframe subset for that power
-    
+
     # Sort by frequency to ensure lines are drawn in order
     frame = frame.sort_values(by="Signal_Frequency")
-    
-    plt.plot(frame["Signal_Frequency"], frame["data_peak"], 
-             label=f'Power: {power} dBm', 
-             marker='.')
 
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Measured Data') 
-plt.title('Frequency vs Measured Data')
+    plt.plot(frame["Signal_Frequency"], frame["data_peak"], label=f"Power: {power} dBm", marker=".")
+
+plt.xlabel("Frequency (Hz)")
+plt.ylabel("Measured Data")
+plt.title("Frequency vs Measured Data")
 plt.legend()
 plt.grid(True)
 plt.show()
@@ -133,7 +131,7 @@ plt.show()
 # =============================================================================
 # Save DataFrame to HDF5 (better than CSV)
 meas_df.to_hdf("measurements.h5", key="data", mode="w")
-# key="data" is like a "dataset name" inside the HDF5 file 
+# key="data" is like a "dataset name" inside the HDF5 file
 # (you can store multiple DataFrames in one file with different keys).
 # mode="w" overwrites the file. Use mode="a" if you want to append new datasets.
 
@@ -141,7 +139,7 @@ meas_df.to_hdf("measurements.h5", key="data", mode="w")
 loaded_df = pd.read_hdf("measurements.h5", key="data")
 print(loaded_df.head())
 
-#or
+# or
 
 # Save DataFrame to CSV
 meas_df.to_csv("measurements.csv", index=False)

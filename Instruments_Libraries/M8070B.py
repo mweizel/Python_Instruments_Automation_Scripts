@@ -61,12 +61,12 @@ class M8070B(BaseInstrument):
     # =============================================================================
 
     def get_amplitude(self, channel: int = 1) -> float:
-        """Returns the differential amplitude setting for the selected channel in Volts.
+        """Returns the differential amplitude setting for the selected channel. Unit: ``'V'``.
 
         Parameters
         ----------
         channel : int, optional
-            1 or 2, by default 1
+            Default: ``1``. Valid options: ``1``, ``2``.
         """
         channel = self.validate_channel(channel)
         return float(self.query(f":SOURce:VOLTage:AMPLitude? 'M2.DataOut{channel}'"))
@@ -77,18 +77,18 @@ class M8070B(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
+            Valid options: ``1``, ``2``.
         """
         channel = self.validate_channel(channel)
         return int(self.query(f":OUTPut:STATe? 'M2.DataOut{channel}'"))
 
     def get_delay(self, channel: int) -> float:
-        """Returns the delay for the selected channel in seconds.
+        """Returns the delay for the selected channel. Unit: ``'s'``.
 
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
+            Valid options: ``1``, ``2``.
         """
         channel = self.validate_channel(channel)
         return float(self.query(f":ARM:DELay? 'M2.DataOut{channel}'"))
@@ -103,9 +103,11 @@ class M8070B(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
-        amplitude : int/float
-            Amplitude setting in V. Must be between 0.1 and 2.7 V
+            Valid options: ``1``, ``2``.
+        amplitude : int | float
+            Amplitude setting. Unit: ``'V'``.
+
+            * **Range**: ``0.1 V`` to ``2.7 V``
         """
         channel = self.validate_channel(channel)
         if 0.1 <= amplitude <= 2.7:
@@ -114,15 +116,15 @@ class M8070B(BaseInstrument):
             raise ValueError(f"Value must be between 0.1 and 2.7 V. You entered: {amplitude} V")
 
     def set_rf_power(self, channel: int, power_dBm: int | float) -> None:  # noqa: N803
-        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and
+        """Sets the Signal Generator Output Power. Converts from dBm to V and
         uses ``set_amplitude()`` internally.
 
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
-        power_dBm : int/float
-            Output Power in dBm
+            Valid options: ``1``, ``2``.
+        power_dBm : int | float
+            Output Power. Unit: ``'dBm'``.
         """
         power_watt = 10 ** (power_dBm / 10) * 1e-3
         v_rms = (50 * power_watt) ** 0.5  # 50 Ohm System
@@ -130,15 +132,15 @@ class M8070B(BaseInstrument):
         self.set_amplitude(channel, amplitude)
 
     def set_output_power_level(self, channel: int, power_dBm: int | float) -> None:  # noqa: N803
-        """Sets the Signal Generator Output Power in dBm. Converts from dBm to V and
-        uses ``set_amplitude()`` internally. Alias for set_rf_power().
+        """Sets the Signal Generator Output Power. Converts from dBm to V and
+        uses ``set_amplitude()`` internally. Alias for ``set_rf_power()``.
 
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
-        value : int/float
-            Output Power in dBm
+            Valid options: ``1``, ``2``.
+        power_dBm : int | float
+            Output Power. Unit: ``'dBm'``.
         """
         self.set_rf_power(channel, power_dBm)
 
@@ -148,9 +150,9 @@ class M8070B(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
+            Valid options: ``1``, ``2``.
         state : int | str
-            One of: 0, 1, "off", "on"
+            State. Valid options: ``0``, ``1``, ``'off'``, ``'on'``.
 
         Raises
         ------
@@ -169,14 +171,16 @@ class M8070B(BaseInstrument):
         self.set_output(channel, state)
 
     def set_delay(self, channel: int, delay: float) -> None:
-        """Set the delay for the selected channel in seconds.
+        """Set the delay for the selected channel.
 
         Parameters
         ----------
         channel : int
-            Channel 1 or 2
+            Valid options: ``1``, ``2``.
         delay : float
-            Delay in seconds.
+            Delay. Unit: ``'s'``.
+
+            * **Range**: ``-25e-9 s`` to ``25e-9 s``
         """
         channel = self.validate_channel(channel)
         if not (-25e-9 <= delay <= 25e-9):
@@ -189,12 +193,12 @@ class M8070B(BaseInstrument):
 
     def get_sample_clk_out_frequency(self, channel: int = 1) -> float:
         """Returns the sample clock OUT1 or OUT2 frequency from the M8008A CLK module.
-        Both frequencies are the same (in Hz).
+        Both frequencies are the same. Unit: ``'Hz'``.
 
         Parameters
         ----------
         channel : int, optional
-            1 or 2, by default 1
+            Default: ``1``. Valid options: ``1``, ``2``.
         """
         channel = self.validate_channel(channel)
         return float(self.query(f":OUTPut:FREQuency? 'M1.SampleClkOut{channel}'"))
@@ -206,7 +210,7 @@ class M8070B(BaseInstrument):
         return int(self.query(":OUTPut:STATe? 'M1.SampleClkOut2'"))
 
     def get_sample_clk_out2_power(self) -> float:
-        """Returns the sample clock OUT2 Power in dBm from the M8008A CLK module.
+        """Returns the sample clock OUT2 Power from the M8008A CLK module. Unit: ``'dBm'``.
         Sample clock OUT1 cannot be influenced.
         """
         return float(self.query(":OUTPut:POWer? 'M1.SampleClkOut2'"))
@@ -222,20 +226,21 @@ class M8070B(BaseInstrument):
         Parameters
         ----------
         state : int | str
-            One of: 0, 1, "off", "on"
+            State. Valid options: ``0``, ``1``, ``'OFF'``, ``'ON'``.
         """
         state_normalized = self._parse_state(state)
         self.write(f":OUTPut:STATe 'M1.SampleClkOut2', {state_normalized}")
 
     def set_sample_clk_out2_power(self, power: int | float) -> None:
-        """Sets the sample clock OUT2 Power in dBm from the M8008A CLK module.
+        """Sets the sample clock OUT2 Power from the M8008A CLK module.
         Sample clock OUT1 cannot be influenced.
 
         Parameters
         ----------
         power : int | float
-            Sample Clock OUT2 Power in dBm.
-            Must be between -5 and 12 dBm
+            Sample Clock OUT2 Power. Unit: ``'dBm'``.
+
+            * **Range**: ``-5 dBm`` to ``12 dBm``
         """
         if not (-5 <= power <= 12):
             raise ValueError(f"Power must be between -5 and 12 dBm. You entered: {power} dBm")
@@ -261,15 +266,15 @@ class M8070B(BaseInstrument):
         matlab_engine : matlab.engine
             An active MATLAB engine session.
         channel : int
-            AWG channel (1 or 2).
+            AWG channel. Valid options: ``1``, ``2``.
         frequency : float
-            Tone frequency in Hz.
+            Tone frequency. Unit: ``'Hz'``.
         correction : int, optional
-            Enable correction (default 0).
+            Enable correction. Default: ``0``.
         run : int, optional
-            AWG run number (default 1).
+            AWG run number. Default: ``1``.
         fs : float, optional
-            AWG sample rate (default 256e9).
+            AWG sample rate. Default: ``256e9``.
         """
         # 1) Validate channel
         channel = self.validate_channel(channel)

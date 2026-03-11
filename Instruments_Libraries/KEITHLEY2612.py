@@ -73,7 +73,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         Returns
         -------
@@ -97,7 +97,8 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         state : int | str | bool
-            State to validate (e.g., 'ON', 'OFF', 1, 0, True, False).
+            State to validate. Valid options: ``1``, ``0``, ``True``, ``False``, ``'ON'``,
+            ``'OFF'``.
         output : bool, optional
             If True, allows 'HIGH_Z' state. Default is False.
 
@@ -154,7 +155,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -167,7 +168,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -180,7 +181,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -193,7 +194,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -206,7 +207,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         type_ : str
             Type of measurement (e.g., 'voltage', 'current', 'power', 'resistance').
         """
@@ -231,7 +232,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -249,7 +250,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -263,7 +264,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.measure.autorangev)")))
@@ -276,7 +277,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.measure.autorangei)")))
@@ -292,7 +293,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         """
         channel = self.validate_channel(channel)
         response = self.query(f"print(smu{channel}.source.compliance)").lower()
@@ -306,7 +307,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.autorangev)")))
@@ -319,7 +320,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.autorangei)")))
@@ -331,7 +332,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -344,7 +345,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -357,7 +358,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -370,7 +371,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -383,7 +384,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -396,7 +397,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
 
         """
         channel = self.validate_channel(channel)
@@ -409,7 +410,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         """
         channel = self.validate_channel(channel)
         return int(float(self.query(f"print(smu{channel}.source.func)")))
@@ -436,9 +437,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         state : int | str | bool
-            Output state (e.g., 'ON', 'OFF', 1, 0, True, False).
+            Output state. Valid options: ``1``, ``0``, ``True``, ``False``, ``'ON'``, ``'OFF'``.
         """
         channel = self.validate_channel(channel)
         state_normalized = self.validate_state(state, output=True)
@@ -455,9 +456,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         state : int | str | bool
-            Status (e.g., 'ON' or 'OFF').
+            Status. Valid options: ``'ON'``, ``'OFF'``.
         """
         channel = self.validate_channel(channel)
         state_normalized = self.validate_state(state)
@@ -470,9 +471,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         state : int | str | bool
-            Status (e.g., 'ON' or 'OFF').
+            Status. Valid options: ``'ON'``, ``'OFF'``.
         """
         channel = self.validate_channel(channel)
         state_normalized = self.validate_state(state)
@@ -485,9 +486,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         value : int | float
-            Voltage range in Volts.
+            Voltage range Unit: ``'V'``.
         """
         channel = self.validate_channel(channel)
         value_formatted = self.format_scientific(value=value, precision=0)
@@ -500,9 +501,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         value : int | float
-            Current range in Amperes.
+            Current range Unit: ``'A'``.
         """
         channel = self.validate_channel(channel)
         value_formatted = self.format_scientific(value=value, precision=0)
@@ -517,9 +518,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         limit : int | float
-            Voltage limit in Volts.
+            Voltage limit Unit: ``'V'``.
         high_voltage : bool, optional
             Enable high voltage range (>10V). Default is False.
 
@@ -558,9 +559,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         limit : int | float
-            Current limit in Amperes.
+            Current limit Unit: ``'A'``.
 
         Raises
         ------
@@ -584,9 +585,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         voltage : int | float
-            Voltage to set in Volts.
+            Voltage to set Unit: ``'V'``.
         high_voltage : bool, optional
             Enable high voltage range (>10V). Default is False.
 
@@ -624,9 +625,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         current : int | float
-            Current to set in Amperes.
+            Current to set Unit: ``'A'``.
 
         Raises
         ------
@@ -649,9 +650,12 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         function : str
-            Source function ('volt', 'voltage', 'amp', 'current').
+            Source function.
+
+            * ``'volt'`` / ``'voltage'`` : Voltage source
+            * ``'amp'`` / ``'current'`` : Current source
         """
         channel = self.validate_channel(channel)
         func_type = self._check_scpi_param(function, ["VOLTage", "CURRent", "V", "I", "AMP"])
@@ -672,7 +676,7 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         value : Any
             Pulse value.
         ton : int | float
@@ -690,9 +694,13 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         mode : str | int
-            Off mode ('normal'/0, 'zero'/1, 'high_z'/2).
+            Off mode.
+
+            * ``'normal'`` / ``0`` : normal mode
+            * ``'zero'`` / ``1`` : zero mode
+            * ``'high_z'`` / ``2`` : high impedance mode
         """
         channel = self.validate_channel(channel)
 
@@ -720,9 +728,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         value : int | float
-            Range in Volts.
+            Range Unit: ``'V'``.
         """
         channel = self.validate_channel(channel)
         value_formatted = self.format_scientific(value=value, precision=0)
@@ -741,9 +749,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         value : int | float
-            Range in Amperes.
+            Range Unit: ``'A'``.
         """
         channel = self.validate_channel(channel)
         value_formatted = self.format_scientific(value=value, precision=0)
@@ -764,9 +772,12 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         measurement_type : str
-            Type ('volt', 'voltage', 'amp', 'current').
+            Type.
+
+            * ``'volt'`` / ``'voltage'`` : Voltage measurement
+            * ``'amp'`` / ``'current'`` : Current measurement
         range_value : int | float
             Range value.
         """
@@ -807,9 +818,9 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         measurement_type : str
-            Measurement type ('v', 'i', 'r', 'p', etc.).
+            Measurement type. Valid options: ``'v'``, ``'i'``, ``'r'``, ``'p'``.
         """
         channel = self.validate_channel(channel)
         meas_type = self._check_scpi_param(
@@ -872,11 +883,11 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         voltage : float
-            Voltage level in Volts.
+            Voltage level Unit: ``'V'``.
         current_limit : float
-            Current compliance in Amperes.
+            Current compliance Unit: ``'A'``.
         """
         channel = self.validate_channel(channel)
         self.set_channel_display(channel)
@@ -892,11 +903,11 @@ class KEITHLEY2612(BaseInstrument):
         Parameters
         ----------
         channel : str
-            Channel identifier ('a' or 'b').
+            Channel identifier. Valid options: ``'a'``, ``'b'``.
         current : float
-            Current level in Amperes.
+            Current level Unit: ``'A'``.
         voltage_limit : float
-            Voltage compliance in Volts.
+            Voltage compliance Unit: ``'V'``.
         """
         channel = self.validate_channel(channel)
         self.set_channel_display(channel)

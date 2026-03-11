@@ -34,7 +34,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         if not isinstance(channel_num, int):
             raise ValueError("Channel number must be an integer.")
@@ -67,7 +67,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":SENS" + str(channel_num) + ":AVER:SWE?"))
@@ -79,7 +79,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return self.query(":SENS" + str(channel_num) + ":TS3739:STATe?")
@@ -108,12 +108,12 @@ class MS4647B(BaseInstrument):
     def get_freq_span(self, channel_num: int) -> float:
         """
         Optional query. Span is automatically calculated as Stop Frequency minus
-        Start Frequency. The query returns the resulting span in Hertz.
+        Start Frequency. The query returns the resulting span Unit: ``'Hz'``.
 
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
+                     Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":SENSe" + str(channel_num) + ":FREQuency:SPAN?"))
@@ -126,7 +126,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":SENSe" + str(channel_num) + ":FREQuency:CENTer?"))
@@ -135,12 +135,12 @@ class MS4647B(BaseInstrument):
         """
         Sets the CW frequency of the indicated channel. Outputs the CW
         frequency of the indicated channel.
-        The output parameter is in Hertz.
+        The output parameter is Unit: ``'Hz'``.
 
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":SENS" + str(channel_num) + ":FREQ:CW?"))
@@ -152,7 +152,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
+                     Channel number.
         """
         self._validate_channel_number(channel_num)
         return self.query(":SENSe" + str(channel_num) + ":FREQuency:DATA?")
@@ -199,7 +199,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
+                     Channel number.
         """
         self._validate_channel_number(channel_num)
         return self.query(":SENS" + str(channel_num) + ":AVER?")
@@ -211,7 +211,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return self.query(":SENS" + str(channel_num) + ":AVER:TYP?")
@@ -223,7 +223,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
+                     Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":SENS" + str(channel_num) + ":AVER:COUN?"))
@@ -266,7 +266,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":SENS" + str(channel_num) + ":BAND?"))
@@ -280,7 +280,7 @@ class MS4647B(BaseInstrument):
         segment : int
             Selected Source. Can be from 1-16
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         segment_list = np.arange(1, 17, 1)
         channel_num_list = np.arange(1, 5, 1)
@@ -298,7 +298,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         return float(self.query(":CALC" + str(channel_num) + ":SMO?"))
@@ -350,7 +350,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         self.write(":SENS" + str(channel_num) + ":AVER:CLE")
@@ -391,9 +391,9 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
-        state : str/int
-            ON/OFF or 1/0.
+            Channel number.
+        state : int | str
+            State. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         self._validate_channel_number(channel_num)
         parsed_state = self._parse_state(state)
@@ -434,9 +434,9 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
-        value : int/str in form - 10E+9
-                The input parameter is in Hertz, Meters, or Seconds.
+                     Channel number.
+        value : int | str in form - 10E+9
+                The input parameter is Unit: ``'Hz'``., Meters, or Seconds.
         """
         self._validate_channel_number(channel_num)
         self.write(":SENSe" + str(channel_num) + ":FREQuency:STARt " + str(value))
@@ -444,13 +444,13 @@ class MS4647B(BaseInstrument):
     def set_stop_freq(self, channel_num: int, value: int | str) -> None:
         """
         Sets the stop value of the sweep range of the indicated channel.
-        The input parameter is in Hertz, Meters, or Seconds.
+        The input parameter is Unit: ``'Hz'``., Meters, or Seconds.
 
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
-        value : int/str in form - 10E+9
+                     Channel number.
+        value : int | str in form - 10E+9
 
         """
         self._validate_channel_number(channel_num)
@@ -464,8 +464,8 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
-        value : int/str in form - 10E+9
+                     Channel number.
+        value : int | str in form - 10E+9
 
         """
         self._validate_channel_number(channel_num)
@@ -479,8 +479,8 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
-        value : int/str in form - 10E+9
+                     Channel number.
+        value : int | str in form - 10E+9
         """
         self._validate_channel_number(channel_num)
         self.write(":SENS" + str(channel_num) + ":FREQ:CW " + str(value))
@@ -491,8 +491,8 @@ class MS4647B(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-                ON/OFF or 1/0.
+        state : int | str
+                State. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         parsed_state = self._parse_state(state)
         self.write(":DISP:ACT:CHAN:SWE:STAT  " + parsed_state)
@@ -502,12 +502,18 @@ class MS4647B(BaseInstrument):
         The command assigns the data port pair to use when creating an sNp
         data file on the indicated channel. The use of Port 3 and/or Port 4
         requires a 4-port VNA instrument.
-        PORT12 | PORT13 | PORT14 | PORT23 | PORT24 | PORT34
+
+        * ``'PORT12'`` : Ports 1 and 2
+        * ``'PORT13'`` : Ports 1 and 3
+        * ``'PORT14'`` : Ports 1 and 4
+        * ``'PORT23'`` : Ports 2 and 3
+        * ``'PORT24'`` : Ports 2 and 4
+        * ``'PORT34'`` : Ports 3 and 4
 
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
+                     Channel number.
         value1 : int
         value2 : int
         """
@@ -536,9 +542,11 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         unit : str
-            - LINPH = Linear and Phase
-            - LOGPH = Log and Phase
-            - REIM = Real and Imaginary Numbers
+            Parameter format.
+
+            * ``'LINPH'`` : Linear Magnitude and Phase
+            * ``'LOGPH'`` : Log Magnitude and Phase
+            * ``'REIM'`` : Real and Imaginary
         """
         unit_parsed = self._check_scpi_param(unit, ["LINPH", "LOGPH", "REIM"])
         self.write(":FORM:SNP:PAR " + unit_parsed)
@@ -549,7 +557,7 @@ class MS4647B(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
+        state : int | str
             Sets the RF on/off state in Hold.
         """
         parsed_state = self._parse_state(state)
@@ -563,9 +571,9 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                    Channel Number 1,2,3...
-        state : int/str
-                ON/OFF or 1/0.
+                    Channel number.
+        state : int | str
+                State. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         self._validate_channel_number(channel_num)
         parsed_state = self._parse_state(state)
@@ -578,11 +586,13 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                    Channel Number 1,2,3...
+                    Channel number.
         state : str
             Sets the averaging function type to point-by-point or sweep-by-sweep.
-            POIN | SWE
-            Default Value: POIN
+            Default Value: ``'POIN'``.
+
+            * ``'POINt'`` : point-by-point
+            * ``'SWEep'`` : sweep-by-sweep
         """
         self._validate_channel_number(channel_num)
         state_parsed = self._check_scpi_param(state, ["POINt", "SWEep"])
@@ -596,7 +606,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                     Channel Number 1,2,3...
+                     Channel number.
         value : int
             The input parameter is a unitless number. Range: 1 to 1024
             Default Value: 1
@@ -613,9 +623,9 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-                    Channel Number 1,2,3...
-        value : int/floa/str
-            IF Bandwidth in Hz
+                    Channel number.
+        value : int | float | str
+            IF Bandwidth Unit: ``'Hz'``.
         """
 
         value = str(value)
@@ -631,8 +641,8 @@ class MS4647B(BaseInstrument):
         segment : int
             Selected Source. Can be from 1-16
         channel_num : int
-            Channel Number 1,2,3...
-        value : int/floa/str
+            Channel number.
+        value : int | float | str
             Power level
         """
 
@@ -650,9 +660,9 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
-        state : str/int
-            can be int or str form the list ['ON','OFF',1,0]
+            Channel number.
+        state : int | str
+            State. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         self._validate_channel_number(channel_num)
         parsed_state = self._parse_state(state)
@@ -665,7 +675,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         value : int
             Percentage smoothing between 0 to 100
         """
@@ -680,7 +690,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         self.write(":DISP:WIND" + str(channel_num) + ":ACT")
@@ -697,7 +707,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
         self._validate_channel_number(channel_num)
         self.write(":DISP:COUN " + str(channel_num))
@@ -709,7 +719,7 @@ class MS4647B(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Channel Number 1,2,3...
+            Channel number.
         """
 
         if isinstance(channel_name, str):
@@ -858,7 +868,7 @@ class MS4647B(BaseInstrument):
             Where on the PC to save the data
         name : str
             Name of the File
-        port_num : int/str
+        port_num : int | str
             The N(ports number) for the .sNp data output.
             Write a text File with the transferred data
         """
@@ -885,4 +895,3 @@ class MS4647B(BaseInstrument):
             for line in readinglines:
                 f.write(line)
                 f.write("\n")
-

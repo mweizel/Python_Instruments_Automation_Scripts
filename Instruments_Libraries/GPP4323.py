@@ -105,9 +105,9 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
-        voltage : int/float.
-            Set Voltage on Channel.
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
+        voltage : int | float
+            Set Voltage on Channel. Unit: ``'V'``.
         """
         channel = self._validate_channel(channel)
         voltage_str = self._validate_voltage(channel, voltage)
@@ -118,9 +118,9 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
-        amp : int/float
-            Set Current on Channel.
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
+        amp : int | float
+            Set Current on Channel. Unit: ``'A'``.
         """
         channel = self._validate_channel(channel)
         amp_str = self._validate_amp(channel, amp)
@@ -134,7 +134,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         state : str
-            Possible state ["ON", "OFF"].
+            Possible state. Valid options: ``'ON'``, ``'OFF'``.
         """
         state_normalized = self._parse_state(state)
         self.write(f":OUTPut:SERies {state_normalized}")
@@ -145,7 +145,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         state : str
-            Possible state ["ON", "OFF"].
+            Possible state. Valid options: ``'ON'``, ``'OFF'``.
         """
         state_normalized = self._parse_state(state)
         self.write(f":OUTPut:PARallel {state_normalized}")
@@ -157,7 +157,11 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         mode : int
-            Select 0 - Independent, 1 - Series or 2 - Parallel
+            Select operation mode. Valid options: ``0``, ``1``, ``2``.
+
+            * ``0`` : Independent
+            * ``1`` : Series
+            * ``2`` : Parallel
         """
         if mode not in [0, 1, 2]:
             raise ValueError("Invalid Mode. Select 0 - Independent, 1 - Series, 2 - Parallel")
@@ -169,11 +173,15 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2].
+            Select channel. Valid options: ``1``, ``2``.
         mode : str
-            Select Load CV, CC or CR mode.
+            Select Load mode.
+
+            * ``'CV'`` : Constant Voltage
+            * ``'CC'`` : Constant Current
+            * ``'CR'`` : Constant Resistance
         state : str
-            Possible state ["ON", "OFF"].
+            Possible state. Valid options: ``'ON'``, ``'OFF'``.
         """
         valid_mode = self._check_scpi_param(mode, ["CC", "CV", "CR"])
         channel = self._validate_channel(channel, main_channel=True)
@@ -186,9 +194,11 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2].
+            Select channel. Valid options: ``1``, ``2``.
         res : float
-            Set resistance values from range 1-1000.
+            Set resistance values.
+
+            * **Range**: ``1`` to ``1000``
         """
         channel = self._validate_channel(channel, main_channel=True)
         res_str = self._validate_resistor(res)
@@ -200,9 +210,9 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         state : str
-            state of power Supple output. Could be ["ON", "OFF"]
+            State of power Supply output. Valid options: ``'ON'``, ``'OFF'``.
         """
         channel = self._validate_channel(channel)
         state_normalized = self._parse_state(state)
@@ -216,7 +226,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         state : str
-            state of power Supple output. Could be ["ON", "OFF"]
+            State of power Supply output. Valid options: ``'ON'``, ``'OFF'``.
         """
         state_normalized = self._parse_state(state)
         if state_normalized == "ON":
@@ -234,7 +244,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         """
         channel = self._validate_channel(channel)
         return float(self.query(f"VSET{channel}?"))
@@ -245,7 +255,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         """
         channel = self._validate_channel(channel)
         return float(self.query(f"ISET{channel}?"))
@@ -256,10 +266,13 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
-        Type : str
-            Select measurement type:
-            'volt', 'amp' or 'watt'.
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
+        measurement_type : str
+            Select measurement type.
+
+            * ``'volt'`` : Voltage measurement
+            * ``'amp'`` : Current measurement
+            * ``'watt'`` : Power measurement
         """
         channel = self._validate_channel(channel)
         type_norm = self._validate_measurement_type(measurement_type)
@@ -271,7 +284,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         """
         return self.measure(channel, "amp")
 
@@ -281,7 +294,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         """
         return self.measure(channel, "volt")
 
@@ -291,7 +304,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         """
         return self.measure(channel, "watt")
 
@@ -302,7 +315,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2].
+            Select channel. Valid options: ``1``, ``2``.
         """
         channel = self._validate_channel(channel, main_channel=True)
         return self.query(f":MODE{channel}?")
@@ -312,7 +325,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2].
+            Select channel. Valid options: ``1``, ``2``.
         """
         channel = self._validate_channel(channel, main_channel=True)
         return float(self.query(f":LOAD{channel}:RESistor?"))
@@ -328,7 +341,7 @@ class GPP4323(BaseInstrument):
         Parameters
         ----------
         channel : int
-            Select channel from List of Channel Numbers [1,2,3,4].
+            Select channel. Valid options: ``1``, ``2``, ``3``, ``4``.
         """
         channel = self._validate_channel(channel)
         result = {}

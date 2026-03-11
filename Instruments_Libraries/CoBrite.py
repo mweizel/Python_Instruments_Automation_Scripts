@@ -45,7 +45,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -65,7 +65,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -85,7 +85,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -104,7 +104,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -124,7 +124,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -144,7 +144,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -164,7 +164,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -195,7 +195,7 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
+            Channel number. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -237,10 +237,9 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
+            Channel number. Valid options: ``1``, ``2``.
         value : float
-            Sets the optical output power target setting of a tunable laser port.
-            Value format is in dBm.
+            Sets the optical output power target setting of a tunable laser port. Unit: ``'dBm'``.
 
         Raises
         ------
@@ -258,10 +257,9 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
+            Channel number. Valid options: ``1``, ``2``.
         value : float
-            Sets the wavelength setting of a tunable laser port. Value format
-            is in Nanometer.
+            Sets the wavelength setting of a tunable laser port. Unit: ``'nm'``.
 
         Raises
         ------
@@ -279,10 +277,9 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
+            Channel number. Valid options: ``1``, ``2``.
         value : float
-            Sets or queries the wavelength setting of a tunable laser port.
-            Value format is in Tera Hertz.
+            Sets or queries the wavelength setting of a tunable laser port. Unit: ``'THz'``.
 
         Raises
         ------
@@ -299,10 +296,9 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
-        state : float/int
-            Set if laser is ON or OFF. Can be integer 0 or 1, but can be a str
-            ON and OFF.
+            Channel number. Valid options: ``1``, ``2``.
+        state : float | int | str
+            Set if laser is ON or OFF. Valid options: ``'ON'``, ``'OFF'``, ``1``, ``0``.
 
         Raises
         ------
@@ -323,10 +319,9 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!.
+            Channel number. Valid options: ``1``, ``2``.
         value : float
-            Sets the frequency offset setting of a tunable laser port.
-            Value format is in Giga Hertz.
+            Sets the frequency offset setting of a tunable laser port. Unit: ``'GHz'``.
 
         Raises
         ------
@@ -341,16 +336,15 @@ class CoBrite(BaseInstrument):
         Parameters
         ----------
         chan : int
-            Channel number. Can be 1 or 2. CoBrite have only 2 channels!
+            Channel number. Valid options: ``1``, ``2``.
         freq : float
-            Sets frequency in Thz format. For example freq = 192.2345
+            Sets frequency in THz format. Unit: ``'THz'``.
         power : float
-            Sets the power to dBm. For example power = 9.8.
-            min Power = 8.8
-            max Power = 17.8
-            Check ask_LaserLim() for more info.
+            Sets the power to dBm. Unit: ``'dBm'``.
+
+            * **Range**: ``8.8 dBm`` to ``17.8 dBm``
         offset : float
-            Sets offset Freq in range Ghz.
+            Sets offset Freq. Unit: ``'GHz'``.
 
         Raises
         ------

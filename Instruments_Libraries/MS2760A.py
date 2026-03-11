@@ -133,21 +133,21 @@ class MS2760A(BaseInstrument):
 
     def get_start_frequency(self) -> float:
         """
-        Query for the start frequency in Hz.
+        Query for the start frequency Unit: ``'Hz'``.
         """
 
         return self.query_ascii_values(":SENSe:FREQuency:STARt?")[0]
 
     def get_stop_frequency(self) -> float:
         """
-        Query for the stop frequency in Hz.
+        Query for the stop frequency Unit: ``'Hz'``.
         """
 
         return self.query_ascii_values(":SENSe:FREQuency:STOP?")[0]
 
     def get_resolution_bandwidth(self) -> float:
         """
-        Query the resolution bandwidth in Hz.
+        Query the resolution bandwidth Unit: ``'Hz'``.
         """
 
         return self.query_ascii_values(":SENSe:BANDwidth:RESolution?")[0]
@@ -176,12 +176,12 @@ class MS2760A(BaseInstrument):
 
     def get_sweep_time(self) -> float:
         """
-        Query the measured sweep time (in milliseconds).
+        Query the measured sweep time (in ms).
 
         Returns
         -------
         float
-            Measured sweep time in ms. Returns ``nan`` if not available.
+            Measured sweep time Unit: ``'ms'``. Returns ``nan`` if not available.
         """
 
         return self.query_ascii_values(":DIAGnostic:SWEep:TIME?")[0]
@@ -296,14 +296,14 @@ class MS2760A(BaseInstrument):
 
     def get_center_frequency(self) -> float:
         """
-        Query the center frequency in Hz.
+        Query the center frequency Unit: ``'Hz'``.
         """
 
         return self.query_ascii_values(":SENSe:FREQuency:CENTer?")[0]
 
     def get_span(self) -> float:
         """
-        Query the frequency span in Hz.
+        Query the frequency span Unit: ``'Hz'``.
         """
         return self.query_ascii_values(":SENSe:FREQuency:SPAN?")[0]
 
@@ -353,7 +353,7 @@ class MS2760A(BaseInstrument):
 
     def get_reference_level(self) -> float:
         """
-        Query the reference level in dBm.
+        Query the reference level Unit: ``'dBm'``.
         """
         return self.query_ascii_values(":DISPlay:TRACe:Y:SCALe:RLEVel?")[0]
 
@@ -384,7 +384,7 @@ class MS2760A(BaseInstrument):
 
     def get_capture_time(self) -> float:
         """
-        Returns the capture time in ms. Range 0 ms to 10000 ms.
+        Returns the capture time Unit: ``'ms'``. Range 0 ms to 10000 ms.
         """
         return self.query_ascii_values(":CAPTure:TIMe?")[0]
 
@@ -423,7 +423,7 @@ class MS2760A(BaseInstrument):
             Sets the start frequency.
 
         unit : str
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``HZ``. Valid options: ``'HZ'``, ``'KHZ'``, ``'MHZ'``, ``'GHZ'``.
 
         """
 
@@ -445,7 +445,7 @@ class MS2760A(BaseInstrument):
             Sets the stop frequency.
 
         unit : str
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``HZ``. Valid options: ``'HZ'``, ``'KHZ'``, ``'MHZ'``, ``'GHZ'``.
 
         """
 
@@ -468,7 +468,7 @@ class MS2760A(BaseInstrument):
             Sets the resolution bandwidth.
 
         unit : str
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``HZ``. Valid options: ``'HZ'``, ``'KHZ'``, ``'MHZ'``, ``'GHZ'``.
 
         """
 
@@ -489,7 +489,7 @@ class MS2760A(BaseInstrument):
         ----------
         state : int | str
             Coupling state of resolution bandwidth to span. Default: ``ON``.
-            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
 
         state = self._parse_state(state)
@@ -507,7 +507,7 @@ class MS2760A(BaseInstrument):
             Sets the center frequency.
 
         unit : str
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``HZ``. Valid options: ``'HZ'``, ``'KHZ'``, ``'MHZ'``, ``'GHZ'``.
 
         """
 
@@ -531,7 +531,7 @@ class MS2760A(BaseInstrument):
             Sets the frequency span.
 
         unit : str
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``HZ``. Valid options: ``'HZ'``, ``'KHZ'``, ``'MHZ'``, ``'GHZ'``.
 
         """
 
@@ -553,7 +553,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Sets the continuous measurement state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Sets the continuous measurement state. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
 
         state = self._parse_state(state)
@@ -566,7 +566,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str
-            Set Data Format. Options: {``ASCii`` | ``INTeger`` | ``REAL``}
+            Set Data Format. Valid options: ``'ASCii'``, ``'INTeger'``, ``'REAL'``.
         """
 
         valid_format = self._check_scpi_param(state, ["ASCii", "INTeger", "REAL"])
@@ -580,7 +580,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Marker excursion state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Marker excursion state. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         state = self._parse_state(state)
         self.write(f":CALCulate:MARKer:PEAK:EXCursion:STATe {state}")
@@ -643,7 +643,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Channel power measurement state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Channel power measurement state. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
 
         state = self._parse_state(state)
@@ -656,13 +656,8 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         mode : str
-            * Normal - ``NORM`` or ``WRITE``
-            * Hold the Minimum - ``MIN`` or ``MINHOLD``
-            * Hold the Maximum - ``MAX`` or ``MAXHOLD``
-            * Average - ``AVER`` or ``AVERAGE``
-            * Rolling Max Hold - ``RMAX``
-            * Rolling Min Hold - ``RMIN``
-            * Rolling Average - ``RAV``
+            Trace mode. Valid options: ``'NORM'``, ``'WRITE'``, ``'MIN'``, ``'MINHOLD'``, ``'MAX'``,
+            ``'MAXHOLD'``, ``'AVER'``, ``'AVERAGE'``, ``'RMAX'``, ``'RMIN'``, ``'RAV'``.
         trace_number : int
             Trace number (1 to 6). Default: 1.
         """
@@ -679,14 +674,14 @@ class MS2760A(BaseInstrument):
             "RMIN": "RMIN",
             "RAV": "RAV",
         }
-        
+
         mode_upper = mode.strip().upper()
         if mode_upper in mode_map:
             valid_trace_type = mode_map[mode_upper]
         else:
             valid_list = ["NORM", "MIN", "MAX", "AVER", "RMAX", "RMIN", "RAV"]
             valid_trace_type = self._check_scpi_param(mode, valid_list)
-            
+
         if trace_number in self._trace_List:
             self.write(f":TRACe{trace_number}:TYPE {valid_trace_type}")
         else:
@@ -716,7 +711,7 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Trace visibility state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Trace visibility state. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         trace_number : int
             Trace number (1 to 6). Default: 1.
         """
@@ -729,12 +724,12 @@ class MS2760A(BaseInstrument):
 
     def set_reference_level(self, level: float) -> None:
         """
-        Set the reference level in dBm.
+        Set the reference level Unit: ``'dBm'``.
 
         Parameters
         ----------
         level : float
-            Reference level in dBm.
+            Reference level Unit: ``'dBm'``.
 
         """
         if -150 <= level <= 30:
@@ -750,25 +745,20 @@ class MS2760A(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            IF gain state. Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            IF gain state. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
 
         state = self._parse_state(state)
         self.write(f":POWer:IF:GAIN:STATe {state}")
 
-    def set_detector_mode(
-        self,
-        mode: str = "POSitive",
-        trace_number: int = 1,
-        **kwargs
-    ) -> None:
+    def set_detector_mode(self, mode: str = "POSitive", trace_number: int = 1, **kwargs) -> None:
         """
         Sets the detector mode.
 
         Parameters
         ----------
         mode : str
-            Detector mode. Options: {``POSitive`` | ``RMS`` | ``NEGative``}
+            Detector mode. Valid options: ``'POSitive'``, ``'RMS'``, ``'NEGative'``.
         trace_number : int
             Trace number (1 to 6). Default: 1.
         """
@@ -788,7 +778,8 @@ class MS2760A(BaseInstrument):
         capture_time : float, optional
             Capture time. Range: 0.0 to 10000.0. Default: 0.0.
         unit : str, optional
-            Default: ``MS``. Options: {``PS`` | ``NS`` | ``US`` | ``MS`` | ``S`` | ``MIN`` | ``HR``}
+            Default: ``MS``. Valid options: ``'PS'``, ``'NS'``, ``'US'``, ``'MS'``, ``'S'``,
+            ``'MIN'``, ``'HR'``.
         """
         valid_unit = self._check_scpi_param(unit, ["PS", "NS", "US", "MS", "S", "MIN", "HR"])
         self.write(f":CAPTure:TIMe {capture_time} {valid_unit}")
@@ -805,7 +796,7 @@ class MS2760A(BaseInstrument):
         Returns
         -------
         dict | np.ndarray
-            Measured frequency in Hz and peak power in dBm.
+            Measured frequency in Hz and peak power Unit: ``'dBm'``.
         """
 
         self.set_continuous("OFF")
@@ -1015,4 +1006,3 @@ class MS2760A(BaseInstrument):
             # For now, to avoid breaking, we will just return data.
 
         return x_array, y_array
-

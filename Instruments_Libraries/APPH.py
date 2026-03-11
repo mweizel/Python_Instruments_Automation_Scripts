@@ -120,16 +120,12 @@ class APPH(BaseInstrument):
     def get_pn_spot(self, value: float) -> str:
         """
         Returns the phase noise value of the last measurement at the offset frequency
-        defined in <value>. The parameter is given as offset frequency in [Hz]
-        Unit Hz
-        Value - float
+        defined in <value>. The parameter is given as offset frequency in [Hz].
 
         Parameters
         ----------
         value : float
-            The parameter is given as offset frequency in [Hz]
-            Unit Hz
-            Value - float
+            Offset frequency. Unit: ``'Hz'``.
         """
         return self.query("CALCulate:PN:TRACE:SPOT? " + str(value))
 
@@ -168,16 +164,12 @@ class APPH(BaseInstrument):
     def get_an_spot(self, value: float) -> str:
         """
         Returns the phase noise value of the last measurement at the offset frequency
-        defined in <value>. The parameter is given as offset frequency in [Hz]
-        Unit Hz
-        Value - float
+        defined in <value>. The parameter is given as offset frequency in [Hz].
 
         Parameters
         ----------
         value : float
-            The parameter is given as offset frequency in [Hz]
-            Unit Hz
-            Value - float
+            Offset frequency. Unit: ``'Hz'``.
         """
         return self.query("CALCulate:AN:TRACE:SPOT? " + str(value))
 
@@ -220,9 +212,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            The parameters defines the spot noise offset frequency in [Hz].
-            Units are in Hz.
-            Value - float
+            Spot noise offset frequency. Unit: ``'Hz'``.
         """
         return self.query("CALCulate:FN:TRACE:SPOT? " + str(value))
 
@@ -245,13 +235,13 @@ class APPH(BaseInstrument):
 
         Parameters
         ----------
-        chan : list
-            Can be set to [1,2,3,4]
+        chan : int
+            Valid options: ``1``, ``2``, ``3``, ``4``.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid channel is provided.
         """
         chan_list = [1, 2, 3, 4]
         if chan in chan_list:
@@ -342,12 +332,12 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         state : int
-            Can be set to [1,2,3,4]
+            Offset selector. Valid options: ``1``, ``2``, ``3``, ``4``.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         state_list = [1, 2, 3, 4]
         if state in state_list:
@@ -369,13 +359,16 @@ class APPH(BaseInstrument):
         """
         Parameters
         ----------
-        status : str
-            Set Output ON and OFF.  CAn be ['ON','OFF']
+        status : str | int | float | bool
+            Set Output ON and OFF.
+
+            * ``'ON'`` / ``1`` : Activates the output.
+            * ``'OFF'`` / ``0`` : Deactivates the output.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_status = self._parse_state(status)
         self.write(":OUTput " + valid_status)
@@ -385,18 +378,19 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         state : str
-            Sets/gets the active measurement mode. Can be ['PN','AN','FN','BB','TRAN','VCO']
-                • PN: phase noise measurement
-                • AN: amplitude noise measurement
-                • FN: frequency noise measurement (results are converted to phase noise)
-                • BB: base band measurement (not yet available)
-                • TRAN: transient analysis (not yet available)
-                • VCO: voltage controlled oscillator characterization
+            Sets/gets the active measurement mode.
+
+            * ``'PN'`` : phase noise measurement
+            * ``'AN'`` : amplitude noise measurement
+            * ``'FN'`` : frequency noise measurement (results are converted to phase noise)
+            * ``'BB'`` : base band measurement (not yet available)
+            * ``'TRAN'`` : transient analysis (not yet available)
+            * ``'VCO'`` : voltage controlled oscillator characterization
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._check_scpi_param(state, ["PN", "AN", "FN", "BB", "TRAN", "VCO"])
         self.write("SENSe:MODE " + valid_state)
@@ -419,14 +413,16 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         event : str
-                Waits for the defined event
-                NEXT: next iteration complete
-                ALL: measurement complete
-                <value>: specified iteration complete
-                Optionally, a timeout in milliseconds can be specified as a second parameter.
-                This command will block further SCPI requests until the specified event or the
-                specified timeout has occurred. If no timeout is specified, the timeout will be
-                initiated.
+            Waits for the defined event.
+
+            * ``'NEXT'``: next iteration complete
+            * ``'ALL'``: measurement complete
+            * ``<value>``: specified iteration complete
+
+            Optionally, a timeout in milliseconds can be specified as a second parameter.
+            This command will block further SCPI requests until the specified event or the
+            specified timeout has occurred. If no timeout is specified, the timeout will be
+            initiated.
         """
         self.write("CALCulate:WAIT:AVERage " + str(event))
 
@@ -439,9 +435,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            Sets the voltage at the DUT TUNE port. Returns the configured value.
-            If the output is turned off, it doesn't necessarily return 0, as an internal
-            voltage may be configured
+            Voltage at the DUT TUNE port.
         """
         self.write(":SOURce:TUNE:DUT:VOLT " + str(value))
 
@@ -450,12 +444,15 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         state : str | int | float | bool
-            Enables/disables the DUT TUNE port. Can be ['ON','OFF'] or [1,0] or [True,False].
+            Enables/disables the DUT TUNE port.
+
+            * ``'ON'`` / ``1`` : Enables the port.
+            * ``'OFF'`` / ``0`` : Disables the port.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SOURce:TUNE:DUT:STAT " + valid_state)
@@ -469,13 +466,14 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            Range: 0-60
             Sets the IF gain for the measurement.
+
+            * **Range**: ``0`` to ``60``
 
         Raises
         ------
         ValueError
-            Error massage
+            If the value is out of bounds.
         """
         if value > 60.0:
             raise ValueError("Unknown input! See function description for more info.")
@@ -487,8 +485,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-                    Unit HZ
-                    Sets the start offset frequency.
+            Start offset frequency. Unit: ``'Hz'``.
         """
         self.write(":SENSe:PN:FREQuency:STARt " + str(value))
 
@@ -497,8 +494,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            Unit HZ
-            Sets the stop offset frequency.
+            Stop offset frequency. Unit: ``'Hz'``.
         """
         self.write(":SENSe:PN:FREQuency:STOP " + str(value))
 
@@ -510,15 +506,14 @@ class APPH(BaseInstrument):
         """
         Parameters
         ----------
-        state : str
-            Can be ['ALL','NEXT']
+        state : str | int
+            Target iteration to be saved.
+
+            * ``'ALL'`` : Specifies the last iteration (waits for the measurement to finish)
+            * ``'NEXT'`` : Specifies the next possible iteration
+            * `<int>` : Specifies the specific iteration requested
         value : float
-            This command requests a preliminary result during the measurement and blocks until
-            the result is ready. The first parameter (required) specifies the target iteration
-            to be saved. NEXT specifies the next possible iteration, ALL specifies the last
-            iteration of the measurement (i.e. waits for the measurement to finish) and an
-            integer specifies the specific iteration requested.The second parameter (optional)
-            defines a timeout in milliseconds. If the command terminates without generating a
+            Defines a timeout in milliseconds. If the command terminates without generating a
             preliminary result. It will produce an error. This error can be queried with
             SYST:ERR? or SYST:ERR:ALL?.
         """
@@ -531,12 +526,14 @@ class APPH(BaseInstrument):
         ----------
         state : str | int | float | bool
             Enables/Disables the frequency parameter for the measurement.
-            Can be ['ON','OFF'] or [1,0] or [True,False].
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:FREQuency " + valid_state)
@@ -547,12 +544,14 @@ class APPH(BaseInstrument):
         ----------
         state : str | int | float | bool
             Enables/Disables the phase noise parameter for the measurement.
-            Can be  ['ON','OFF'] or [1,0] or [True,False].
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:PNoise " + valid_state)
@@ -563,12 +562,14 @@ class APPH(BaseInstrument):
         ----------
         state : str | int | float | bool
             Enables/Disables the power parameter for the measurement.
-            Can be ['ON','OFF'] or [1,0] or [True,False].
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:POWer " + valid_state)
@@ -578,8 +579,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            Sets the start tuning voltage for the measurement.
-            Unit V
+            Start tuning voltage for the measurement. Unit: ``'V'``.
         """
         self.write(":SENSe:VCO:VOLTage:STARt " + str(value))
 
@@ -588,8 +588,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            Sets the stop tuning voltage for the measurement.
-            Units are in V.
+            Stop tuning voltage for the measurement. Unit: ``'V'``.
         """
         self.write(":SENSe:VCO:VOLTage:STOP " + str(value))
 
@@ -599,12 +598,14 @@ class APPH(BaseInstrument):
         ----------
         state : str | int | float | bool
             Enables/disables the supply current parameter for the measurement.
-            Can be ['ON','OFF'] or [1,0] or [True,False].
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:ISUPply " + valid_state)
@@ -615,12 +616,14 @@ class APPH(BaseInstrument):
         ----------
         state : str | int | float | bool
             Enables/disables the pushing parameter for the measurement.
-            Can be ['ON','OFF'] or [1,0] or [True,False].
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:KPUShing " + valid_state)
@@ -630,13 +633,15 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         state : str | int | float | bool
-           Enables/disables the tune sensitivity parameter for the measurement
-           Can be ['ON','OFF'] or [1,0] or [True,False].
+            Enables/disables the tune sensitivity parameter for the measurement.
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:KVCO " + valid_state)
@@ -646,13 +651,15 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         typ : str
-            Select the DUT type for the measurement. Distinguish between slow (VCXO) and fast
-            (VCO) tuning sensitivities. Can be ['VCO','VCXO']
+            Select the DUT type for the measurement.
+
+            * ``'VCO'`` : Fast tuning sensitivity
+            * ``'VCXO'`` : Slow tuning sensitivity
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid type is provided.
         """
         valid_typ = self._check_scpi_param(typ, ["VCO", "VCXO"])
         self.write(":SENSe:VCO:TYPE " + valid_typ)
@@ -663,12 +670,14 @@ class APPH(BaseInstrument):
         ----------
         state : str | int | float | bool
             Enables/Disables the phase noise parameter for the measurement.
-            Can be set to ['ON','OFF'] or [1,0] or [True,False].
+
+            * ``'ON'`` / ``1`` : Enables parameter.
+            * ``'OFF'`` / ``0`` : Disables parameter.
 
         Raises
         ------
         ValueError
-            Error massage
+            If an invalid state is provided.
         """
         valid_state = self._parse_state(state)
         self.write(":SENSe:VCO:TEST:PNoise " + valid_state)
@@ -688,13 +697,13 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value1 : float
-            freq val 1
+            Offset 1 frequency. Unit: ``'Hz'``.
         value2 : float
-            freq val 2
+            Offset 2 frequency. Unit: ``'Hz'``.
         value3 : float
-            freq val 3
+            Offset 3 frequency. Unit: ``'Hz'``.
         value4 : float
-            freq val 4
+            Offset 4 frequency. Unit: ``'Hz'``.
         """
         self.write(
             ":SENSe:VCO:TEST:Pnoise:OFFSet "
@@ -712,7 +721,7 @@ class APPH(BaseInstrument):
         Parameters
         ----------
         value : float
-            Sets the number rof voltage points to use in the measurement
+            Number of voltage points to use in the measurement.
         """
         self.write(":SENSe:VCO:VOLTage:POINts " + str(value))
 

@@ -123,7 +123,7 @@ class FSWP50(BaseInstrument):
         ----------
         state : bool | int
             True/1 to enable MultiView (ON), False/0 to disable (OFF).
-            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         state = self._parse_state(state)
         self.write(f"DISPlay:ATAB {state}")
@@ -154,7 +154,7 @@ class FSWP50(BaseInstrument):
         center_freq : int | float
             Frequency value (e.g., 1, 2.5) to be combined with unit.
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -175,7 +175,7 @@ class FSWP50(BaseInstrument):
         start_freq : float
             Start frequency.
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -196,7 +196,7 @@ class FSWP50(BaseInstrument):
         stop_freq : float
             Stop frequency.
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -217,7 +217,7 @@ class FSWP50(BaseInstrument):
         span : int | float
             Span value.
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -242,7 +242,7 @@ class FSWP50(BaseInstrument):
         res_bw : int | float
             Sets the resolution bandwidth.
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit in self._freq_Units_List:
@@ -290,7 +290,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         state : str | int
-            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         state = self._parse_state(state)
         self.write(f":INP:ATT:AUTO {state}")
@@ -325,7 +325,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         state : int | str
-            Options: {``1`` | ``0`` | ``ON`` | ``OFF``}
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         state = self._parse_state(state)
         self.write(f"INITiate:CONT {state}")
@@ -559,8 +559,8 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         mode : str
-            Detector mode. Options: {``APEAK`` | ``NEGATIVE`` | ``POSITIVE`` |
-            ``RMS`` | ``AVERAGE`` | ``SAMPLE``}
+            Detector mode. Valid options: ``'APEAK'``, ``'NEGATIVE'``, ``'POSITIVE'``, ``'RMS'``,
+            ``'AVERAGE'``, ``'SAMPLE'``.
         trace_number : int, optional
             Trace number, by default 1.
         window_number : int, optional
@@ -625,7 +625,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit not in self._freq_Units_List:
@@ -660,7 +660,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ`` | ``GHZ``}
+            Default: ``'Hz'``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``, ``'GHz'``.
         """
         unit = unit.upper()
         if unit not in self._freq_Units_List:
@@ -696,7 +696,7 @@ class FSWP50(BaseInstrument):
         bandwidth : float
             RBW value.
         unit : str, optional
-            Default: ``HZ``. Options: {``HZ`` | ``KHZ`` | ``MHZ``}
+            Default: ``HZ``. Valid options: ``'Hz'``, ``'kHz'``, ``'MHz'``.
         """
         unit = unit.strip().upper()
         if unit not in ["HZ", "KHZ", "MHZ"]:
@@ -776,7 +776,7 @@ class FSWP50(BaseInstrument):
         Parameters
         ----------
         mode : str
-            Capture Range mode. Options: {``NORMAL`` | ``WIDE`` | ``40MHZ``}
+            Capture Range mode. Valid options: ``'NORMAL'``, ``'WIDE'``, ``'40MHZ'``.
         """
         mode_map = {
             "NORMAL": "NORM",
@@ -954,4 +954,3 @@ class FSWP50(BaseInstrument):
         Queries the name of the currently selected spurious filter.
         """
         return self.query("SENS:SPUR:FILT:NAME?")
-

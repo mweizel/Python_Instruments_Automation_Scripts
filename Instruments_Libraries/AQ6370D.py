@@ -167,7 +167,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-           Trace selected - ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+            Trace selected. Valid options: ``'TRA'``, ``'TRB'``, ``'TRC'``, ``'TRD'``, ``'TRE'``,
+            ``'TRF'``, ``'TRG'``.
 
         Raises
         ------
@@ -271,8 +272,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-             Name of the trace that should be extract/selected.
-            state = [TRA|TRB|TRC|TRD|TRE|TRF|TRG]
+            Name of the trace that should be extract/selected. Valid options: ``'TRA'``, ``'TRB'``,
+            ``'TRC'``, ``'TRD'``, ``'TRE'``, ``'TRF'``, ``'TRG'``.
 
         Raises
         ------
@@ -295,8 +296,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-            Name of the trace that should be extract/selected.
-            state = [TRA|TRB|TRC|TRD|TRE|TRF|TRG]
+            Name of the trace that should be extract/selected. Valid options: ``'TRA'``, ``'TRB'``,
+            ``'TRC'``, ``'TRD'``, ``'TRE'``, ``'TRF'``, ``'TRG'``.
 
         Raises
         ------
@@ -343,8 +344,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-            Name of the trace that should be extract/selected.
-            state_list = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+            Name of the trace that should be extract/selected. Valid options: ``'TRA'``, ``'TRB'``,
+            ``'TRC'``, ``'TRD'``, ``'TRE'``, ``'TRF'``, ``'TRG'``.
 
         Raises
         ------
@@ -379,9 +380,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-            Set the units of the main scale of the
-            level axis
-            ['dBm','W','DBM/NM','W/NM']
+            Set the units of the main scale of the level axis. Valid options: ``'dBm'``, ``'W'``,
+            ``'DBM/NM'``, ``'W/NM'``.
 
         Raises
         ------
@@ -399,10 +399,10 @@ class AQ6370D(BaseInstrument):
         """
         Parameters
         ----------
-        value : int/float
-            Set the measurement condition
+        value : int | float
+            Set the measurement condition.
         unit : str
-            units - [M|HZ].
+            Units. Valid options: ``'M'``, ``'HZ'``.
 
         Raises
         ------
@@ -434,8 +434,11 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         unit : str
-            unit_list = ['ASCii', 'REAL[,64]', 'REAL,32']
             Sets the parameter format displayed in an SNP data file.
+
+            * ``'ASCii'`` : ASCII format (default)
+            * ``'REAL[,64]'`` : REAL format (64-bits)
+            * ``'REAL,32'`` : REAL format (32-bits)
 
         Notes
         -----
@@ -485,7 +488,10 @@ class AQ6370D(BaseInstrument):
         ----------
         unit : str
             Set the units for the X axis.
-            unit_list = ['WAV','FREQ','WNUM']
+
+            * ``'WAV'`` : Wavelength
+            * ``'FREQ'`` : Frequency
+            * ``'WNUM'`` : Wavenumber
 
         Raises
         ------
@@ -503,11 +509,10 @@ class AQ6370D(BaseInstrument):
         """
         Parameters
         ----------
-        value : int/float
-            Set the center wavelength of the
-            X-axis of the display scale
+        value : int | float
+            Set the center wavelength of the X-axis of the display scale.
         unit : str
-            Units = ['M','HZ']
+            Units. Valid options: ``'M'``, ``'HZ'``.
 
         Raises
         ------
@@ -525,10 +530,10 @@ class AQ6370D(BaseInstrument):
         """
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Set the measurement span.
         unit : str
-            unit_lists = ['M','HZ']
+            Units. Valid options: ``'M'``, ``'HZ'``.
         """
 
         unit_list = ["M", "HZ"]
@@ -541,10 +546,10 @@ class AQ6370D(BaseInstrument):
         """
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Set the measurement resolution.
         unit : str
-            unit_list = ['M','HZ']
+            Units. Valid options: ``'M'``, ``'HZ'``.
 
         Raises
         ------
@@ -564,13 +569,14 @@ class AQ6370D(BaseInstrument):
         ----------
         unit : str
             Set the measurement sensitivity.
-                NHLD = NORMAL HOLD
-                NAUT = NORMAL AUTO
-                NORMal = NORMAL
-                MID = MID
-                HIGH1 = HIGH1 or HIGH1/CHOP
-                HIGH2 = HIGH2 or HIGH2/CHOP
-                HIGH3 = HIGH3 or HIGH3/CHOP
+
+            * ``'NHLD'`` : NORMAL HOLD
+            * ``'NAUT'`` : NORMAL AUTO
+            * ``'NORMAL'`` : NORMAL
+            * ``'MID'`` : MID
+            * ``'HIGH1'`` : HIGH1 or HIGH1/CHOP
+            * ``'HIGH2'`` : HIGH2 or HIGH2/CHOP
+            * ``'HIGH3'`` : HIGH3 or HIGH3/CHOP
 
         Raises
         ------
@@ -589,8 +595,7 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         value : int
-            Set the number of times averaging for
-            each measured point.
+            Set the number of times averaging for each measured point.
         """
         value = int(value)
         self.write(":SENSE:AVERAGE:COUNT " + str(value))
@@ -599,10 +604,9 @@ class AQ6370D(BaseInstrument):
         """
         Parameters
         ----------
-        value :int
-            Set the number of sampling points
-            to be measured at one time when performing
-            SEGMENT MEASURE.
+        value : int
+            Set the number of sampling points to be measured at one time when performing SEGMENT
+            MEASURE.
         """
         value = int(value)
         self.write(":SENSE:SWEEP:SEGMENT:POINTS " + str(value))
@@ -624,8 +628,9 @@ class AQ6370D(BaseInstrument):
         ----------
         value : int
             Set the sweep speed.
-            1 - Standard
-            2 - Twice as fast as standard
+
+            * ``1`` : Standard
+            * ``2`` : Twice as fast as standard
         """
 
         value = int(value)
@@ -641,9 +646,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-            Set the function of automatically
-            setting the sampling number to be measured
-            ['ON'|'OFF']
+            Set the function of automatically setting the sampling number to be measured. Valid
+            options: ``'ON'``, ``'OFF'``.
 
         Raises
         ------
@@ -662,8 +666,8 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-            Sets the active trace.
-            state_list = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+            Sets the active trace. Valid options: ``'TRA'``, ``'TRB'``, ``'TRC'``, ``'TRD'``,
+            ``'TRE'``, ``'TRF'``, ``'TRG'``.
 
         Raises
         ------
@@ -682,8 +686,12 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         state : str
-            Set the sweep mode
-            ['SINGle','REPeat','AUTO','SEGMent']
+            Set the sweep mode.
+
+            * ``'SINGle'`` : Single sweep
+            * ``'REPeat'`` : Repeat sweep
+            * ``'AUTO'`` : Auto sweep
+            * ``'SEGMent'`` : Segment sweep
 
         Raises
         ------
@@ -699,20 +707,18 @@ class AQ6370D(BaseInstrument):
         Parameters
         ----------
         trace : str
-            Sets the active trace.
-            state_list = ['TRA','TRB','TRC','TRD','TRE','TRF','TRG']
+            Sets the active trace. Valid options: ``'TRA'``, ``'TRB'``, ``'TRC'``, ``'TRD'``,
+            ``'TRE'``, ``'TRF'``, ``'TRG'``.
 
         state : str
-            Set the attributes of the specified
-            trace
-            ['WRITe','FIX','MAX','MIN','RAVG','CALC']
+            Set the attributes of the specified trace.
 
-            WRITe = WRITE
-            FIX = FIX
-            MAX = MAX HOLD
-            MIN = MIN HOLD
-            RAVG = ROLL AVG
-            CALC = CALC
+            * ``'WRITe'`` : WRITE
+            * ``'FIX'`` : FIX
+            * ``'MAX'`` : MAX HOLD
+            * ``'MIN'`` : MIN HOLD
+            * ``'RAVG'`` : ROLL AVG
+            * ``'CALC'`` : CALC
 
 
         Raises

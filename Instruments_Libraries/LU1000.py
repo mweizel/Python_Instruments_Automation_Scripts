@@ -95,12 +95,12 @@ class LU1000_Base:  # noqa: N801
     # =============================================================================
     def get_laser_output(self, laser: int) -> int:
         """
-        Returns the Laser output state. Enabled = 1 , Disabled = 0
+        Returns the Laser output state. Valid options: ``1``, ``0``.
 
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -122,9 +122,9 @@ class LU1000_Base:  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected -  1 or 2
-        value : int or str
-            value = ``'ON' |'OFF'|1|0``
+            Laser output selected. Valid options: ``1``, ``2``.
+        value : int | str
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
 
         Raises
         ------
@@ -189,7 +189,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         """
         self._min_freq[laser] = self.get_min_freq(laser)
         self._max_freq[laser] = self.get_max_freq(laser)
@@ -201,7 +201,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -221,7 +221,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -240,7 +240,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -259,7 +259,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -279,7 +279,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -299,7 +299,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -318,7 +318,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -337,7 +337,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -356,7 +356,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -375,7 +375,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser out selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -394,7 +394,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser out selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -412,7 +412,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser out selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -430,7 +430,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -449,7 +449,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -468,7 +468,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -487,7 +487,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -506,7 +506,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -525,7 +525,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -548,7 +548,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser out selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -576,7 +576,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -604,7 +604,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -631,8 +631,8 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
-        value : int or float
+            Laser output selected. Valid options: ``1``, ``2``.
+        value : int | float
             optical power in dBm
         ignore_warning : bool
             When True, no warning for power > 10dBm is displayed
@@ -658,7 +658,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         value : int
             Sets the laser module's current channel
             value = select channel value
@@ -682,7 +682,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         value : int
             Set Grid spacing. Smallest possible value = 1
 
@@ -717,8 +717,8 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
-        value : int or float
+            Laser output selected. Valid options: ``1``, ``2``.
+        value : int | float
             Channel's frequency, THz
 
         Raises
@@ -737,8 +737,8 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
-        value : int or float
+            Laser output selected. Valid options: ``1``, ``2``.
+        value : int | float
             Channel's frequency, GHz*10
 
         Raises
@@ -757,7 +757,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         value : int
             Fine-tuning set the frequency in MHz steps
         """
@@ -772,9 +772,9 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         state : str | int
-            ['ON','OFF', 1, 0]
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         timeout : int
             Timeout in seconds
         """
@@ -818,7 +818,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         value : float
             Set Laser Frequency in THz
             e.g value = 192.876
@@ -886,7 +886,7 @@ class LU1000_Cband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -930,7 +930,7 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -951,7 +951,7 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -972,7 +972,7 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -1004,7 +1004,7 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -1031,9 +1031,9 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         temperature : float
-            9°C <= temperature <= 45°C
+            * **Range**: 9.0 to 45.0
 
         Raises
         ------
@@ -1057,9 +1057,9 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
         value : float
-            0mA <= value <= 100mA
+            * **Range**: 0.0 to 100.0
 
         Raises
         ------
@@ -1091,7 +1091,7 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------
@@ -1113,7 +1113,7 @@ class LU1000_Oband(LU1000_Base):  # noqa: N801
         Parameters
         ----------
         laser : int
-            Laser output selected - 1 or 2
+            Laser output selected. Valid options: ``1``, ``2``.
 
         Raises
         ------

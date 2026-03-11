@@ -93,7 +93,7 @@ class RD3005(BaseInstrument):
             Ignored for RD3005 as it is a single-channel instrument.
             Included for interface compatibility.
         voltage : float
-            Set the voltage on the Display
+            Set the voltage on the Display. Unit: ``'V'``.
         **kwargs : dict
             Optional keyword arguments like 'delay'.
         """
@@ -104,7 +104,7 @@ class RD3005(BaseInstrument):
     def get_voltage_setting(self, channel: Any = None) -> float:
         """
         Returns the set voltage.
-        
+
         Parameters
         ----------
         channel : Any, optional
@@ -131,7 +131,7 @@ class RD3005(BaseInstrument):
             Ignored for RD3005 as it is a single-channel instrument.
             Included for interface compatibility.
         current : float
-            Set the current on the Display
+            Set the current on the Display. Unit: ``'A'``.
         **kwargs : dict
             Optional keyword arguments like 'delay'.
         """
@@ -183,8 +183,8 @@ class RD3005(BaseInstrument):
         channel : Any, optional
             Ignored for RD3005 as it is a single-channel instrument.
             Included for interface compatibility.
-        state : str (ON/OFF)
-            Turn Output ON and OFF
+        state : int | str
+            Turn Output ON and OFF. Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         state_norm = self._parse_state(state)
         if state_norm == "ON":
@@ -196,8 +196,9 @@ class RD3005(BaseInstrument):
         """
         Parameters
         ----------
-        state : str (ON/OFF)
-            Set the state of the overcurrent protection ON and OFF
+        state : int | str
+            Set the state of the overcurrent protection ON and OFF. Valid options: ``1``, ``0``,
+            ``'ON'``, ``'OFF'``.
         """
         state_norm = self._parse_state(state)
         if state_norm == "ON":

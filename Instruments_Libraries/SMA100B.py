@@ -45,8 +45,8 @@ class SMA100B(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            'ON' 1 or 'OFF' 0
+        state : int | str
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
 
         Raises
         ------
@@ -61,8 +61,8 @@ class SMA100B(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            'ON' 1 or 'OFF' 0
+        state : int | str
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
 
         Raises
         ------
@@ -77,8 +77,8 @@ class SMA100B(BaseInstrument):
 
         Parameters
         ----------
-        state : str/int
-            'ON' 1 or 'OFF' 0
+        state : int | str
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
 
         Raises
         ------
@@ -93,9 +93,9 @@ class SMA100B(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Sets the value of the DC offset.
-            Range: -5 to 5
+            * **Range**: -5 to 5
             Increment: 0.001
         """
         if value >= -5 and value <= 5:
@@ -109,9 +109,9 @@ class SMA100B(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Sets the voltage for the CMOS signal.
-            Range: 0.8 to 2.7
+            * **Range**: 0.8 to 2.7
             Increment: 0.001
 
         Raises
@@ -131,9 +131,9 @@ class SMA100B(BaseInstrument):
 
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Shifts the phase of the generated clock signal.
-            Range: -36000 to 36000
+            * **Range**: -36000 to 36000
             Increment: 0.1
 
 
@@ -157,26 +157,16 @@ class SMA100B(BaseInstrument):
         Parameters
         ----------
         mode : str
-            <Mode> CW | FIXed | SWEep | LIST | COMBined
+            Mode.
 
-            CW|FIXed
-                Sets the fixed frequency mode. CW and FIXed are synonyms.
-                The instrument operates at a defined frequency.
-
-            SWEep
-                Sets sweep mode.
-                The instrument processes frequency (and level) settings in
-                defined sweep steps.
-
-            LIST
-                Sets list mode.
-                The instrument processes frequency and level settings by
-                means of values loaded from a list.
-
-            COMBined
-                Sets the combined RF frequency / level sweep mode.
-                The instrument processes frequency and level settings in
-                defined sweep steps.
+            * ``'CW'`` / ``'FIXed'`` : Sets the fixed frequency mode. The instrument operates
+                                       at a defined frequency.
+            * ``'SWEep'`` : Sets sweep mode. The instrument processes frequency (and level) settings
+                            in defined sweep steps.
+            * ``'LIST'`` : Sets list mode. The instrument processes frequency and level settings by
+                           means of values loaded from a list.
+            * ``'COMBined'`` : Sets the combined RF frequency / level sweep mode. The instrument
+                               processes frequency and level settings in defined sweep steps.
         """
 
         valid_mode = self._check_scpi_param(mode, ["CW", "FIXed", "SWEep", "LIST", "COMBined"])
@@ -186,11 +176,11 @@ class SMA100B(BaseInstrument):
         """
         Parameters
         ----------
-        value : int/float
+        value : int | float
             Parameter Frequency
 
-        unit : str (optional)
-            Frequency Unit: 'GHz' or 'MHz' or 'Hz'
+        unit : str, optional
+            Frequency Unit. Valid options: ``'GHz'``, ``'MHz'``, ``'Hz'``.
 
         """
 
@@ -226,7 +216,7 @@ class SMA100B(BaseInstrument):
         Parameters
         ----------
         state : str
-            'ON' 1 or 'OFF' 0
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         state = self._parse_state(state)
         self.write(f":CSYNthesis:OFFSet:STATe {state}")
@@ -236,12 +226,12 @@ class SMA100B(BaseInstrument):
     # =============================================================================
 
     def set_rf_power(self, value: int | float) -> None:
-        """Sets the Signal Generator Output Power in dBm.
+        """Sets the Signal Generator Output Power. Unit: ``'dBm'``..
 
         Parameters
         ----------
-        value : int/float
-            Output Power in dBm
+        value : int | float
+            Output Power. Unit: ``'dBm'``.
         """
         min_val = -20.0
         max_val = 30.0
@@ -251,4 +241,3 @@ class SMA100B(BaseInstrument):
             )
 
         self.write(f"SOURce:POWer:LEVel:IMMediate:AMPlitude {value}")
-

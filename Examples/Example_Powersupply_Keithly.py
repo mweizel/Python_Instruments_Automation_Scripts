@@ -19,7 +19,7 @@ from Instruments_Libraries.InstrumentSelect import SourceMeter
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
 # myKEITHLEY2612 = KEITHLEY2612('COMXX') # noqa: N816
-myKEITHLEY2612 = SourceMeter() # noqa: N816
+myKEITHLEY2612 = SourceMeter()  # noqa: N816
 myKEITHLEY2612.reset()
 
 # %% ==========================================================================
@@ -27,9 +27,9 @@ myKEITHLEY2612.reset()
 # =============================================================================
 num_of_points = 10
 sleep_time = 0.5
-vcc_ch_num = 'a' # channel for VCC
-vcc = 4.7 # V
-vcc_current_limit = 0.140 # A
+vcc_ch_num = "a"  # channel for VCC
+vcc = 4.7  # V
+vcc_current_limit = 0.140  # A
 
 # %% ==========================================================================
 # Configure the Instrument
@@ -43,17 +43,17 @@ myKEITHLEY2612.setup_voltage_source(vcc_ch_num, vcc, vcc_current_limit)
 # %% ==========================================================================
 # Measurement
 # =============================================================================
-myKEITHLEY2612.set_output(channel=vcc_ch_num, state='ON') # turn on the channel
+myKEITHLEY2612.set_output(channel=vcc_ch_num, state="ON")  # turn on the channel
 
-records = [] # Empty list to store data and meta data
+records = []  # Empty list to store data and meta data
 for idx in tqdm(range(num_of_points)):
-    rec = {} # single record
+    rec = {}  # single record
     rec["VCC_Voltage"] = myKEITHLEY2612.measure_voltage(vcc_ch_num)
     rec["VCC_Current"] = myKEITHLEY2612.measure_current(vcc_ch_num)
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
     time.sleep(sleep_time)
-    temp = idx*np.pi # do something with idx
+    temp = idx * np.pi  # do something with idx
 
 # %% ==========================================================================
 # Create Dataframe
@@ -67,15 +67,15 @@ t0 = meas_df["Timestamps"].iloc[0]
 relative_time = (meas_df["Timestamps"] - t0).dt.total_seconds()
 
 plt.plot(relative_time, meas_df["VCC_Current"])
-plt.xlabel('Time (s)')
-plt.ylabel('Current (A)')
+plt.xlabel("Time (s)")
+plt.ylabel("Current (A)")
 plt.show()
 # %% ==========================================================================
 # Save Dataframe
 # =============================================================================
 # Save DataFrame to HDF5 (better than CSV)
 meas_df.to_hdf("measurements.h5", key="data", mode="w")
-# key="data" is like a "dataset name" inside the HDF5 file 
+# key="data" is like a "dataset name" inside the HDF5 file
 # (you can store multiple DataFrames in one file with different keys).
 # mode="w" overwrites the file. Use mode="a" if you want to append new datasets.
 
@@ -83,7 +83,7 @@ meas_df.to_hdf("measurements.h5", key="data", mode="w")
 loaded_df = pd.read_hdf("measurements.h5", key="data")
 print(loaded_df.head())
 
-#or
+# or
 
 # Save DataFrame to CSV
 meas_df.to_csv("measurements.csv", index=False)

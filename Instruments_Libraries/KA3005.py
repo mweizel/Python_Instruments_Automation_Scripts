@@ -14,4 +14,5 @@ class KA3005(RD3005):
     Unified driver delegating immediately to RD3005, preserving backwards compatibility.
     The KA3005, KA3005p, and RD3005 power supplies are fundamentally identical Korad architectures.
     """
+
     pass

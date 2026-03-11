@@ -26,7 +26,7 @@ class BaseInstrument:
         resource_str : str
             The VISA resource string (e.g., 'TCPIP::192.168.1.1::INSTR') or just an IP address.
         visa_library : str, optional
-            VISA library to use (e.g., '@ivi', '@py'). Default is '@py'.
+            VISA library to use (e.g., '@ivi', '@py'). Default: ``'@py'``.
         **kwargs : dict
             Additional arguments passed to `open_resource`.
         """

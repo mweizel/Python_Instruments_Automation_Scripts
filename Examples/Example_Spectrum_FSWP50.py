@@ -19,7 +19,7 @@ from Instruments_Libraries.FSWP50 import FSWP50  # SpectrumAnalyzer
 # %% ==========================================================================
 # Select Instruments and Load Instrument Libraries
 # =============================================================================
-mySpecAnalyser = FSWP50("169.254.253.126") # using class directly  # noqa: N816
+mySpecAnalyser = FSWP50("169.254.253.126")  # using class directly  # noqa: N816
 # mySpecAnalyser = FSWP50() # using InstrumentSelect # noqa: N816
 mySpecAnalyser.reset()
 
@@ -27,12 +27,12 @@ mySpecAnalyser.reset()
 # Setup the Measurement
 # =============================================================================
 num_of_points = 10
-sleep_time = 1 # in seconds
+sleep_time = 1  # in seconds
 freq = np.linspace(1e9, 40e9, num_of_points)
 
 # Initial Spectrum Analyzer Sweep Settings
-SA_RMS_TraceNum = 1 
-SA_POS_TraceNum = 2 
+SA_RMS_TraceNum = 1
+SA_POS_TraceNum = 2
 SA_f_min = 0
 SA_f_max = 40e9
 SA_resBW = 100e3
@@ -42,34 +42,34 @@ datapoints = 4001
 # %% ==========================================================================
 # Configure the Instrument
 # =============================================================================
-mySpecAnalyser.create_channel('SANALYZER', 'Spectrum') # Create Spectrum Channel
-mySpecAnalyser.delete_channel('Phase Noise') # Delete Phase Noise Channel
-mySpecAnalyser.set_continuous('ON') # Set Continuous Mode
+mySpecAnalyser.create_channel("SANALYZER", "Spectrum")  # Create Spectrum Channel
+mySpecAnalyser.delete_channel("Phase Noise")  # Delete Phase Noise Channel
+mySpecAnalyser.set_continuous("ON")  # Set Continuous Mode
 mySpecAnalyser.set_start_frequency(SA_f_min)
 mySpecAnalyser.set_stop_frequency(SA_f_max)
 mySpecAnalyser.set_resolution_bandwidth(SA_resBW)
 mySpecAnalyser.set_reference_level(SA_ref_level)
-mySpecAnalyser.set_sweep_points(datapoints) # Set Number of Data Points
-mySpecAnalyser.set_input_attenuation_auto("OFF") # Disable Auto Input Attenuation
-mySpecAnalyser.set_input_attenuation(0) # Set Input Attenuation
+mySpecAnalyser.set_sweep_points(datapoints)  # Set Number of Data Points
+mySpecAnalyser.set_input_attenuation_auto("OFF")  # Disable Auto Input Attenuation
+mySpecAnalyser.set_input_attenuation(0)  # Set Input Attenuation
 # Trace 1: RMS
 mySpecAnalyser.set_detector_mode("RMS", trace_number=SA_RMS_TraceNum)
 # Trace 2: Positive
 mySpecAnalyser.set_detector_mode("POSITIVE", trace_number=SA_POS_TraceNum)
-mySpecAnalyser.set_trace_mode("WRITE", trace_number=SA_POS_TraceNum) # turn it on
+mySpecAnalyser.set_trace_mode("WRITE", trace_number=SA_POS_TraceNum)  # turn it on
 
 
 # %% ==========================================================================
 # Measurement
 # =============================================================================
 
-records = [] # Empty list to store data and meta data
+records = []  # Empty list to store data and meta data
 for idx in tqdm(range(num_of_points)):
-    rec = {} # single record
+    rec = {}  # single record
 
     # Do some changes, like change input frequency
     # SignalGenerator.set_freq_CW(freq[idx])
-    temp = idx*np.pi # do something with idx
+    temp = idx * np.pi  # do something with idx
 
     # Write Meta Data
     rec["SA f_min"] = SA_f_min
@@ -80,14 +80,16 @@ for idx in tqdm(range(num_of_points)):
     # Take the Measurement
     time.sleep(sleep_time)
     rec["data_rms"] = mySpecAnalyser.measure_and_get_trace(
-        trace_number=SA_RMS_TraceNum, window_number=1)
+        trace_number=SA_RMS_TraceNum, window_number=1
+    )
     rec["data_pos"] = mySpecAnalyser.measure_and_get_trace(
-        trace_number=SA_POS_TraceNum, window_number=1)
+        trace_number=SA_POS_TraceNum, window_number=1
+    )
 
     # append the record
     rec["Timestamps"] = datetime.datetime.now()
     records.append(rec)
-    
+
 
 # %% ==========================================================================
 # Create Dataframe
@@ -101,15 +103,15 @@ freq_hz = np.linspace(SA_f_min, SA_f_max, datapoints)
 power_pos_dBm = np.vstack(meas_df["data_pos"])  # noqa: N816
 power_rms_dBm = np.vstack(meas_df["data_rms"])  # noqa: N816
 
-fig, ax = plt.subplots(figsize=(5, 4), layout='constrained')
-ax.plot(freq_hz/1e9, power_pos_dBm[0], label="Positive")
-ax.plot(freq_hz/1e9, power_rms_dBm[0], label="RMS")
+fig, ax = plt.subplots(figsize=(5, 4), layout="constrained")
+ax.plot(freq_hz / 1e9, power_pos_dBm[0], label="Positive")
+ax.plot(freq_hz / 1e9, power_rms_dBm[0], label="RMS")
 # Formatting
-ax.set_xlabel('Frequency (GHz)', fontsize=14, fontweight='bold')
-ax.set_ylabel('Power (dBm)', fontsize=14, fontweight='bold')
-ax.grid(True, which='both', linestyle='--')
+ax.set_xlabel("Frequency (GHz)", fontsize=14, fontweight="bold")
+ax.set_ylabel("Power (dBm)", fontsize=14, fontweight="bold")
+ax.grid(True, which="both", linestyle="--")
 ax.legend(fontsize=14)
-ax.tick_params(axis='both', labelsize=12)
+ax.tick_params(axis="both", labelsize=12)
 for tick in ax.get_xticklabels() + ax.get_yticklabels():
     tick.set_fontweight("bold")
 plt.show()
@@ -118,7 +120,7 @@ plt.show()
 # =============================================================================
 # Save DataFrame to HDF5 (better than CSV)
 meas_df.to_hdf("measurements.h5", key="data", mode="w")
-# key="data" is like a "dataset name" inside the HDF5 file 
+# key="data" is like a "dataset name" inside the HDF5 file
 # (you can store multiple DataFrames in one file with different keys).
 # mode="w" overwrites the file. Use mode="a" if you want to append new datasets.
 
@@ -126,7 +128,7 @@ meas_df.to_hdf("measurements.h5", key="data", mode="w")
 loaded_df = pd.read_hdf("measurements.h5", key="data")
 print(loaded_df.head())
 
-#or
+# or
 
 # Save DataFrame to CSV
 meas_df.to_csv("measurements.csv", index=False)

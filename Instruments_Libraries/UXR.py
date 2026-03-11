@@ -80,7 +80,7 @@ class UXR(BaseInstrument):
         Returns
         -------
         int
-            {1 | 0}
+            ``1``, ``0``.
         """
         return int(self.query(":ADER?"))
 
@@ -90,7 +90,7 @@ class UXR(BaseInstrument):
         Returns
         -------
         str
-            {ARM | TRIG | ATRIG | ADONE}
+            ``'ARM'``, ``'TRIG'``, ``'ATRIG'``, ``'ADONE'``.
         """
         return self.query(":ASTate?")
 
@@ -107,17 +107,20 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         value : str, optional
-            {ALL | DISPlayed}, if None then query
+            Select channels to autoscale. If None then query.
+
+            * ``'ALL'`` : All channels
+            * ``'DISPlayed'`` : Displayed channels only
 
         Returns
         -------
         str
-            {ALL | DISP}
+           ``'ALL'``, ``'DISP'``.
 
         Raises
         ------
         ValueError
-            Expected one of: {ALL | DISP | DISPlayed }
+            Expected one of: ``'ALL'``, ``'DISP'``, ``'DISPlayed'``.
         """
         _types = ["ALL", "DISPlayed"]
         if value is not None:
@@ -135,7 +138,7 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         channel_num : int
-            Number of the Channel
+            Channel number.
 
         Raises
         ------
@@ -154,7 +157,7 @@ class UXR(BaseInstrument):
         Returns
         -------
         str
-            {RUN | STOP | SING}
+            ``'RUN'``, ``'STOP'``, ``'SING'``.
         """
         return self.query(":RSTate?")
 
@@ -232,9 +235,9 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         channel : int
-            An integer, analog input channel 1 or 2
-        state : int, str, optional
-            ON, 1, OFF, 0
+            Channel number. Valid options: ``1``, ``2``.
+        state : int | str | None, optional
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
 
 
         Returns
@@ -258,7 +261,7 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         channel : int
-            An integer, analog input channel 1 or 2
+            Channel number. Valid options: ``1``, ``2``.
         range_value : float, optional
             A real number for the full-scale voltage of the specified channel number,
             by default None
@@ -291,7 +294,7 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         channel : int
-            An integer, analog input channel 1 or 2
+            Channel number. Valid options: ``1``, ``2``.
         scale_value : float, optional
             A real number for the vertical scale of the channel in units per division,
             by default None
@@ -368,8 +371,8 @@ class UXR(BaseInstrument):
         ----------
         function_num : int
             Function Number
-        state : int, str, optional
-            ON, 1, OFF, 0
+        state : int | str | None, optional
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``.
 
 
         Returns
@@ -404,17 +407,17 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         state : int | str | None, optional
-            {{ON | 1} | {OFF | 0}}, by default None
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``., by default None
 
         Returns
         -------
         int
-            {1 | 0}
+            ``1``, ``0``.
 
         Raises
         ------
         ValueError
-            Expected one of: {{ON | 1} | {OFF | 0}}
+            Expected one of: ``1``, ``0``, ``'ON'``, ``'OFF'``.
         """
         if state is not None:
             state = self._parse_state(state)
@@ -433,17 +436,20 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         value : str, optional
-            byteorder {MSBF, LSBF}, by default LSBFIRST
+            Byte order. Default is ``'LSBFirst'``.
+
+            * ``'MSBFirst'`` : Most Significant Byte First
+            * ``'LSBFirst'`` : Least Significant Byte First
 
         Returns
         -------
         str
-            byteorder {MSBF, LSBF}
+            ``'MSBF'``, ``'LSBF'``.
 
         Raises
         ------
         ValueError
-            Expected one of: MSBFIRST, LSBFIRST
+            Expected one of: ``'MSBFirst'``, ``'LSBFirst'``.
         """
         _types = ["MSBFirst", "LSBFirst"]
         if value is not None:
@@ -537,17 +543,22 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         value : str, optional
-            One of {ASCii | BINary | BYTE | WORD }, by default None
+            Data transmission mode. By default None.
+
+            * ``'ASCii'`` : ASCII format
+            * ``'BINary'`` : Binary format
+            * ``'BYTE'`` : Byte format
+            * ``'WORD'`` : Word format
 
         Returns
         -------
         str
-            {ASC | BIN | BYTE | WORD }
+            ``'ASC'``, ``'BIN'``, ``'BYTE'``, ``'WORD'``.
 
         Raises
         ------
         ValueError
-            Expected one of: {ASCii | BINary | BYTE | WORD}
+            Expected one of: ``'ASCii'``, ``'BINary'``, ``'BYTE'``, ``'WORD'``.
         """
         _types = ["ASCii", "BINary", "BYTE", "WORD"]
         if value is not None:
@@ -601,12 +612,12 @@ class UXR(BaseInstrument):
         Parameters
         ----------
         state : int | str | None, optional
-            {{ON | 1} | {OFF | 0}}, by default None
+            Valid options: ``1``, ``0``, ``'ON'``, ``'OFF'``., by default None
 
         Returns
         -------
         int
-            {1 | 0}
+            ``1``, ``0``.
         """
         if state is not None:
             state = self._parse_state(state)

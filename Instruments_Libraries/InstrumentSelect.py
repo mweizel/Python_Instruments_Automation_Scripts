@@ -56,7 +56,7 @@ def find_resource(
     model_regex : str
         Regular expression to match against the ``*IDN?`` string.
     resource_filter : str
-        VISA resource filter string (default: ``?*INSTR``).
+        VISA resource filter string. Default: ``'?*INSTR'``.
     specific_address : str, optional
         Specific VISA resource string to use.
 
@@ -267,6 +267,7 @@ def PowerMeter(index: int = 0, resource: str | None = None) -> PM100D:  # noqa: 
 
 def LU1000(resource: str | None = "USB") -> LU1000_Cband:  # noqa: N802
     from Instruments_Libraries.LU1000 import LU1000_Cband
+
     if resource is None:
         resource = "USB"
     return LU1000_Cband(resource)
